@@ -188,6 +188,10 @@ weigh-to-go/
 │   │       └── java/com/rickgoshen/weightogo/
 │   └── build.gradle
 ├── docs/
+|   ├── adr/               # Architecture Decision Records
+    │   └── 0001-*.md
+    ├── ddr/               # Design Decision Records
+    │   └── 0001-*.md
 │   ├── architecture/
 │   │   └── WeighToGo_Database_Architecture.md
 │   ├── design/
