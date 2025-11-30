@@ -25,15 +25,29 @@ Create all required XML layouts and resources following the Figma Design Specifi
 ### In Progress
 - [ ] None
 
-### Phase 1: Resource Files
+### Phase 1: Resource Files (Completed)
 - [x] Create colors.xml palette (2025-11-29)
 - [x] Add drawable icons across all densities (2025-11-29)
 - [x] Create strings.xml with all UI strings (2025-11-29)
 - [x] Create dimens.xml with spacing and sizing values (2025-11-29)
 - [x] Update themes.xml for Material Design 3 (2025-11-29)
 
-### Phase 2: Login Screen (25%)
-- [ ] Create activity_login.xml layout
+### Phase 2: Login Screen (25%) - Completed
+- [x] Create activity_login.xml layout (2025-11-29)
+  - [x] Used existing ic_profile.png for username icon
+  - [x] Used existing ic_lock.png for password icon
+  - [x] Used existing bg_gradient_primary.xml for header
+  - [x] Build header section with app icon, name, and tagline
+  - [x] Build auth card with tab toggle (Sign In / Create Account)
+  - [x] Build username/password fields with icons
+  - [x] Add Sign In button (primary, filled)
+  - [x] Add Create Account button (secondary, outlined)
+  - [x] Add Forgot Password link
+  - [x] Add "or continue with" divider
+  - [x] Add terms/privacy footer
+  - [x] Verify password field uses inputType="textPassword"
+  - [x] Verify focus order matches user flow
+  - [x] Validate accessibility (content descriptions, 48dp touch targets)
 
 ### Phase 3: Database Grid Screen (25%)
 - [ ] Create activity_main.xml layout with grid
