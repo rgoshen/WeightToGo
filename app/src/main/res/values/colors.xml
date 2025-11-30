@@ -1,5 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Weigh to Go! Color Palette -->
+    
+    <!-- Primary Colors -->
+    <color name="primary_teal">#00897B</color>
+    <color name="primary_dark">#00695C</color>
+    <color name="primary_light">#4DB6AC</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent_green">#4CAF50</color>
+    <color name="accent_green_light">#81C784</color>
+    
+    <!-- Status Colors -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="error">#F44336</color>
+    <color name="info">#2196F3</color>
+
+    <!-- Permission Status Badge Colors -->
+    <color name="status_pending_bg">#FFF3E0</color>
+    <color name="status_pending_text">#FF9800</color>
+    <color name="status_granted_bg">#E8F5E9</color>
+    <color name="status_granted_text">#4CAF50</color>
+    <color name="status_denied_bg">#FFEBEE</color>
+    <color name="status_denied_text">#F44336</color>
+
+    <!-- Info Banner -->
+    <color name="info_banner_bg">#E0F2F1</color>
+    <color name="info_banner_text">#00695C</color>
+    
+    <!-- Background Colors -->
+    <color name="background_primary">#FFFFFF</color>
+    <color name="background_secondary">#F5F5F5</color>
+    <color name="surface_variant">#E0F2F1</color>
+    <color name="surface_tint">#B2DFDB</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_hint">#9E9E9E</color>
+    <color name="text_disabled">#BDBDBD</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    
+    <!-- Trend Indicator Colors -->
+    <color name="trend_down">#4CAF50</color>      <!-- Weight loss (good) -->
+    <color name="trend_up">#F44336</color>        <!-- Weight gain -->
+    <color name="trend_same">#FF9800</color>      <!-- No change -->
+    
+    <!-- Gradient Colors (for programmatic use) -->
+    <color name="gradient_start">#00897B</color>
+    <color name="gradient_end">#00695C</color>
+    
+    <!-- Divider and Border -->
+    <color name="divider">#E0E0E0</color>
+    <color name="border">#BDBDBD</color>
+    <color name="border_focused">#00897B</color>
+    
+    <!-- Overlay Colors -->
+    <color name="overlay_light">#80FFFFFF</color>
+    <color name="overlay_dark">#80000000</color>
+    
+    <!-- Icon Colors -->
+    <color name="icon_primary">#00897B</color>
+    <color name="icon_secondary">#757575</color>
+    <color name="icon_on_surface">#FFFFFF</color>
+    
+    <!-- Card Colors -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_shadow">#1A000000</color>
+    
+    <!-- Button Colors -->
+    <color name="button_primary">#00897B</color>
+    <color name="button_primary_pressed">#00695C</color>
+    <color name="button_secondary">#E0F2F1</color>
+    <color name="button_disabled">#BDBDBD</color>
+    
+    <!-- Input Field Colors -->
+    <color name="input_background">#F5F5F5</color>
+    <color name="input_stroke">#E0E0E0</color>
+    <color name="input_stroke_focused">#00897B</color>
+    
+    <!-- Status Bar (for edge-to-edge) -->
+    <color name="status_bar">#00695C</color>
+    <color name="navigation_bar">#FFFFFF</color>
+    
+    <!-- Splash Screen -->
+    <color name="splash_background">#00897B</color>
+    
+    <!-- Material Design Color Aliases -->
+    <color name="colorPrimary">@color/primary_teal</color>
+    <color name="colorPrimaryDark">@color/primary_dark</color>
+    <color name="colorAccent">@color/accent_green</color>
+    <color name="colorSurface">@color/background_primary</color>
+    <color name="colorOnSurface">@color/text_primary</color>
+    <color name="colorOnPrimary">@color/text_on_primary</color>
 </resources>
