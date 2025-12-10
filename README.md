@@ -200,7 +200,12 @@ weigh-to-go/
 │   ├── api/
 │   │   └── (future API documentation)
 │   └── user-guide/
-│       └── (future user documentation)
+│   │    └── (future user documentation)
+│   ├── requirements/
+│   │   ├── CS360_Project_Three_Requirments.md
+│   │   ├── CS360_Project_Two_Requirments.md
+│   │   ├── Weight_Tracker_App_Requirements_v1.md
+│   │   └── Weight_Tracker_App_Requirements_v2.md
 ├── previews/
 │   ├── weight_tracker_login.html
 │   ├── weight_tracker_dashboard.html
