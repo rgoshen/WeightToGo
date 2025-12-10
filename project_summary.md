@@ -486,7 +486,33 @@ None identified
 
 ### Phase 1.2 Complete
 All three model classes implemented with TDD:
-- ✅ User (12 tests) - 6 fields
+- ✅ User (11 tests) - 6 fields
 - ✅ WeightEntry (11 tests) - 9 fields
 - ✅ GoalWeight (13 tests) - 11 fields
-- **Total: 36 tests, 100% model coverage**
+- **Total: 35 tests, 100% model coverage**
+
+---
+
+## [2025-12-10] Refactor: Remove User Full Constructor - Completed
+
+### Work Completed
+- Removed 6-parameter full constructor from `User.java`
+- Removed corresponding `test_fullConstructor_withAllFields_createsUser` from `UserTest.java`
+- All remaining 11 User tests still passing
+
+### Rationale
+- **Industry standard**: Clean Code recommends 0-2 parameters, max 3; 6 is a code smell
+- **Consistency**: User, WeightEntry, and GoalWeight now all follow same pattern (default constructor only)
+- **Best practice**: Default constructor + setters is more flexible and readable
+- **Maintainability**: Prevents "telescoping constructor" anti-pattern
+
+### Lessons Learned
+- **Question existing patterns** - Even if something "works", it may not be best practice
+- **Consistency matters** - All models should follow the same architectural pattern
+- **Test count ≠ quality** - Better to have fewer, meaningful tests than maximize count
+- **Industry standards exist for a reason** - Parameter count limits aren't arbitrary
+
+### Test Coverage
+- **User.java**: 100% coverage (11 tests, down from 12)
+- All essential functionality still tested: getters, setters, toString, security
+- Removed test was redundant (getters/setters already tested individually)

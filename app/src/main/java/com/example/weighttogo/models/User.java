@@ -12,18 +12,10 @@ public class User {
     private String createdAt;
     private String lastLogin;
 
+    /**
+     * Default constructor.
+     */
     public User() {
-        // Default constructor
-    }
-
-    public User(long userId, String username, String passwordHash, String salt,
-                String createdAt, String lastLogin) {
-        this.userId = userId;
-        this.username = username;
-        this.passwordHash = passwordHash;
-        this.salt = salt;
-        this.createdAt = createdAt;
-        this.lastLogin = lastLogin;
     }
 
     public long getUserId() {

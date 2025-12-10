@@ -110,29 +110,6 @@ public class UserTest {
     }
 
     @Test
-    public void test_fullConstructor_withAllFields_createsUser() {
-        // ARRANGE
-        long expectedUserId = 1L;
-        String expectedUsername = "testuser";
-        String expectedPasswordHash = "hashedpassword123";
-        String expectedSalt = "saltystring";
-        String expectedCreatedAt = "2025-12-09 10:00:00";
-        String expectedLastLogin = "2025-12-09 15:00:00";
-
-        // ACT
-        User user = new User(expectedUserId, expectedUsername, expectedPasswordHash,
-                           expectedSalt, expectedCreatedAt, expectedLastLogin);
-
-        // ASSERT
-        assertEquals("UserId should match", expectedUserId, user.getUserId());
-        assertEquals("Username should match", expectedUsername, user.getUsername());
-        assertEquals("PasswordHash should match", expectedPasswordHash, user.getPasswordHash());
-        assertEquals("Salt should match", expectedSalt, user.getSalt());
-        assertEquals("CreatedAt should match", expectedCreatedAt, user.getCreatedAt());
-        assertEquals("LastLogin should match", expectedLastLogin, user.getLastLogin());
-    }
-
-    @Test
     public void test_toString_returnsNonNullString() {
         // ARRANGE
         User user = new User();
