@@ -30,6 +30,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowToast;
 
@@ -48,7 +49,7 @@ import static org.robolectric.Shadows.shadowOf;
  * Tests dashboard functionality, authentication, data loading, and user interactions.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 28)
+@Config(sdk = 30)
 public class MainActivityTest {
 
     private MainActivity activity;
