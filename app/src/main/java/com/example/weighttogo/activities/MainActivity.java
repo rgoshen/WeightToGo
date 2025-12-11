@@ -332,11 +332,16 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
 
     /**
      * Update user name display.
+     * Falls back to username if display_name is null or empty (defensive programming).
      */
     private void updateUserName() {
         User user = userDAO.getUserById(currentUserId);
-        if (user != null && user.getDisplayName() != null) {
-            userName.setText(user.getDisplayName());
+        if (user != null) {
+            String displayName = user.getDisplayName();
+            if (displayName == null || displayName.trim().isEmpty()) {
+                displayName = user.getUsername();  // Fallback to username
+            }
+            userName.setText(displayName);
         }
     }
 
