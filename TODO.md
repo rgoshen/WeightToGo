@@ -341,9 +341,6 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - 12 strategic indexes (not 6)
 - Complete column specifications
 
-**Decision:**
-Per user feedback 2025-12-10: "we should have been following the @WeighToGO_Database_Architecture.md file. that is in the files reference."
-
 ---
 
 **DAO Implementation (After Schema Corrections):**
