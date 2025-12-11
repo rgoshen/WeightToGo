@@ -172,4 +172,45 @@ public class WeightEntryTest {
         assertTrue("toString should contain weightUnit", result.contains("lbs"));
         assertTrue("toString should contain weightDate", result.contains("2025-12-10"));
     }
+
+    @Test
+    public void test_equals_withSameWeightId_returnsTrue() {
+        // ARRANGE
+        WeightEntry entry1 = new WeightEntry();
+        entry1.setWeightId(42L);
+        entry1.setWeightValue(175.5);
+
+        WeightEntry entry2 = new WeightEntry();
+        entry2.setWeightId(42L);
+        entry2.setWeightValue(180.0);
+
+        // ACT & ASSERT
+        assertEquals("Entries with same weightId should be equal", entry1, entry2);
+    }
+
+    @Test
+    public void test_equals_withDifferentWeightId_returnsFalse() {
+        // ARRANGE
+        WeightEntry entry1 = new WeightEntry();
+        entry1.setWeightId(42L);
+
+        WeightEntry entry2 = new WeightEntry();
+        entry2.setWeightId(99L);
+
+        // ACT & ASSERT
+        assertNotEquals("Entries with different weightId should not be equal", entry1, entry2);
+    }
+
+    @Test
+    public void test_hashCode_withSameWeightId_returnsSameHash() {
+        // ARRANGE
+        WeightEntry entry1 = new WeightEntry();
+        entry1.setWeightId(42L);
+
+        WeightEntry entry2 = new WeightEntry();
+        entry2.setWeightId(42L);
+
+        // ACT & ASSERT
+        assertEquals("Entries with same weightId should have same hashCode", entry1.hashCode(), entry2.hashCode());
+    }
 }

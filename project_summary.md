@@ -771,3 +771,123 @@ None identified
 ✅ **Critical: API Compatibility** - Added desugaring for java.time support
 ✅ **Missing @NonNull** - User.updatedAt already had @NonNull annotation
 ✅ **Inconsistent Field Types** - Fixed weightDate, targetDate, achievedDate to use LocalDate
+
+---
+
+## [2025-12-10] Feature: Add equals/hashCode & Javadoc - Completed
+
+### Work Completed
+**equals() and hashCode() Implementation:**
+- Added to User model (based on userId primary key)
+- Added to WeightEntry model (based on weightId primary key)
+- Added to GoalWeight model (based on goalId primary key)
+
+**Javadoc Documentation:**
+- Added field-level Javadoc to all model fields
+- Security warnings for passwordHash and salt fields
+- Format specifications (E.164 for phoneNumber)
+- Nullability explanations
+- Business rule notes (e.g., "only one active goal per user")
+
+**Test Coverage:**
+- Added 6 equals/hashCode tests for User
+- Added 3 equals/hashCode tests for WeightEntry
+- Added 3 equals/hashCode tests for GoalWeight
+- **Total: 52 tests (22 User + 14 WeightEntry + 16 GoalWeight)**
+- All tests passing
+
+### Rationale
+
+#### 1. equals() and hashCode() Implementation
+**Issue**: Model classes lacked equals() and hashCode(), causing:
+- Cannot use models reliably in Collections (Set, HashMap)
+- Cannot compare model instances properly
+- DAO tests would fail when comparing retrieved vs expected objects
+- Violates Java equals/hashCode contract
+
+**Solution**: Implemented equals() and hashCode() based on primary key
+
+**Design Decision - Primary Key Equality:**
+```java
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return userId == user.userId;  // Compare by primary key only
+}
+
+@Override
+public int hashCode() {
+    return Long.hashCode(userId);  // Hash by primary key only
+}
+```
+
+**Why Primary Key Only?**
+- Database semantics: Two records with same ID are the same entity
+- Mutable fields: Other fields can change, but ID remains constant
+- Collection consistency: User with userId=42 should always hash to same bucket
+- DAO tests: Retrieved object equals original if IDs match
+
+**Benefits:**
+- ✅ Can use in HashSet, HashMap, etc.
+- ✅ DAO tests: `assertEquals(expectedUser, retrievedUser)` works
+- ✅ Consistent with database entity semantics
+- ✅ Follows Java best practices for entity classes
+
+#### 2. Javadoc Documentation
+**Issue**: No field-level documentation, unclear which fields are:
+- Security-sensitive (passwordHash, salt)
+- Required for specific features (phoneNumber for SMS)
+- Format-specific (E.164 phone numbers)
+- Business rule constrained (one active goal per user)
+
+**Solution**: Added comprehensive field-level Javadoc
+
+**Critical Documentation Examples:**
+```java
+/**
+ * SHA-256 hashed password for authentication.
+ * NEVER store, log, or transmit plain text passwords.
+ */
+@NonNull private String passwordHash;
+
+/**
+ * Optional phone number for SMS notifications in E.164 format (e.g., +15551234567).
+ * Required for SMS notification features (FR-5).
+ */
+@Nullable private String phoneNumber;
+
+/** Active status - only one goal per user can be active at a time */
+private boolean isActive;
+```
+
+**Benefits:**
+- ✅ Self-documenting code
+- ✅ Security reminders (never log passwordHash/salt)
+- ✅ Format specifications (E.164 phone numbers)
+- ✅ Business rules documented at field level
+- ✅ Better IDE auto-complete hints
+- ✅ Easier onboarding for new developers
+
+### Lessons Learned
+1. **equals/hashCode are not optional** - Any class used in Collections needs these
+2. **Primary key equality is standard for entities** - Don't compare all fields
+3. **Javadoc prevents security mistakes** - "NEVER log this" warnings help developers
+4. **Format specs belong in Javadoc** - E.164 phone format documented at field level
+5. **TDD for equals/hashCode** - Test edge cases (null, same instance, same ID different data)
+6. **Business rules in documentation** - "One active goal per user" documented at field level
+
+### Technical Debt
+None identified
+
+### Test Coverage
+- User: 22 tests (16 fields + 6 equals/hashCode)
+- WeightEntry: 14 tests (11 fields + 3 equals/hashCode)
+- GoalWeight: 16 tests (13 fields + 3 equals/hashCode)
+- **Total: 52 tests passing** (up from 40)
+
+### PR Review Comments Addressed
+✅ **Missing equals/hashCode** - Implemented for all models based on primary keys
+✅ **Inconsistent Javadoc** - Added field-level documentation for all fields
+✅ **Security documentation** - Added warnings for passwordHash and salt fields

@@ -10,16 +10,46 @@ import java.time.LocalDateTime;
  */
 public class User {
 
+    /** Primary key - unique identifier for user account */
     private long userId;
+
+    /** Unique username for authentication - cannot be null */
     @NonNull private String username;
+
+    /** Optional email address for account recovery and notifications */
     @Nullable private String email;
+
+    /**
+     * Optional phone number for SMS notifications in E.164 format (e.g., +15551234567).
+     * Required for SMS notification features (FR-5).
+     */
     @Nullable private String phoneNumber;
+
+    /** Optional display name shown in UI */
     @Nullable private String displayName;
+
+    /**
+     * SHA-256 hashed password for authentication.
+     * NEVER store, log, or transmit plain text passwords.
+     */
     @NonNull private String passwordHash;
+
+    /**
+     * Cryptographic salt used for password hashing.
+     * NEVER store, log, or expose this value.
+     */
     @NonNull private String salt;
+
+    /** Timestamp when user account was created */
     @NonNull private LocalDateTime createdAt;
+
+    /** Timestamp when user account was last updated */
     @NonNull private LocalDateTime updatedAt;
+
+    /** Timestamp of last successful login (null if never logged in) */
     @Nullable private LocalDateTime lastLogin;
+
+    /** Account status flag - true if account is active, false if deactivated */
     private boolean isActive;
 
     /**
@@ -114,6 +144,19 @@ public class User {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return userId == user.userId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(userId);
     }
 
     @Override

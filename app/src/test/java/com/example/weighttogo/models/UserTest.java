@@ -206,4 +206,78 @@ public class UserTest {
         // ASSERT
         assertEquals("IsActive should be set correctly", expectedFlag, user.getIsActive());
     }
+
+    @Test
+    public void test_equals_withSameUserId_returnsTrue() {
+        // ARRANGE
+        User user1 = new User();
+        user1.setUserId(42L);
+        user1.setUsername("john");
+
+        User user2 = new User();
+        user2.setUserId(42L);
+        user2.setUsername("different");
+
+        // ACT & ASSERT
+        assertEquals("Users with same userId should be equal", user1, user2);
+    }
+
+    @Test
+    public void test_equals_withDifferentUserId_returnsFalse() {
+        // ARRANGE
+        User user1 = new User();
+        user1.setUserId(42L);
+
+        User user2 = new User();
+        user2.setUserId(99L);
+
+        // ACT & ASSERT
+        assertNotEquals("Users with different userId should not be equal", user1, user2);
+    }
+
+    @Test
+    public void test_equals_withNull_returnsFalse() {
+        // ARRANGE
+        User user = new User();
+        user.setUserId(42L);
+
+        // ACT & ASSERT
+        assertNotEquals("User should not equal null", user, null);
+    }
+
+    @Test
+    public void test_equals_withSameInstance_returnsTrue() {
+        // ARRANGE
+        User user = new User();
+        user.setUserId(42L);
+
+        // ACT & ASSERT
+        assertEquals("User should equal itself", user, user);
+    }
+
+    @Test
+    public void test_hashCode_withSameUserId_returnsSameHash() {
+        // ARRANGE
+        User user1 = new User();
+        user1.setUserId(42L);
+
+        User user2 = new User();
+        user2.setUserId(42L);
+
+        // ACT & ASSERT
+        assertEquals("Users with same userId should have same hashCode", user1.hashCode(), user2.hashCode());
+    }
+
+    @Test
+    public void test_hashCode_withDifferentUserId_returnsDifferentHash() {
+        // ARRANGE
+        User user1 = new User();
+        user1.setUserId(42L);
+
+        User user2 = new User();
+        user2.setUserId(99L);
+
+        // ACT & ASSERT
+        assertNotEquals("Users with different userId should have different hashCode", user1.hashCode(), user2.hashCode());
+    }
 }

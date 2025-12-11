@@ -12,16 +12,37 @@ import java.time.LocalDateTime;
  */
 public class GoalWeight {
 
+    /** Primary key - unique identifier for goal */
     private long goalId;
+
+    /** Foreign key reference to users table */
     private long userId;
+
+    /** Target weight value */
     private double goalWeight;
+
+    /** Unit of measurement: 'lbs' or 'kg' */
     @NonNull private String goalUnit;
+
+    /** Starting weight when goal was created */
     private double startWeight;
+
+    /** Optional target date to achieve goal (date only) */
     @Nullable private LocalDate targetDate;
+
+    /** Achievement status - true if goal reached, false if in progress */
     private boolean isAchieved;
+
+    /** Date when goal was achieved (null if not yet achieved) */
     @Nullable private LocalDate achievedDate;
+
+    /** Timestamp when goal was created */
     @NonNull private LocalDateTime createdAt;
+
+    /** Timestamp when goal was last updated */
     @NonNull private LocalDateTime updatedAt;
+
+    /** Active status - only one goal per user can be active at a time */
     private boolean isActive;
 
     /**
@@ -116,6 +137,19 @@ public class GoalWeight {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GoalWeight that = (GoalWeight) o;
+        return goalId == that.goalId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(goalId);
     }
 
     @Override

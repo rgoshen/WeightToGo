@@ -197,4 +197,45 @@ public class GoalWeightTest {
         assertTrue("toString should contain goalWeight", result.contains("150.0"));
         assertTrue("toString should contain goalUnit", result.contains("lbs"));
     }
+
+    @Test
+    public void test_equals_withSameGoalId_returnsTrue() {
+        // ARRANGE
+        GoalWeight goal1 = new GoalWeight();
+        goal1.setGoalId(42L);
+        goal1.setGoalWeight(150.0);
+
+        GoalWeight goal2 = new GoalWeight();
+        goal2.setGoalId(42L);
+        goal2.setGoalWeight(160.0);
+
+        // ACT & ASSERT
+        assertEquals("Goals with same goalId should be equal", goal1, goal2);
+    }
+
+    @Test
+    public void test_equals_withDifferentGoalId_returnsFalse() {
+        // ARRANGE
+        GoalWeight goal1 = new GoalWeight();
+        goal1.setGoalId(42L);
+
+        GoalWeight goal2 = new GoalWeight();
+        goal2.setGoalId(99L);
+
+        // ACT & ASSERT
+        assertNotEquals("Goals with different goalId should not be equal", goal1, goal2);
+    }
+
+    @Test
+    public void test_hashCode_withSameGoalId_returnsSameHash() {
+        // ARRANGE
+        GoalWeight goal1 = new GoalWeight();
+        goal1.setGoalId(42L);
+
+        GoalWeight goal2 = new GoalWeight();
+        goal2.setGoalId(42L);
+
+        // ACT & ASSERT
+        assertEquals("Goals with same goalId should have same hashCode", goal1.hashCode(), goal2.hashCode());
+    }
 }

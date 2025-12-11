@@ -12,14 +12,31 @@ import java.time.LocalDateTime;
  */
 public class WeightEntry {
 
+    /** Primary key - unique identifier for weight entry */
     private long weightId;
+
+    /** Foreign key reference to users table */
     private long userId;
+
+    /** Weight measurement value (numeric) */
     private double weightValue;
+
+    /** Unit of measurement: 'lbs' or 'kg' */
     @NonNull private String weightUnit;
+
+    /** Date of weight entry (date only, no time component) */
     @NonNull private LocalDate weightDate;
+
+    /** Optional user notes for this entry */
     @Nullable private String notes;
+
+    /** Timestamp when entry was created */
     @NonNull private LocalDateTime createdAt;
+
+    /** Timestamp when entry was last updated */
     @NonNull private LocalDateTime updatedAt;
+
+    /** Soft delete flag - true if deleted, false if active */
     private boolean isDeleted;
 
     /**
@@ -98,6 +115,19 @@ public class WeightEntry {
 
     public void setIsDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WeightEntry that = (WeightEntry) o;
+        return weightId == that.weightId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(weightId);
     }
 
     @Override
