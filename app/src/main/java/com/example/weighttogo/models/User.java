@@ -1,16 +1,26 @@
 package com.example.weighttogo.models;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.time.LocalDateTime;
+
 /**
  * Model class representing a user account.
  */
 public class User {
 
     private long userId;
-    private String username;
-    private String passwordHash;
-    private String salt;
-    private String createdAt;
-    private String lastLogin;
+    @NonNull private String username;
+    @Nullable private String email;
+    @Nullable private String phoneNumber;
+    @Nullable private String displayName;
+    @NonNull private String passwordHash;
+    @NonNull private String salt;
+    @NonNull private LocalDateTime createdAt;
+    @NonNull private LocalDateTime updatedAt;
+    @Nullable private LocalDateTime lastLogin;
+    private boolean isActive;
 
     /**
      * Default constructor.
@@ -34,6 +44,30 @@ public class User {
         this.username = username;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     public String getPasswordHash() {
         return passwordHash;
     }
@@ -50,20 +84,36 @@ public class User {
         this.salt = salt;
     }
 
-    public String getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getLastLogin() {
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getLastLogin() {
         return lastLogin;
     }
 
-    public void setLastLogin(String lastLogin) {
+    public void setLastLogin(LocalDateTime lastLogin) {
         this.lastLogin = lastLogin;
+    }
+
+    public boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 
     @Override
@@ -71,8 +121,8 @@ public class User {
         return "User{" +
                 "userId=" + userId +
                 ", username='" + username + '\'' +
-                ", createdAt='" + createdAt + '\'' +
-                ", lastLogin='" + lastLogin + '\'' +
+                ", createdAt=" + createdAt +
+                ", lastLogin=" + lastLogin +
                 '}';
     }
 }

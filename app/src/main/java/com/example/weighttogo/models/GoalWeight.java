@@ -1,5 +1,10 @@
 package com.example.weighttogo.models;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.time.LocalDateTime;
+
 /**
  * Model class representing a weight goal.
  * Corresponds to the goal_weights table in the database.
@@ -9,14 +14,14 @@ public class GoalWeight {
     private long goalId;
     private long userId;
     private double goalWeight;
-    private String goalUnit;
+    @NonNull private String goalUnit;
     private double startWeight;
-    private String targetDate;
-    private int isAchieved;
-    private String achievedDate;
-    private String createdAt;
-    private String updatedAt;
-    private int isActive;
+    @Nullable private LocalDateTime targetDate;
+    private boolean isAchieved;
+    @Nullable private LocalDateTime achievedDate;
+    @NonNull private LocalDateTime createdAt;
+    @NonNull private LocalDateTime updatedAt;
+    private boolean isActive;
 
     /**
      * Default constructor.
@@ -64,51 +69,51 @@ public class GoalWeight {
         this.startWeight = startWeight;
     }
 
-    public String getTargetDate() {
+    public LocalDateTime getTargetDate() {
         return targetDate;
     }
 
-    public void setTargetDate(String targetDate) {
+    public void setTargetDate(LocalDateTime targetDate) {
         this.targetDate = targetDate;
     }
 
-    public int getIsAchieved() {
+    public boolean getIsAchieved() {
         return isAchieved;
     }
 
-    public void setIsAchieved(int isAchieved) {
+    public void setIsAchieved(boolean isAchieved) {
         this.isAchieved = isAchieved;
     }
 
-    public String getAchievedDate() {
+    public LocalDateTime getAchievedDate() {
         return achievedDate;
     }
 
-    public void setAchievedDate(String achievedDate) {
+    public void setAchievedDate(LocalDateTime achievedDate) {
         this.achievedDate = achievedDate;
     }
 
-    public String getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getUpdatedAt() {
+    public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public int getIsActive() {
+    public boolean getIsActive() {
         return isActive;
     }
 
-    public void setIsActive(int isActive) {
+    public void setIsActive(boolean isActive) {
         this.isActive = isActive;
     }
 
@@ -120,11 +125,11 @@ public class GoalWeight {
                 ", goalWeight=" + goalWeight +
                 ", goalUnit='" + goalUnit + '\'' +
                 ", startWeight=" + startWeight +
-                ", targetDate='" + targetDate + '\'' +
+                ", targetDate=" + targetDate +
                 ", isAchieved=" + isAchieved +
-                ", achievedDate='" + achievedDate + '\'' +
-                ", createdAt='" + createdAt + '\'' +
-                ", updatedAt='" + updatedAt + '\'' +
+                ", achievedDate=" + achievedDate +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 ", isActive=" + isActive +
                 '}';
     }

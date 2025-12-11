@@ -2,6 +2,8 @@ package com.example.weighttogo.models;
 
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.Assert.*;
 
 /**
@@ -100,7 +102,7 @@ public class GoalWeightTest {
     public void test_setTargetDate_withValidDate_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        String expectedDate = "2025-12-31";
+        LocalDateTime expectedDate = LocalDateTime.of(2025, 12, 31, 0, 0, 0);
 
         // ACT
         goal.setTargetDate(expectedDate);
@@ -113,7 +115,7 @@ public class GoalWeightTest {
     public void test_setIsAchieved_withValidFlag_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        int expectedFlag = 1;
+        boolean expectedFlag = true;
 
         // ACT
         goal.setIsAchieved(expectedFlag);
@@ -126,7 +128,7 @@ public class GoalWeightTest {
     public void test_setAchievedDate_withValidDate_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        String expectedDate = "2025-12-10";
+        LocalDateTime expectedDate = LocalDateTime.of(2025, 12, 10, 0, 0, 0);
 
         // ACT
         goal.setAchievedDate(expectedDate);
@@ -139,7 +141,7 @@ public class GoalWeightTest {
     public void test_setCreatedAt_withValidTimestamp_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        String expectedTimestamp = "2025-12-10 08:00:00";
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2025, 12, 10, 8, 0, 0);
 
         // ACT
         goal.setCreatedAt(expectedTimestamp);
@@ -152,7 +154,7 @@ public class GoalWeightTest {
     public void test_setUpdatedAt_withValidTimestamp_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        String expectedTimestamp = "2025-12-10 09:00:00";
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2025, 12, 10, 9, 0, 0);
 
         // ACT
         goal.setUpdatedAt(expectedTimestamp);
@@ -165,7 +167,7 @@ public class GoalWeightTest {
     public void test_setIsActive_withValidFlag_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        int expectedFlag = 1;
+        boolean expectedFlag = true;
 
         // ACT
         goal.setIsActive(expectedFlag);
@@ -182,7 +184,7 @@ public class GoalWeightTest {
         goal.setUserId(123L);
         goal.setGoalWeight(150.0);
         goal.setGoalUnit("lbs");
-        goal.setIsActive(1);
+        goal.setIsActive(true);
 
         // ACT
         String result = goal.toString();

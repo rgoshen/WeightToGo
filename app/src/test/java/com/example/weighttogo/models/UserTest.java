@@ -2,6 +2,8 @@ package com.example.weighttogo.models;
 
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.Assert.*;
 
 /**
@@ -84,29 +86,29 @@ public class UserTest {
     }
 
     @Test
-    public void test_setCreatedAt_withValidDate_setsValue() {
+    public void test_setCreatedAt_withValidDateTime_setsValue() {
         // ARRANGE
         User user = new User();
-        String expectedDate = "2025-12-09 10:30:00";
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 9, 10, 30, 0);
 
         // ACT
-        user.setCreatedAt(expectedDate);
+        user.setCreatedAt(expectedDateTime);
 
         // ASSERT
-        assertEquals("CreatedAt should be set correctly", expectedDate, user.getCreatedAt());
+        assertEquals("CreatedAt should be set correctly", expectedDateTime, user.getCreatedAt());
     }
 
     @Test
-    public void test_setLastLogin_withValidDate_setsValue() {
+    public void test_setLastLogin_withValidDateTime_setsValue() {
         // ARRANGE
         User user = new User();
-        String expectedDate = "2025-12-09 14:45:00";
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 9, 14, 45, 0);
 
         // ACT
-        user.setLastLogin(expectedDate);
+        user.setLastLogin(expectedDateTime);
 
         // ASSERT
-        assertEquals("LastLogin should be set correctly", expectedDate, user.getLastLogin());
+        assertEquals("LastLogin should be set correctly", expectedDateTime, user.getLastLogin());
     }
 
     @Test
@@ -138,5 +140,70 @@ public class UserTest {
         // ASSERT
         assertFalse("toString should NOT expose password hash", result.contains("supersecret123"));
         assertFalse("toString should NOT expose salt", result.contains("randomsalt456"));
+    }
+
+    @Test
+    public void test_setEmail_withValidEmail_setsValue() {
+        // ARRANGE
+        User user = new User();
+        String expectedEmail = "john@example.com";
+
+        // ACT
+        user.setEmail(expectedEmail);
+
+        // ASSERT
+        assertEquals("Email should be set correctly", expectedEmail, user.getEmail());
+    }
+
+    @Test
+    public void test_setPhoneNumber_withValidPhone_setsValue() {
+        // ARRANGE
+        User user = new User();
+        String expectedPhone = "+15551234567";
+
+        // ACT
+        user.setPhoneNumber(expectedPhone);
+
+        // ASSERT
+        assertEquals("Phone number should be set correctly", expectedPhone, user.getPhoneNumber());
+    }
+
+    @Test
+    public void test_setDisplayName_withValidName_setsValue() {
+        // ARRANGE
+        User user = new User();
+        String expectedDisplayName = "John Doe";
+
+        // ACT
+        user.setDisplayName(expectedDisplayName);
+
+        // ASSERT
+        assertEquals("Display name should be set correctly", expectedDisplayName, user.getDisplayName());
+    }
+
+    @Test
+    public void test_setUpdatedAt_withValidDateTime_setsValue() {
+        // ARRANGE
+        User user = new User();
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 10, 15, 30, 0);
+
+        // ACT
+        user.setUpdatedAt(expectedDateTime);
+
+        // ASSERT
+        assertEquals("UpdatedAt should be set correctly", expectedDateTime, user.getUpdatedAt());
+    }
+
+    @Test
+    public void test_setIsActive_withValidFlag_setsValue() {
+        // ARRANGE
+        User user = new User();
+        boolean expectedFlag = true;
+
+        // ACT
+        user.setIsActive(expectedFlag);
+
+        // ASSERT
+        assertEquals("IsActive should be set correctly", expectedFlag, user.getIsActive());
     }
 }

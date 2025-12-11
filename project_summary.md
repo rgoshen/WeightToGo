@@ -516,3 +516,156 @@ All three model classes implemented with TDD:
 - **User.java**: 100% coverage (11 tests, down from 12)
 - All essential functionality still tested: getters, setters, toString, security
 - Removed test was redundant (getters/setters already tested individually)
+
+---
+
+## [2025-12-10] Refactor: Model Data Types (String/int → LocalDateTime/boolean) - Completed
+
+### Work Completed
+- **User.java**: Changed `String createdAt/lastLogin` → `LocalDateTime`
+- **UserTest.java**: Updated 2 timestamp tests to use `LocalDateTime.of(year, month, day, hour, minute, second)`
+- **WeightEntry.java**: Changed `String weightDate/createdAt/updatedAt` → `LocalDateTime`, `int isDeleted` → `boolean`
+- **WeightEntryTest.java**: Updated 4 tests (3 date/time, 1 boolean flag)
+- **GoalWeight.java**: Changed `String targetDate/achievedDate/createdAt/updatedAt` → `LocalDateTime`, `int isAchieved/isActive` → `boolean`
+- **GoalWeightTest.java**: Updated 6 tests (4 date/time, 2 boolean flags)
+- All 35 tests passing after refactoring
+
+### Rationale
+1. **Type Safety**
+   - `String` dates prone to format errors ("2025-12-10" vs "12/10/2025" vs "Dec 10, 2025")
+   - `LocalDateTime` enforces valid date/time structure at compile time
+   - `int` flags (0/1) lack semantic meaning; `boolean` (true/false) is self-documenting
+
+2. **Better API**
+   - `LocalDateTime` provides rich API: `.plusDays()`, `.isBefore()`, `.getDayOfWeek()`
+   - No manual string parsing/formatting required in business logic
+   - Date comparisons are type-safe: `date1.isBefore(date2)` vs error-prone string comparison
+
+3. **Consistency with Java Standards**
+   - `LocalDateTime` is Java 8+ Time API standard for date/time handling
+   - Available via Android desugaring for minSdk 28 (our target)
+   - `boolean` is Java primitive type for true/false values (not int 0/1)
+
+4. **Database Interoperability**
+   - SQLite stores dates as TEXT/INTEGER/REAL - conversion required either way
+   - DAO layer handles conversion: `LocalDateTime ↔ ISO-8601 String` for database storage
+   - Type-safe in Java layer, string-based in database layer (separation of concerns)
+
+5. **Performance**
+   - No performance penalty - `LocalDateTime` is immutable, lightweight
+   - Reduces string parsing overhead in business logic
+   - Boolean comparison faster than integer comparison
+
+### Naming Convention
+- Field: `isDeleted`, `isAchieved`, `isActive` (prefix "is" indicates boolean)
+- Getter: `getIsDeleted()`, `getIsAchieved()`, `getIsActive()` (mechanical rule: capitalize first letter + "get")
+- Setter: `setIsDeleted(boolean)`, `setIsAchieved(boolean)`, `setIsActive(boolean)`
+- **Rationale**: Consistent with JavaBeans naming convention - don't drop "is" prefix for getters
+
+### Lessons Learned
+- **Choose types based on semantics** - Dates are temporal values (use LocalDateTime), flags are binary (use boolean)
+- **String is not universal** - Just because database stores as text doesn't mean Java layer should use String
+- **Type safety catches bugs early** - Compiler prevents `setIsDeleted(2)` with boolean, but allows it with int
+- **Refactoring is part of TDD** - Red-Green-**Refactor** includes improving type choices after tests pass
+- **LocalDateTime works on Android** - With desugaring, Java 8+ Time API is fully supported on Android minSdk 26+
+
+### Technical Debt
+None identified
+
+### Test Coverage
+- All 35 tests updated and passing:
+  - User (11 tests) - 2 LocalDateTime tests
+  - WeightEntry (11 tests) - 3 LocalDateTime tests, 1 boolean test
+  - GoalWeight (13 tests) - 4 LocalDateTime tests, 2 boolean tests
+
+---
+
+## [2025-12-10] Feature: Add Missing Fields & Nullability Annotations - Completed
+
+### Work Completed
+**User Model - Added Missing Fields:**
+- `email` (String, @Nullable) - Optional email address
+- `phoneNumber` (String, @Nullable) - **Critical for SMS notifications (FR-5)**
+- `displayName` (String, @Nullable) - User's display name
+- `updatedAt` (LocalDateTime, @NonNull) - Last update timestamp
+- `isActive` (boolean) - Account status flag (default true)
+
+**Nullability Annotations Added to All Models:**
+
+*User.java*
+- @NonNull: username, passwordHash, salt, createdAt, updatedAt
+- @Nullable: email, phoneNumber, displayName, lastLogin
+
+*WeightEntry.java*
+- @NonNull: weightUnit, weightDate, createdAt, updatedAt
+- @Nullable: notes
+
+*GoalWeight.java*
+- @NonNull: goalUnit, createdAt, updatedAt
+- @Nullable: targetDate, achievedDate
+
+**Tests Updated:**
+- Added 5 new tests for User model fields (email, phoneNumber, displayName, updatedAt, isActive)
+- Total User tests: 16 (up from 11)
+- **Total test suite: 40 tests (16 User + 11 WeightEntry + 13 GoalWeight)**
+- All tests passing
+
+### Rationale
+
+#### 1. Database Schema Alignment
+**Issue**: Models were missing fields defined in the database architecture document
+- User model was incomplete - missing 5 critical fields
+- WeightEntry and GoalWeight were complete but lacked nullability documentation
+
+**Solution**: Added all missing fields from `docs/architecture/WeighToGo_Database_Architecture.md`
+- Ensures models match database schema exactly
+- Prevents runtime errors when DAOs expect fields that don't exist
+- `phoneNumber` is **mandatory for FR-5 (SMS Notifications)** - cannot implement SMS features without it
+
+#### 2. Nullability Safety
+**Issue**: No indication of which fields can be null, leading to potential NullPointerExceptions
+
+**Solution**: Added @Nullable and @NonNull annotations (androidx.annotation)
+- **@NonNull fields**: Required fields that should never be null (username, timestamps, units)
+- **@Nullable fields**: Optional fields that can be null (email, phone, notes, optional dates)
+- Provides compile-time null safety hints to Android Studio/lint
+- Self-documenting code - developers immediately know which fields are optional
+
+**Benefits:**
+- Prevents `NullPointerException` bugs before they happen
+- Android Lint warns when potentially null values are used without null checks
+- IntelliJ/Android Studio provides better auto-completion and warnings
+- Easier to understand API contracts (which parameters are required vs optional)
+
+#### 3. Industry Best Practices
+- **Nullability annotations are Android best practice** - part of androidx library
+- Used extensively in Android SDK and Google sample code
+- Kotlin interop: @Nullable maps to Kotlin nullable types (String?), @NonNull to non-null (String)
+- Static analysis tools (Android Lint, FindBugs) use these annotations for better checking
+
+#### 4. SMS Notification Support (FR-5)
+**Critical**: `phoneNumber` field enables entire FR-5 feature
+- SMS notifications for goal achievements
+- SMS reminders for daily weight logging
+- SMS milestone alerts
+- Phone number stored in E.164 format (+15551234567) per database schema
+- Without this field, DAOs would fail when trying to retrieve phone numbers for SMS sending
+
+### Lessons Learned
+1. **Always reference architecture docs before implementation** - Database schema is the source of truth
+2. **Nullability annotations prevent bugs** - Small upfront cost for significant long-term benefit
+3. **Missing fields = broken features** - Can't implement SMS without phoneNumber field
+4. **TDD with missing fields fails DAO tests** - Would have caught this when implementing UserDAO
+5. **@Nullable doesn't mean optional** - It means "can be null"; business logic still decides if it's required
+
+### Technical Debt
+None identified - models now fully aligned with database schema
+
+### Test Coverage
+- User: 16 tests (100% coverage, 11 fields)
+- WeightEntry: 11 tests (100% coverage, 9 fields)
+- GoalWeight: 13 tests (100% coverage, 11 fields)
+- **Total: 40 tests passing**
+
+### Next Steps
+Phase 1.3 will implement DAOs, which will now correctly work with complete model classes

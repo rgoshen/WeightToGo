@@ -2,6 +2,8 @@ package com.example.weighttogo.models;
 
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.Assert.*;
 
 /**
@@ -84,16 +86,16 @@ public class WeightEntryTest {
     }
 
     @Test
-    public void test_setWeightDate_withValidDate_setsValue() {
+    public void test_setWeightDate_withValidDateTime_setsValue() {
         // ARRANGE
         WeightEntry entry = new WeightEntry();
-        String expectedDate = "2025-12-10";
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 10, 8, 0, 0);
 
         // ACT
-        entry.setWeightDate(expectedDate);
+        entry.setWeightDate(expectedDateTime);
 
         // ASSERT
-        assertEquals("Weight date should be set correctly", expectedDate, entry.getWeightDate());
+        assertEquals("Weight date should be set correctly", expectedDateTime, entry.getWeightDate());
     }
 
     @Test
@@ -110,36 +112,36 @@ public class WeightEntryTest {
     }
 
     @Test
-    public void test_setCreatedAt_withValidTimestamp_setsValue() {
+    public void test_setCreatedAt_withValidDateTime_setsValue() {
         // ARRANGE
         WeightEntry entry = new WeightEntry();
-        String expectedTimestamp = "2025-12-10 08:30:00";
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 10, 8, 30, 0);
 
         // ACT
-        entry.setCreatedAt(expectedTimestamp);
+        entry.setCreatedAt(expectedDateTime);
 
         // ASSERT
-        assertEquals("CreatedAt should be set correctly", expectedTimestamp, entry.getCreatedAt());
+        assertEquals("CreatedAt should be set correctly", expectedDateTime, entry.getCreatedAt());
     }
 
     @Test
-    public void test_setUpdatedAt_withValidTimestamp_setsValue() {
+    public void test_setUpdatedAt_withValidDateTime_setsValue() {
         // ARRANGE
         WeightEntry entry = new WeightEntry();
-        String expectedTimestamp = "2025-12-10 09:15:00";
+        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 10, 9, 15, 0);
 
         // ACT
-        entry.setUpdatedAt(expectedTimestamp);
+        entry.setUpdatedAt(expectedDateTime);
 
         // ASSERT
-        assertEquals("UpdatedAt should be set correctly", expectedTimestamp, entry.getUpdatedAt());
+        assertEquals("UpdatedAt should be set correctly", expectedDateTime, entry.getUpdatedAt());
     }
 
     @Test
     public void test_setIsDeleted_withValidFlag_setsValue() {
         // ARRANGE
         WeightEntry entry = new WeightEntry();
-        int expectedFlag = 1;
+        boolean expectedFlag = true;
 
         // ACT
         entry.setIsDeleted(expectedFlag);
@@ -156,7 +158,7 @@ public class WeightEntryTest {
         entry.setUserId(123L);
         entry.setWeightValue(175.5);
         entry.setWeightUnit("lbs");
-        entry.setWeightDate("2025-12-10");
+        entry.setWeightDate(LocalDateTime.of(2025, 12, 10, 8, 0, 0));
 
         // ACT
         String result = entry.toString();

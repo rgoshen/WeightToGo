@@ -1,5 +1,10 @@
 package com.example.weighttogo.models;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.time.LocalDateTime;
+
 /**
  * Model class representing a daily weight entry.
  * Corresponds to the daily_weights table in the database.
@@ -9,12 +14,12 @@ public class WeightEntry {
     private long weightId;
     private long userId;
     private double weightValue;
-    private String weightUnit;
-    private String weightDate;
-    private String notes;
-    private String createdAt;
-    private String updatedAt;
-    private int isDeleted;
+    @NonNull private String weightUnit;
+    @NonNull private LocalDateTime weightDate;
+    @Nullable private String notes;
+    @NonNull private LocalDateTime createdAt;
+    @NonNull private LocalDateTime updatedAt;
+    private boolean isDeleted;
 
     /**
      * Default constructor.
@@ -54,11 +59,11 @@ public class WeightEntry {
         this.weightUnit = weightUnit;
     }
 
-    public String getWeightDate() {
+    public LocalDateTime getWeightDate() {
         return weightDate;
     }
 
-    public void setWeightDate(String weightDate) {
+    public void setWeightDate(LocalDateTime weightDate) {
         this.weightDate = weightDate;
     }
 
@@ -70,27 +75,27 @@ public class WeightEntry {
         this.notes = notes;
     }
 
-    public String getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getUpdatedAt() {
+    public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public int getIsDeleted() {
+    public boolean getIsDeleted() {
         return isDeleted;
     }
 
-    public void setIsDeleted(int isDeleted) {
+    public void setIsDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
 
@@ -101,10 +106,10 @@ public class WeightEntry {
                 ", userId=" + userId +
                 ", weightValue=" + weightValue +
                 ", weightUnit='" + weightUnit + '\'' +
-                ", weightDate='" + weightDate + '\'' +
+                ", weightDate=" + weightDate +
                 ", notes='" + notes + '\'' +
-                ", createdAt='" + createdAt + '\'' +
-                ", updatedAt='" + updatedAt + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 ", isDeleted=" + isDeleted +
                 '}';
     }
