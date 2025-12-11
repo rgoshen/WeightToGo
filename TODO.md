@@ -257,16 +257,44 @@ Follow strict TDD methodology (Red-Green-Refactor), MVC architecture, and GitFlo
   - toString() method
   - All 13 tests passing
 
-### 1.3 Implement Database Helper
-- [ ] Write `WeighToGoDBHelperTest.java` - test database creation
-- [ ] Implement `database/WeighToGoDBHelper.java`
-  - Singleton pattern
+### 1.3 Implement Database Helper (Completed 2025-12-10)
+- [x] Add Robolectric 4.13 testing framework for database tests (2025-12-10)
+- [x] Write `DateTimeConverterTest.java` - test LocalDateTime/LocalDate conversions (TDD) (2025-12-10)
+  - test_toTimestamp_withValidLocalDateTime_returnsISO8601String
+  - test_fromTimestamp_withValidString_returnsLocalDateTime
+  - test_toDateString_withValidLocalDate_returnsISO8601String
+  - test_fromDateString_withValidString_returnsLocalDate
+  - test_roundTrip_preservesDateTime
+  - All 5 tests passing
+- [x] Implement `utils/DateTimeConverter.java` (2025-12-10)
+  - toTimestamp(LocalDateTime) - converts to "yyyy-MM-dd HH:mm:ss" format for SQLite
+  - fromTimestamp(String) - parses timestamp string to LocalDateTime
+  - toDateString(LocalDate) - converts to "yyyy-MM-dd" format for SQLite
+  - fromDateString(String) - parses date string to LocalDate
+  - **Security**: Validate input strings, handle null/empty cases
+  - **Logging**: Add TAG constant, log conversion errors (Log.e with exception)
+  - All methods implemented with comprehensive error handling
+- [x] Write `WeighToGoDBHelperTest.java` - test database creation (TDD) (2025-12-10)
+  - test_getInstance_returnsSingletonInstance
+  - test_getInstance_calledTwice_returnsSameInstance
+  - test_onCreate_createsUsersTable
+  - test_onCreate_createsWeightEntriesTable
+  - test_onCreate_createsGoalWeightsTable
+  - test_onConfigure_enablesForeignKeys
+  - All 6 tests passing using Robolectric
+- [x] Implement `database/WeighToGoDBHelper.java` (2025-12-10)
+  - Singleton pattern (thread-safe with synchronized getInstance)
   - DATABASE_NAME = "weigh_to_go.db"
   - DATABASE_VERSION = 1
-  - onCreate() - create users, weight_entries, goal_weights tables
-  - onUpgrade() - handle migrations
-  - onConfigure() - enable foreign keys
+  - onCreate() - create users, weight_entries, goal_weights tables with proper schema
+  - onUpgrade() - handle migrations (drops and recreates tables for v1)
+  - onConfigure() - enable foreign keys (setForeignKeyConstraintsEnabled)
+  - **Security**: Foreign key constraints enabled, parameterized queries ready for DAOs
+  - **Security**: Passwords stored as salted hashes (schema supports salt column)
   - **Logging**: Add TAG constant, log onCreate (Log.i), table creation (Log.d), onUpgrade (Log.w), errors (Log.e with exception)
+  - **Logging**: Include database name and version in onCreate log
+  - **Logging**: Log foreign key enforcement status
+  - All 6 tests passing, lint clean
 
 ### 1.4 Implement DAO Classes
 - [ ] Write `UserDAOTest.java` - all CRUD operations

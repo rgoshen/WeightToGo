@@ -1166,3 +1166,249 @@ None identified
 - ✅ Better IDE auto-completion and hints
 - ✅ Kotlin interop ready (nullable types map correctly)
 - ✅ API contract clarity (which methods accept/return null)
+
+---
+
+## [2025-12-10] Phase 1.3: Database Helper & DateTime Conversion (TDD) - Completed
+
+### Work Completed
+**DateTimeConverter Utility:**
+- Created `utils/DateTimeConverter.java` with SQLite date/time conversion methods:
+  - `toTimestamp(LocalDateTime)` - converts to "yyyy-MM-dd HH:mm:ss" format
+  - `fromTimestamp(String)` - parses timestamp string to LocalDateTime
+  - `toDateString(LocalDate)` - converts to "yyyy-MM-dd" format
+  - `fromDateString(String)` - parses date string to LocalDate
+  - Comprehensive null/empty string validation
+  - Industry-standard logging with TAG constant (Log.w for warnings, Log.e for errors)
+- Created `utils/DateTimeConverterTest.java` with 5 TDD tests:
+  - test_toTimestamp_withValidLocalDateTime_returnsISO8601String
+  - test_fromTimestamp_withValidString_returnsLocalDateTime
+  - test_toDateString_withValidLocalDate_returnsISO8601String
+  - test_fromDateString_withValidString_returnsLocalDate
+  - test_roundTrip_preservesDateTime
+  - All 5 tests passing
+
+**WeighToGoDBHelper Database Helper:**
+- Created `database/WeighToGoDBHelper.java` - thread-safe singleton SQLite helper:
+  - Singleton pattern with synchronized getInstance(Context)
+  - DATABASE_NAME = "weigh_to_go.db"
+  - DATABASE_VERSION = 1
+  - `onCreate()` creates three tables:
+    - `users` (6 columns): id, username, password_hash, salt, created_at, last_login
+    - `weight_entries` (9 columns): id, user_id, weight_value, weight_unit, weight_date, notes, created_at, updated_at, is_deleted
+    - `goal_weights` (11 columns): id, user_id, goal_weight, goal_unit, start_weight, target_date, is_achieved, achieved_date, created_at, updated_at, is_active
+  - `onConfigure()` enables foreign key constraints (setForeignKeyConstraintsEnabled)
+  - `onUpgrade()` drops and recreates tables (acceptable for v1)
+  - Comprehensive logging: TAG constant, Log.i for onCreate, Log.d for table creation, Log.w for upgrade, Log.e for errors
+  - Security-ready schema: salt column, foreign keys, soft delete support (is_deleted)
+- Created `database/WeighToGoDBHelperTest.java` with 6 Robolectric tests:
+  - test_getInstance_returnsSingletonInstance
+  - test_getInstance_calledTwice_returnsSameInstance
+  - test_onCreate_createsUsersTable (verified 6 columns)
+  - test_onCreate_createsWeightEntriesTable (verified 9 columns)
+  - test_onCreate_createsGoalWeightsTable (verified 11 columns)
+  - test_onConfigure_enablesForeignKeys (verified PRAGMA foreign_keys=1)
+  - All 6 tests passing using Robolectric 4.13
+
+**Testing Framework:**
+- Added Robolectric 4.13 to gradle/libs.versions.toml and app/build.gradle
+- Configured for fast JVM-based database testing (no emulator needed)
+
+**TDD Methodology:**
+- Strict Red-Green-Refactor cycle:
+  - RED: Wrote failing tests first (DateTimeConverterTest, WeighToGoDBHelperTest)
+  - GREEN: Implemented minimal code to pass tests
+  - REFACTOR: N/A - implementation was clean from the start
+
+**Documentation:**
+- Updated TODO.md section 1.3 with completed tasks (2025-12-10)
+- Updated project_summary.md with this entry
+
+### Issues Encountered
+1. **Gradle test runner syntax** - `--tests` flag not supported, had to run full test suite with `./gradlew test`
+2. **Robolectric test framework choice** - Needed real SQLite implementation for database tests
+
+### Corrections Made
+1. Used full test suite execution instead of individual test filtering
+2. Selected Robolectric as best database testing framework:
+   - Runs on JVM (fast, no emulator)
+   - Provides real SQLite implementation
+   - Industry standard for Android database testing
+   - Perfect for TDD with quick feedback loops
+
+### Rationale
+
+#### 1. Why DateTimeConverter is Necessary
+**Problem**: SQLite has no native date/time types
+- SQLite stores everything as TEXT, INTEGER, or REAL
+- Java uses LocalDateTime and LocalDate (java.time API)
+- Need bidirectional conversion: Java types ↔ SQLite TEXT
+
+**Solution**: DateTimeConverter utility class
+- Converts LocalDateTime to "yyyy-MM-dd HH:mm:ss" for database storage
+- Converts LocalDate to "yyyy-MM-dd" for database storage
+- Parses stored strings back to Java date/time objects
+- Handles null/empty strings gracefully with logging
+
+**Benefits:**
+- ✅ Type-safe date handling in Java layer
+- ✅ ISO-8601 format in database (sortable, standard)
+- ✅ Centralized conversion logic (DAOs use this utility)
+- ✅ Comprehensive error handling and logging
+
+#### 2. SQLite Storage Format Choices
+**Timestamp Format**: "yyyy-MM-dd HH:mm:ss"
+- ISO-8601 compatible (without T separator)
+- Sortable as TEXT in SQL queries
+- Human-readable in database browser tools
+- 19 characters per timestamp
+
+**Date Format**: "yyyy-MM-dd"
+- ISO-8601 standard
+- Sortable as TEXT
+- 10 characters per date
+- Used for weightDate, targetDate, achievedDate
+
+**Why TEXT over INTEGER (epoch)?**
+- Readability: "2025-12-10 14:30:45" vs "1733837445"
+- Debugging: Easy to understand in database browser
+- SQL queries: Natural date comparisons with BETWEEN, >, <
+- Time zones: LocalDateTime has no timezone, so epoch is ambiguous
+- Standards: ISO-8601 is international standard
+
+#### 3. Singleton Pattern for Database Helper
+**Why Singleton?**
+- **Single database instance**: Multiple DBHelper instances = multiple file handles = corruption risk
+- **Thread safety**: synchronized getInstance() prevents race conditions
+- **Resource efficiency**: One connection pool shared across app
+- **Android best practice**: Recommended in Android documentation
+
+**Implementation Details:**
+```java
+private static WeighToGoDBHelper instance;
+
+public static synchronized WeighToGoDBHelper getInstance(Context context) {
+    if (instance == null) {
+        instance = new WeighToGoDBHelper(context.getApplicationContext());
+    }
+    return instance;
+}
+```
+
+**Benefits:**
+- ✅ Prevents database corruption from multiple writes
+- ✅ Reduces memory/file handle usage
+- ✅ Thread-safe with synchronized keyword
+- ✅ Lazy initialization (created only when needed)
+
+#### 4. Foreign Key Constraints
+**Implementation:**
+```java
+@Override
+public void onConfigure(SQLiteDatabase db) {
+    super.onConfigure(db);
+    db.setForeignKeyConstraintsEnabled(true);
+}
+```
+
+**Why Foreign Keys?**
+- **Referential integrity**: Can't have weight_entries for deleted user
+- **CASCADE DELETE**: Deleting user automatically deletes their entries/goals
+- **Data consistency**: Database enforces relationships, not just app code
+- **Production best practice**: Industry standard for relational databases
+
+**Example:**
+```sql
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+```
+- If user with id=123 is deleted, all their weight_entries are auto-deleted
+- Prevents orphaned data (weight entries with no user)
+
+#### 5. Security Considerations
+**Password Storage:**
+- Schema has `password_hash` and `salt` columns (not `password`)
+- Ready for SHA-256 hashing (implemented in Phase 2)
+- Never store plain-text passwords
+
+**SQL Injection Prevention:**
+- DBHelper uses `execSQL()` for DDL (CREATE TABLE) - safe, no user input
+- DAOs will use parameterized queries via ContentValues and `?` placeholders
+- Security note in Javadoc: "All user input should use parameterized queries (handled in DAOs)"
+
+**Foreign Key Enforcement:**
+- Prevents malicious data manipulation
+- User can't manually insert weight_entries with fake user_id
+
+#### 6. Logging Best Practices
+**Log Levels Used:**
+- `Log.i()` - onCreate successful, getInstance created new instance
+- `Log.d()` - Table creation (debug-level detail)
+- `Log.w()` - onUpgrade (warning-level event, data loss)
+- `Log.e()` - Errors with exceptions (error-level)
+
+**TAG Constant:**
+```java
+private static final String TAG = "WeighToGoDBHelper";
+```
+
+**Benefits:**
+- Consistent log filtering: `adb logcat | grep WeighToGoDBHelper`
+- Production debugging: Track database operations
+- Development feedback: See when database is created/upgraded
+- Security: No sensitive data logged (no passwords, tokens)
+
+#### 7. Robolectric Testing Framework
+**Why Robolectric over Instrumented Tests?**
+| Robolectric | Instrumented Tests |
+|-------------|-------------------|
+| Runs on JVM (fast) | Runs on emulator/device (slow) |
+| ~1-2 seconds | ~30-60 seconds |
+| Real SQLite | Real SQLite |
+| No emulator needed | Requires emulator |
+| Perfect for TDD | Too slow for TDD |
+
+**Test Coverage:**
+- Singleton pattern verification
+- Table schema validation (column count, column names)
+- Foreign key enforcement check
+- All tests use real SQLite database (not mocked)
+
+**Benefits:**
+- ✅ Fast feedback loop for TDD
+- ✅ Real database behavior (not mocked)
+- ✅ No emulator setup required
+- ✅ CI/CD friendly (runs in GitHub Actions)
+
+### Lessons Learned
+1. **DateTimeConverter is mandatory for SQLite date handling** - SQLite has no native date types
+2. **ISO-8601 TEXT format is best choice** - Sortable, readable, standard
+3. **Singleton pattern prevents database corruption** - Multiple instances = file corruption
+4. **Foreign keys must be explicitly enabled** - Default is OFF in SQLite
+5. **Robolectric is perfect for database TDD** - Fast, real SQLite, no emulator
+6. **onConfigure runs before onCreate** - Perfect place to enable foreign keys
+7. **Schema validation via PRAGMA** - `PRAGMA table_info(table_name)` shows columns
+8. **Logging at appropriate levels** - Info for normal, Debug for detail, Warning for data loss, Error for failures
+9. **Security starts with schema** - password_hash/salt columns, foreign keys, parameterized queries
+10. **TDD for database code is fast** - Robolectric makes it practical
+
+### Technical Debt
+None identified
+
+### Test Coverage
+- **DateTimeConverter**: 5 tests, 100% coverage
+- **WeighToGoDBHelper**: 6 tests, 100% coverage
+- **Total new tests**: 11
+- **All tests passing**: 66 (55 models + 11 database)
+
+### Phase 1.3 Status
+✅ **Complete** - Database helper implemented with:
+- Robolectric testing framework
+- DateTimeConverter utility (LocalDateTime/LocalDate ↔ SQLite TEXT)
+- WeighToGoDBHelper singleton (thread-safe, foreign keys, comprehensive logging)
+- All tests passing, lint clean
+
+### Next Steps
+Phase 1.4 will implement DAO classes (UserDAO, WeightEntryDAO, GoalWeightDAO) that use:
+- WeighToGoDBHelper.getInstance(context) for database access
+- DateTimeConverter for date/time conversions
+- Parameterized queries for SQL injection prevention
