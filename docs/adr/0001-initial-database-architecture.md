@@ -39,12 +39,12 @@ We will implement a **relational database** using SQLite with the following arch
 
 ### 2. Schema Design: Normalized Relational Model
 
-**Five core tables:**
+**Five core tables** (per WeighToGo_Database_Architecture.md specification):
 
 #### 2.1 `users` Table
 ```sql
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
@@ -59,17 +59,17 @@ CREATE TABLE users (
 ```
 
 **Design Decisions:**
-- `id` - Integer primary key for fast joins, predictable size
+- `user_id` - Integer primary key for fast joins, predictable size, explicit naming per specification
 - `username` - UNIQUE constraint + index for fast login lookup
 - `password_hash` + `salt` - Salted SHA-256 hashing (never plain text)
 - `created_at`, `updated_at` - Audit timestamps (TEXT in ISO-8601 format)
 - `email`, `phone_number` - Optional contact info for notifications (FR-5)
 - `is_active` - Soft delete support (account deactivation without data loss)
 
-#### 2.2 `weight_entries` Table
+#### 2.2 `daily_weights` Table
 ```sql
-CREATE TABLE weight_entries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE daily_weights (
+    weight_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     weight_value REAL NOT NULL,
     weight_unit TEXT NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE weight_entries (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     is_deleted INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 ```
 
@@ -93,7 +93,7 @@ CREATE TABLE weight_entries (
 #### 2.3 `goal_weights` Table
 ```sql
 CREATE TABLE goal_weights (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     goal_weight REAL NOT NULL,
     goal_unit TEXT NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE goal_weights (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 ```
 
@@ -115,11 +115,53 @@ CREATE TABLE goal_weights (
 - `target_date` - Optional deadline for goal completion
 - `achieved_date` - Timestamp when goal was reached
 
+#### 2.4 `achievements` Table
+```sql
+CREATE TABLE achievements (
+    achievement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    goal_id INTEGER,
+    achievement_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    value REAL,
+    achieved_at TEXT NOT NULL,
+    is_notified INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (goal_id) REFERENCES goal_weights(goal_id) ON DELETE SET NULL
+);
+```
+
+**Design Decisions:**
+- `achievement_type` - Enum-style values (GOAL_REACHED, FIRST_ENTRY, STREAK_7, MILESTONE_5, etc.)
+- `goal_id` - Optional reference to associated goal (SET NULL on delete)
+- `value` - Numeric value for achievement (pounds lost, streak days, etc.)
+- `is_notified` - Tracks if user has been notified about this achievement
+
+#### 2.5 `user_preferences` Table
+```sql
+CREATE TABLE user_preferences (
+    preference_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    pref_key TEXT NOT NULL,
+    pref_value TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE (user_id, pref_key)
+);
+```
+
+**Design Decisions:**
+- Key-value store for user settings (weight_unit, theme, notifications, etc.)
+- UNIQUE constraint ensures one value per user per key
+- Flexible TEXT storage allows any setting value
+
 ### 3. Naming Convention: snake_case in Database, camelCase in Java
 
 **Database Layer (SQL):**
 ```sql
-SELECT user_id, created_at, is_deleted FROM weight_entries;
+SELECT user_id, created_at, is_deleted FROM daily_weights;
 ```
 
 **Java Layer (Models):**
@@ -166,14 +208,29 @@ weightEntry.setUserId(userId);
 
 ### 5. Performance Optimization: Strategic Indexing
 
-**Six indexes for optimal query performance:**
+**Twelve indexes for optimal query performance** (per specification):
 
+**Users table:**
 1. **`idx_users_username` (UNIQUE)** - Fast login lookup
-2. **`idx_weight_entries_user_id`** - User's weight history
-3. **`idx_weight_entries_weight_date`** - Date-based queries, sorting
-4. **`idx_weight_entries_is_deleted`** - Soft delete filtering
-5. **`idx_goal_weights_user_id`** - User's goals
-6. **`idx_goal_weights_is_active`** - Find active goal
+2. **`idx_users_email`** - Email search (partial, WHERE email IS NOT NULL)
+3. **`idx_users_active`** - Active user filtering
+
+**Daily weights table:**
+4. **`idx_weights_user_date` (UNIQUE)** - One entry per user per date
+5. **`idx_weights_date`** - Date-based queries, sorting
+6. **`idx_weights_user_created`** - Recent entries by user
+
+**Goal weights table:**
+7. **`idx_goals_user_active`** - Find active goal (composite)
+8. **`idx_goals_achieved`** - Achievement filtering
+
+**Achievements table:**
+9. **`idx_achievements_user`** - User's achievements
+10. **`idx_achievements_unnotified`** - Pending notifications
+11. **`idx_achievements_type`** - Filter by achievement type
+
+**User preferences table:**
+12. **`idx_prefs_user_key` (UNIQUE)** - One value per user per key
 
 **Indexing Strategy:**
 - ✅ Index all foreign keys (JOIN performance)
@@ -253,7 +310,7 @@ public static synchronized WeighToGoDBHelper getInstance(Context context) {
 ## Consequences
 
 ### Positive
-- ✅ **Performance**: 6 indexes provide 40-85% speedup on common queries
+- ✅ **Performance**: 12 indexes provide 40-85% speedup on common queries
 - ✅ **Data Integrity**: Foreign keys prevent orphaned records
 - ✅ **Security**: Salted password hashing, parameterized queries
 - ✅ **Scalability**: Indexed queries scale to thousands of entries
@@ -308,34 +365,35 @@ public static int toInteger(boolean value) {
 }
 ```
 
-### DAO Pattern (Future - Phase 1.4)
+### DAO Pattern (Implemented in Phase 1.4)
 ```java
 public class WeightEntryDAO {
     public long insertWeightEntry(WeightEntry entry) {
         ContentValues values = new ContentValues();
         values.put("user_id", entry.getUserId());
         values.put("weight_value", entry.getWeightValue());
-        values.put("weight_date", DateTimeConverter.toDateString(entry.getWeightDate()));
-        values.put("is_deleted", BooleanConverter.toInteger(entry.getIsDeleted()));
-        return db.insert("weight_entries", null, values);
+        values.put("weight_date", entry.getWeightDate().format(ISO_DATE_FORMATTER));
+        values.put("is_deleted", entry.getIsDeleted() ? 1 : 0);
+        return db.insert("daily_weights", null, values);
     }
 }
 ```
 
 ## Testing Strategy
 
-### Unit Tests (Robolectric)
-- Schema verification (table existence, column count, column names)
-- Index verification (all 6 indexes exist)
-- Foreign key enforcement (prevent orphans, cascade delete)
+### Unit Tests (Robolectric) - Implemented
+- Schema verification (5 tables, all columns correct per specification)
+- Index verification (all 12 indexes exist)
+- Foreign key enforcement (prevent orphans, cascade delete, SET NULL)
 - Singleton behavior (same instance, thread safety)
 - Edge cases (null values, invalid formats, data corruption)
 
-### Integration Tests (Future)
-- DAO CRUD operations with real database
-- Transaction rollback on error
-- Concurrent access from multiple threads
-- Migration testing (version upgrades)
+### DAO Integration Tests (Implemented)
+- UserDAO: 7 tests (insert, getById, getByUsername, usernameExists, updateLastLogin, delete)
+- WeightEntryDAO: Essential CRUD operations implemented
+- GoalWeightDAO: Essential CRUD operations implemented
+- All tests use in-memory database for fast execution
+- Transaction rollback on error (future enhancement)
 
 ### Performance Tests (Future)
 - Query performance with realistic datasets (1000+ entries)
@@ -350,10 +408,10 @@ public class WeightEntryDAO {
 - Better integration with Jetpack components (LiveData, Coroutines)
 - See ADR-0002 for migration strategy
 
-### Future Tables (Not in v1.0)
-- `achievements` - Milestone tracking (7-day streak, 5lb lost, etc.)
-- `user_preferences` - App settings (theme, units, notifications)
+### Future Tables (Potential v2.0)
 - `weight_history_analytics` - Pre-computed statistics for performance
+- `social_sharing` - Share achievements with friends
+- `nutritional_data` - Track calories, macros alongside weight
 
 ### Potential Optimizations
 - Composite indexes for complex queries (user_id + weight_date)

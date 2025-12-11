@@ -11,10 +11,12 @@ import android.util.Log;
  * Implements Singleton pattern for thread-safe single database instance.
  * Manages database creation, upgrades, and foreign key enforcement.
  *
- * Database Schema:
+ * Database Schema (per WeighToGo_Database_Architecture.md):
  * - users: User authentication and profile data
- * - weight_entries: Daily weight tracking with soft delete support
+ * - daily_weights: Daily weight tracking with soft delete support
  * - goal_weights: User goal weights and achievement tracking
+ * - achievements: Milestone achievements and celebration events
+ * - user_preferences: User settings and preferences (key-value store)
  *
  * Naming Convention:
  * - Database: snake_case (id, user_id, created_at) - Android/SQL convention
@@ -44,13 +46,15 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
 
     // Table names
     public static final String TABLE_USERS = "users";
-    public static final String TABLE_WEIGHT_ENTRIES = "weight_entries";
+    public static final String TABLE_DAILY_WEIGHTS = "daily_weights";
     public static final String TABLE_GOAL_WEIGHTS = "goal_weights";
+    public static final String TABLE_ACHIEVEMENTS = "achievements";
+    public static final String TABLE_USER_PREFERENCES = "user_preferences";
 
     // SQL: Create users table
     private static final String CREATE_TABLE_USERS =
         "CREATE TABLE " + TABLE_USERS + " (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "user_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "username TEXT NOT NULL UNIQUE, " +
             "password_hash TEXT NOT NULL, " +
             "salt TEXT NOT NULL, " +
@@ -63,10 +67,10 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             "is_active INTEGER NOT NULL DEFAULT 1" +
         ")";
 
-    // SQL: Create weight_entries table
-    private static final String CREATE_TABLE_WEIGHT_ENTRIES =
-        "CREATE TABLE " + TABLE_WEIGHT_ENTRIES + " (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+    // SQL: Create daily_weights table
+    private static final String CREATE_TABLE_DAILY_WEIGHTS =
+        "CREATE TABLE " + TABLE_DAILY_WEIGHTS + " (" +
+            "weight_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "user_id INTEGER NOT NULL, " +
             "weight_value REAL NOT NULL, " +
             "weight_unit TEXT NOT NULL, " +
@@ -75,13 +79,13 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             "created_at TEXT NOT NULL, " +
             "updated_at TEXT NOT NULL, " +
             "is_deleted INTEGER NOT NULL DEFAULT 0, " +
-            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(id) ON DELETE CASCADE" +
+            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(user_id) ON DELETE CASCADE" +
         ")";
 
     // SQL: Create goal_weights table
     private static final String CREATE_TABLE_GOAL_WEIGHTS =
         "CREATE TABLE " + TABLE_GOAL_WEIGHTS + " (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "goal_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "user_id INTEGER NOT NULL, " +
             "goal_weight REAL NOT NULL, " +
             "goal_unit TEXT NOT NULL, " +
@@ -92,7 +96,36 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             "created_at TEXT NOT NULL, " +
             "updated_at TEXT NOT NULL, " +
             "is_active INTEGER NOT NULL DEFAULT 1, " +
-            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(id) ON DELETE CASCADE" +
+            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(user_id) ON DELETE CASCADE" +
+        ")";
+
+    // SQL: Create achievements table
+    private static final String CREATE_TABLE_ACHIEVEMENTS =
+        "CREATE TABLE " + TABLE_ACHIEVEMENTS + " (" +
+            "achievement_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "user_id INTEGER NOT NULL, " +
+            "goal_id INTEGER, " +
+            "achievement_type TEXT NOT NULL, " +
+            "title TEXT NOT NULL, " +
+            "description TEXT, " +
+            "value REAL, " +
+            "achieved_at TEXT NOT NULL, " +
+            "is_notified INTEGER NOT NULL DEFAULT 0, " +
+            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(user_id) ON DELETE CASCADE, " +
+            "FOREIGN KEY (goal_id) REFERENCES " + TABLE_GOAL_WEIGHTS + "(goal_id) ON DELETE SET NULL" +
+        ")";
+
+    // SQL: Create user_preferences table
+    private static final String CREATE_TABLE_USER_PREFERENCES =
+        "CREATE TABLE " + TABLE_USER_PREFERENCES + " (" +
+            "preference_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "user_id INTEGER NOT NULL, " +
+            "pref_key TEXT NOT NULL, " +
+            "pref_value TEXT NOT NULL, " +
+            "created_at TEXT NOT NULL, " +
+            "updated_at TEXT NOT NULL, " +
+            "FOREIGN KEY (user_id) REFERENCES " + TABLE_USERS + "(user_id) ON DELETE CASCADE, " +
+            "UNIQUE (user_id, pref_key)" +
         ")";
 
     /**
@@ -181,58 +214,70 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             db.execSQL(CREATE_TABLE_USERS);
             Log.d(TAG, "Created table: " + TABLE_USERS);
 
-            // Create weight_entries table
-            db.execSQL(CREATE_TABLE_WEIGHT_ENTRIES);
-            Log.d(TAG, "Created table: " + TABLE_WEIGHT_ENTRIES);
+            // Create daily_weights table
+            db.execSQL(CREATE_TABLE_DAILY_WEIGHTS);
+            Log.d(TAG, "Created table: " + TABLE_DAILY_WEIGHTS);
 
             // Create goal_weights table
             db.execSQL(CREATE_TABLE_GOAL_WEIGHTS);
             Log.d(TAG, "Created table: " + TABLE_GOAL_WEIGHTS);
 
-            // Index: weight_entries.user_id (Foreign Key Performance)
-            // Optimizes: SELECT * FROM weight_entries WHERE user_id = ?
-            // Used by: Dashboard weight history, user's all entries query
-            // Impact: 60-80% faster on JOIN queries and user-specific filtering
-            db.execSQL("CREATE INDEX idx_weight_entries_user_id ON " + TABLE_WEIGHT_ENTRIES + "(user_id)");
-            Log.d(TAG, "Created index: idx_weight_entries_user_id");
+            // Create achievements table
+            db.execSQL(CREATE_TABLE_ACHIEVEMENTS);
+            Log.d(TAG, "Created table: " + TABLE_ACHIEVEMENTS);
 
-            // Index: goal_weights.user_id (Foreign Key Performance)
-            // Optimizes: SELECT * FROM goal_weights WHERE user_id = ?
-            // Used by: User's goal history, active goal lookup
-            // Impact: 50-70% faster on user-specific goal queries
-            db.execSQL("CREATE INDEX idx_goal_weights_user_id ON " + TABLE_GOAL_WEIGHTS + "(user_id)");
-            Log.d(TAG, "Created index: idx_goal_weights_user_id");
+            // Create user_preferences table
+            db.execSQL(CREATE_TABLE_USER_PREFERENCES);
+            Log.d(TAG, "Created table: " + TABLE_USER_PREFERENCES);
 
-            // Index: weight_entries.weight_date (Date-Based Queries)
-            // Optimizes: SELECT * FROM weight_entries WHERE weight_date BETWEEN ? AND ?
-            //            ORDER BY weight_date DESC LIMIT 10 (recent entries)
-            // Used by: Dashboard recent entries, date range queries, trend charts
-            // Impact: 70-85% faster on date sorting and range queries
-            db.execSQL("CREATE INDEX idx_weight_entries_weight_date ON " + TABLE_WEIGHT_ENTRIES + "(weight_date)");
-            Log.d(TAG, "Created index: idx_weight_entries_weight_date");
+            // ================================================================================
+            // INDEXES (per WeighToGo_Database_Architecture.md lines 308-336)
+            // ================================================================================
 
-            // Index: weight_entries.is_deleted (Soft Delete Filtering)
-            // Optimizes: SELECT * FROM weight_entries WHERE is_deleted = 0
-            // Used by: All queries showing active entries (dashboard, history, trends)
-            // Impact: 40-70% faster by narrowing result set before other filters
-            // Note: Boolean indexes are small but highly effective for common WHERE clauses
-            db.execSQL("CREATE INDEX idx_weight_entries_is_deleted ON " + TABLE_WEIGHT_ENTRIES + "(is_deleted)");
-            Log.d(TAG, "Created index: idx_weight_entries_is_deleted");
+            // Users table indexes
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON " + TABLE_USERS + "(username)");
+            Log.d(TAG, "Created index: idx_users_username");
 
-            // Index: goal_weights.is_active (Active Goal Lookup)
-            // Optimizes: SELECT * FROM goal_weights WHERE user_id = ? AND is_active = 1 LIMIT 1
-            // Used by: Dashboard progress card (get current active goal)
-            // Impact: Critical for dashboard performance - finds active goal instantly
-            db.execSQL("CREATE INDEX idx_goal_weights_is_active ON " + TABLE_GOAL_WEIGHTS + "(is_active)");
-            Log.d(TAG, "Created index: idx_goal_weights_is_active");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_users_email ON " + TABLE_USERS + "(email) WHERE email IS NOT NULL");
+            Log.d(TAG, "Created index: idx_users_email");
 
-            // Index: users.username (UNIQUE - Login Performance + Constraint)
-            // Optimizes: SELECT * FROM users WHERE username = ? (login authentication)
-            // Used by: Login screen, registration duplicate check
-            // Impact: 50-70% faster login queries + enforces username uniqueness at DB level
-            // Note: UNIQUE constraint doubles as index (no separate index needed)
-            db.execSQL("CREATE UNIQUE INDEX idx_users_username ON " + TABLE_USERS + "(username)");
-            Log.d(TAG, "Created unique index: idx_users_username");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_users_active ON " + TABLE_USERS + "(is_active)");
+            Log.d(TAG, "Created index: idx_users_active");
+
+            // Daily weights table indexes (most critical for performance)
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_weights_user_date ON " + TABLE_DAILY_WEIGHTS +
+                "(user_id, weight_date) WHERE is_deleted = 0");
+            Log.d(TAG, "Created index: idx_weights_user_date");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_weights_date ON " + TABLE_DAILY_WEIGHTS + "(weight_date)");
+            Log.d(TAG, "Created index: idx_weights_date");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_weights_user_created ON " + TABLE_DAILY_WEIGHTS +
+                "(user_id, created_at DESC)");
+            Log.d(TAG, "Created index: idx_weights_user_created");
+
+            // Goal weights table indexes
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_goals_user_active ON " + TABLE_GOAL_WEIGHTS + "(user_id, is_active)");
+            Log.d(TAG, "Created index: idx_goals_user_active");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_goals_achieved ON " + TABLE_GOAL_WEIGHTS + "(is_achieved)");
+            Log.d(TAG, "Created index: idx_goals_achieved");
+
+            // Achievements table indexes
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_achievements_user ON " + TABLE_ACHIEVEMENTS + "(user_id)");
+            Log.d(TAG, "Created index: idx_achievements_user");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_achievements_unnotified ON " + TABLE_ACHIEVEMENTS +
+                "(user_id, is_notified) WHERE is_notified = 0");
+            Log.d(TAG, "Created index: idx_achievements_unnotified");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_achievements_type ON " + TABLE_ACHIEVEMENTS + "(achievement_type)");
+            Log.d(TAG, "Created index: idx_achievements_type");
+
+            // User preferences table indexes
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_prefs_user_key ON " + TABLE_USER_PREFERENCES +
+                "(user_id, pref_key)");
+            Log.d(TAG, "Created index: idx_prefs_user_key");
 
             Log.i(TAG, "Database creation completed successfully");
 
@@ -274,9 +319,11 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
         Log.w(TAG, "WARNING: Data will be lost during upgrade. This is a development-only strategy.");
 
         try {
-            // Drop existing tables
+            // Drop existing tables (in reverse dependency order)
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACHIEVEMENTS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER_PREFERENCES);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_GOAL_WEIGHTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_WEIGHT_ENTRIES);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_DAILY_WEIGHTS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
 
             Log.w(TAG, "Dropped all tables for database upgrade");

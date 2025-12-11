@@ -96,7 +96,7 @@ public class WeighToGoDBHelperTest {
             assertEquals("users table should have 11 columns", 11, columnCount);
 
             // Verify column names (order matters in PRAGMA table_info)
-            String[] expectedColumns = {"id", "username", "password_hash", "salt", "created_at", "last_login", "email", "phone_number", "display_name", "updated_at", "is_active"};
+            String[] expectedColumns = {"user_id", "username", "password_hash", "salt", "created_at", "last_login", "email", "phone_number", "display_name", "updated_at", "is_active"};
             int index = 0;
             while (cursor.moveToNext()) {
                 String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
@@ -108,25 +108,25 @@ public class WeighToGoDBHelperTest {
     }
 
     /**
-     * Test 4: onCreate creates weight_entries table with correct schema
+     * Test 4: onCreate creates daily_weights table with correct schema
      */
     @Test
-    public void test_onCreate_createsWeightEntriesTable() {
+    public void test_onCreate_createsDailyWeightsTable() {
         // ACT
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         // ASSERT - Check table exists
         try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='weight_entries'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_weights'",
             null
         )) {
-            assertTrue("weight_entries table should exist", cursor.moveToFirst());
+            assertTrue("daily_weights table should exist", cursor.moveToFirst());
         }
 
         // ASSERT - Check table schema
-        try (Cursor cursor = db.rawQuery("PRAGMA table_info(weight_entries)", null)) {
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(daily_weights)", null)) {
             int columnCount = cursor.getCount();
-            assertEquals("weight_entries table should have 9 columns", 9, columnCount);
+            assertEquals("daily_weights table should have 9 columns", 9, columnCount);
 
             // Verify required columns exist
             boolean hasWeightId = false;
@@ -137,18 +137,18 @@ public class WeighToGoDBHelperTest {
 
             while (cursor.moveToNext()) {
                 String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                if (columnName.equals("id")) hasWeightId = true;
+                if (columnName.equals("weight_id")) hasWeightId = true;
                 if (columnName.equals("user_id")) hasUserId = true;
                 if (columnName.equals("weight_value")) hasWeightValue = true;
                 if (columnName.equals("weight_date")) hasWeightDate = true;
                 if (columnName.equals("is_deleted")) hasIsDeleted = true;
             }
 
-            assertTrue("weight_entries should have id column", hasWeightId);
-            assertTrue("weight_entries should have user_id column", hasUserId);
-            assertTrue("weight_entries should have weight_value column", hasWeightValue);
-            assertTrue("weight_entries should have weight_date column", hasWeightDate);
-            assertTrue("weight_entries should have is_deleted column", hasIsDeleted);
+            assertTrue("daily_weights should have weight_id column", hasWeightId);
+            assertTrue("daily_weights should have user_id column", hasUserId);
+            assertTrue("daily_weights should have weight_value column", hasWeightValue);
+            assertTrue("daily_weights should have weight_date column", hasWeightDate);
+            assertTrue("daily_weights should have is_deleted column", hasIsDeleted);
         }
     }
 
@@ -181,13 +181,13 @@ public class WeighToGoDBHelperTest {
 
             while (cursor.moveToNext()) {
                 String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                if (columnName.equals("id")) hasGoalId = true;
+                if (columnName.equals("goal_id")) hasGoalId = true;
                 if (columnName.equals("user_id")) hasUserId = true;
                 if (columnName.equals("goal_weight")) hasGoalWeight = true;
                 if (columnName.equals("is_active")) hasIsActive = true;
             }
 
-            assertTrue("goal_weights should have id column", hasGoalId);
+            assertTrue("goal_weights should have goal_id column", hasGoalId);
             assertTrue("goal_weights should have user_id column", hasUserId);
             assertTrue("goal_weights should have goal_weight column", hasGoalWeight);
             assertTrue("goal_weights should have is_active column", hasIsActive);
@@ -214,7 +214,7 @@ public class WeighToGoDBHelperTest {
 
     /**
      * Test 7: Foreign key constraint prevents orphaned weight entries
-     * Attempting to insert weight_entry with non-existent user_id should fail
+     * Attempting to insert daily_weight with non-existent user_id should fail
      */
     @Test(expected = android.database.sqlite.SQLiteConstraintException.class)
     public void test_foreignKey_preventOrphanedRecords() {
@@ -222,10 +222,10 @@ public class WeighToGoDBHelperTest {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int nonExistentUserId = 999;
 
-        // ACT - Try to insert weight_entry with invalid user_id
+        // ACT - Try to insert daily_weight with invalid user_id
         // This should throw SQLiteConstraintException due to FOREIGN KEY constraint
         db.execSQL(
-            "INSERT INTO weight_entries (user_id, weight_value, weight_unit, weight_date, created_at, updated_at, is_deleted) " +
+            "INSERT INTO daily_weights (user_id, weight_value, weight_unit, weight_date, created_at, updated_at, is_deleted) " +
             "VALUES (" + nonExistentUserId + ", 175.5, 'lbs', '2025-12-10', '2025-12-10 10:00:00', '2025-12-10 10:00:00', 0)"
         );
 
@@ -234,7 +234,7 @@ public class WeighToGoDBHelperTest {
 
     /**
      * Test 8: Foreign key CASCADE DELETE removes child records when parent is deleted
-     * Deleting a user should automatically delete their weight_entries and goal_weights
+     * Deleting a user should automatically delete their daily_weights and goal_weights
      */
     @Test
     public void test_foreignKey_cascadeDelete() {
@@ -248,14 +248,14 @@ public class WeighToGoDBHelperTest {
         );
 
         // Get the inserted user ID
-        Cursor userCursor = db.rawQuery("SELECT id FROM users WHERE username = 'testuser'", null);
+        Cursor userCursor = db.rawQuery("SELECT user_id FROM users WHERE username = 'testuser'", null);
         assertTrue("User should be inserted", userCursor.moveToFirst());
         int userId = userCursor.getInt(0);
         userCursor.close();
 
-        // Insert weight_entry for this user
+        // Insert daily_weight for this user
         db.execSQL(
-            "INSERT INTO weight_entries (user_id, weight_value, weight_unit, weight_date, created_at, updated_at, is_deleted) " +
+            "INSERT INTO daily_weights (user_id, weight_value, weight_unit, weight_date, created_at, updated_at, is_deleted) " +
             "VALUES (" + userId + ", 175.5, 'lbs', '2025-12-10', '2025-12-10 10:00:00', '2025-12-10 10:00:00', 0)"
         );
 
@@ -266,9 +266,9 @@ public class WeighToGoDBHelperTest {
         );
 
         // Verify records exist before deletion
-        Cursor entryCursor = db.rawQuery("SELECT COUNT(*) FROM weight_entries WHERE user_id = " + userId, null);
+        Cursor entryCursor = db.rawQuery("SELECT COUNT(*) FROM daily_weights WHERE user_id = " + userId, null);
         entryCursor.moveToFirst();
-        assertEquals("Should have 1 weight entry", 1, entryCursor.getInt(0));
+        assertEquals("Should have 1 daily weight", 1, entryCursor.getInt(0));
         entryCursor.close();
 
         Cursor goalCursor = db.rawQuery("SELECT COUNT(*) FROM goal_weights WHERE user_id = " + userId, null);
@@ -277,12 +277,12 @@ public class WeighToGoDBHelperTest {
         goalCursor.close();
 
         // ACT - Delete the user
-        db.execSQL("DELETE FROM users WHERE id = " + userId);
+        db.execSQL("DELETE FROM users WHERE user_id = " + userId);
 
         // ASSERT - Child records should be automatically deleted via CASCADE DELETE
-        entryCursor = db.rawQuery("SELECT COUNT(*) FROM weight_entries WHERE user_id = " + userId, null);
+        entryCursor = db.rawQuery("SELECT COUNT(*) FROM daily_weights WHERE user_id = " + userId, null);
         entryCursor.moveToFirst();
-        assertEquals("Weight entries should be cascade deleted", 0, entryCursor.getInt(0));
+        assertEquals("Daily weights should be cascade deleted", 0, entryCursor.getInt(0));
         entryCursor.close();
 
         goalCursor = db.rawQuery("SELECT COUNT(*) FROM goal_weights WHERE user_id = " + userId, null);
@@ -292,43 +292,7 @@ public class WeighToGoDBHelperTest {
     }
 
     /**
-     * Test 9: onCreate creates index on weight_entries.user_id
-     * Foreign key columns should have indexes for query performance
-     */
-    @Test
-    public void test_onCreate_createsIndexOnWeightEntriesUserId() {
-        // ACT
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        // ASSERT - Check index exists
-        try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weight_entries_user_id'",
-            null
-        )) {
-            assertTrue("Index idx_weight_entries_user_id should exist", cursor.moveToFirst());
-        }
-    }
-
-    /**
-     * Test 10: onCreate creates index on goal_weights.user_id
-     * Foreign key columns should have indexes for query performance
-     */
-    @Test
-    public void test_onCreate_createsIndexOnGoalWeightsUserId() {
-        // ACT
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        // ASSERT - Check index exists
-        try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_goal_weights_user_id'",
-            null
-        )) {
-            assertTrue("Index idx_goal_weights_user_id should exist", cursor.moveToFirst());
-        }
-    }
-
-    /**
-     * Test 11: onCreate creates unique index on users.username
+     * Test 9: onCreate creates unique index on users.username
      * Username must be unique and queries should be fast
      */
     @Test
@@ -356,63 +320,210 @@ public class WeighToGoDBHelperTest {
     }
 
     /**
-     * Test 12: onCreate creates index on weight_entries.weight_date
-     * Date-based queries (recent entries, date ranges) should be optimized
+     * Test 10: onCreate creates index on users.email (conditional)
      */
     @Test
-    public void test_onCreate_createsIndexOnWeightDate() {
+    public void test_onCreate_createsIndexOnUsersEmail() {
         // ACT
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         // ASSERT - Check index exists
         try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weight_entries_weight_date'",
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_users_email'",
             null
         )) {
-            assertTrue("Index idx_weight_entries_weight_date should exist", cursor.moveToFirst());
+            assertTrue("Index idx_users_email should exist", cursor.moveToFirst());
         }
     }
 
     /**
-     * Test 13: onCreate creates index on goal_weights.is_active
-     * Finding active goal (common query) should be optimized
+     * Test 11: onCreate creates index on users.is_active
      */
     @Test
-    public void test_onCreate_createsIndexOnGoalIsActive() {
+    public void test_onCreate_createsIndexOnUsersActive() {
         // ACT
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         // ASSERT - Check index exists
         try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_goal_weights_is_active'",
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_users_active'",
             null
         )) {
-            assertTrue("Index idx_goal_weights_is_active should exist", cursor.moveToFirst());
+            assertTrue("Index idx_users_active should exist", cursor.moveToFirst());
         }
     }
 
     /**
-     * Test 14: onCreate creates index on weight_entries.is_deleted
-     * Soft delete queries (WHERE is_deleted = 0) should be optimized
+     * Test 12: onCreate creates composite index on daily_weights(user_id, weight_date)
+     * Critical for user-specific date range queries
      */
     @Test
-    public void test_onCreate_createsIndexOnIsDeleted() {
+    public void test_onCreate_createsIndexOnWeightsUserDate() {
         // ACT
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         // ASSERT - Check index exists
         try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weight_entries_is_deleted'",
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weights_user_date'",
             null
         )) {
-            assertTrue("Index idx_weight_entries_is_deleted should exist", cursor.moveToFirst());
+            assertTrue("Index idx_weights_user_date should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 13: onCreate creates index on daily_weights.weight_date
+     * Optimizes date sorting and range queries
+     */
+    @Test
+    public void test_onCreate_createsIndexOnWeightsDate() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weights_date'",
+            null
+        )) {
+            assertTrue("Index idx_weights_date should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 14: onCreate creates index on daily_weights(user_id, created_at DESC)
+     * Optimizes queries for recent entries by user
+     */
+    @Test
+    public void test_onCreate_createsIndexOnWeightsUserCreated() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weights_user_created'",
+            null
+        )) {
+            assertTrue("Index idx_weights_user_created should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 15: onCreate creates composite index on goal_weights(user_id, is_active)
+     * Optimizes finding active goal for user
+     */
+    @Test
+    public void test_onCreate_createsIndexOnGoalsUserActive() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_goals_user_active'",
+            null
+        )) {
+            assertTrue("Index idx_goals_user_active should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 16: onCreate creates index on goal_weights.is_achieved
+     */
+    @Test
+    public void test_onCreate_createsIndexOnGoalsAchieved() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_goals_achieved'",
+            null
+        )) {
+            assertTrue("Index idx_goals_achieved should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 17: onCreate creates index on achievements.user_id
+     */
+    @Test
+    public void test_onCreate_createsIndexOnAchievementsUser() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_achievements_user'",
+            null
+        )) {
+            assertTrue("Index idx_achievements_user should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 18: onCreate creates composite index on achievements(user_id, is_notified)
+     */
+    @Test
+    public void test_onCreate_createsIndexOnAchievementsUnnotified() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_achievements_unnotified'",
+            null
+        )) {
+            assertTrue("Index idx_achievements_unnotified should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 19: onCreate creates index on achievements.achievement_type
+     */
+    @Test
+    public void test_onCreate_createsIndexOnAchievementsType() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_achievements_type'",
+            null
+        )) {
+            assertTrue("Index idx_achievements_type should exist", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 20: onCreate creates unique composite index on user_preferences(user_id, pref_key)
+     */
+    @Test
+    public void test_onCreate_createsUniqueIndexOnPrefsUserKey() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_prefs_user_key'",
+            null
+        )) {
+            assertTrue("Index idx_prefs_user_key should exist", cursor.moveToFirst());
+        }
+
+        // ASSERT - Verify it's a unique index
+        try (Cursor cursor = db.rawQuery(
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_prefs_user_key'",
+            null
+        )) {
+            assertTrue("Should find index definition", cursor.moveToFirst());
+            String sql = cursor.getString(0);
+            assertTrue("Index should be UNIQUE", sql.toUpperCase().contains("UNIQUE"));
         }
     }
 
     // ========== EDGE CASE TESTS ==========
 
     /**
-     * Test 15: onUpgrade drops and recreates all tables
+     * Test 21: onUpgrade drops and recreates all 5 tables
      * Simulates database upgrade scenario
      */
     @Test
@@ -444,12 +555,12 @@ public class WeighToGoDBHelperTest {
             assertEquals("Users table should be empty after upgrade", 0, userCountAfter);
         }
 
-        // Check weight_entries table exists
+        // Check daily_weights table exists
         try (Cursor cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='weight_entries'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_weights'",
             null
         )) {
-            assertTrue("weight_entries table should exist after upgrade", cursor.moveToFirst());
+            assertTrue("daily_weights table should exist after upgrade", cursor.moveToFirst());
         }
 
         // Check goal_weights table exists
@@ -458,6 +569,109 @@ public class WeighToGoDBHelperTest {
             null
         )) {
             assertTrue("goal_weights table should exist after upgrade", cursor.moveToFirst());
+        }
+
+        // Check achievements table exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='achievements'",
+            null
+        )) {
+            assertTrue("achievements table should exist after upgrade", cursor.moveToFirst());
+        }
+
+        // Check user_preferences table exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'",
+            null
+        )) {
+            assertTrue("user_preferences table should exist after upgrade", cursor.moveToFirst());
+        }
+    }
+
+    /**
+     * Test 22: onCreate creates achievements table with correct schema
+     */
+    @Test
+    public void test_onCreate_createsAchievementsTable() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check table exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='achievements'",
+            null
+        )) {
+            assertTrue("achievements table should exist", cursor.moveToFirst());
+        }
+
+        // ASSERT - Check table schema
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(achievements)", null)) {
+            int columnCount = cursor.getCount();
+            assertEquals("achievements table should have 9 columns", 9, columnCount);
+
+            // Verify required columns exist
+            boolean hasAchievementId = false;
+            boolean hasUserId = false;
+            boolean hasGoalId = false;
+            boolean hasAchievementType = false;
+            boolean hasIsNotified = false;
+
+            while (cursor.moveToNext()) {
+                String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                if (columnName.equals("achievement_id")) hasAchievementId = true;
+                if (columnName.equals("user_id")) hasUserId = true;
+                if (columnName.equals("goal_id")) hasGoalId = true;
+                if (columnName.equals("achievement_type")) hasAchievementType = true;
+                if (columnName.equals("is_notified")) hasIsNotified = true;
+            }
+
+            assertTrue("achievements should have achievement_id column", hasAchievementId);
+            assertTrue("achievements should have user_id column", hasUserId);
+            assertTrue("achievements should have goal_id column", hasGoalId);
+            assertTrue("achievements should have achievement_type column", hasAchievementType);
+            assertTrue("achievements should have is_notified column", hasIsNotified);
+        }
+    }
+
+    /**
+     * Test 23: onCreate creates user_preferences table with correct schema
+     */
+    @Test
+    public void test_onCreate_createsUserPreferencesTable() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check table exists
+        try (Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'",
+            null
+        )) {
+            assertTrue("user_preferences table should exist", cursor.moveToFirst());
+        }
+
+        // ASSERT - Check table schema
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(user_preferences)", null)) {
+            int columnCount = cursor.getCount();
+            assertEquals("user_preferences table should have 6 columns", 6, columnCount);
+
+            // Verify required columns exist
+            boolean hasPreferenceId = false;
+            boolean hasUserId = false;
+            boolean hasPrefKey = false;
+            boolean hasPrefValue = false;
+
+            while (cursor.moveToNext()) {
+                String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                if (columnName.equals("preference_id")) hasPreferenceId = true;
+                if (columnName.equals("user_id")) hasUserId = true;
+                if (columnName.equals("pref_key")) hasPrefKey = true;
+                if (columnName.equals("pref_value")) hasPrefValue = true;
+            }
+
+            assertTrue("user_preferences should have preference_id column", hasPreferenceId);
+            assertTrue("user_preferences should have user_id column", hasUserId);
+            assertTrue("user_preferences should have pref_key column", hasPrefKey);
+            assertTrue("user_preferences should have pref_value column", hasPrefValue);
         }
     }
 }
