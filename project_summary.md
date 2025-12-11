@@ -669,3 +669,105 @@ None identified - models now fully aligned with database schema
 
 ### Next Steps
 Phase 1.3 will implement DAOs, which will now correctly work with complete model classes
+
+---
+
+## [2025-12-10] Fix: Add Desugaring & Semantic Date Types - Completed
+
+### Work Completed
+**Desugaring Configuration:**
+- Added `coreLibraryDesugaringEnabled true` to build.gradle compileOptions
+- Added dependency: `coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'`
+
+**Semantic Type Corrections:**
+- **WeightEntry.weightDate**: Changed `LocalDateTime` → `LocalDate`
+- **GoalWeight.targetDate**: Changed `LocalDateTime` → `LocalDate`
+- **GoalWeight.achievedDate**: Changed `LocalDateTime` → `LocalDate`
+- **Kept LocalDateTime for**: createdAt, updatedAt, lastLogin (audit timestamps need time)
+
+**Test Updates:**
+- Updated WeightEntryTest.test_setWeightDate_withValidDate_setsValue
+- Updated WeightEntryTest.test_toString_returnsNonNullString
+- Updated GoalWeightTest.test_setTargetDate_withValidDate_setsValue
+- Updated GoalWeightTest.test_setAchievedDate_withValidDate_setsValue
+- All 40 tests passing
+
+### Rationale
+
+#### 1. Desugaring for java.time API Support
+**Issue**: Using java.time (LocalDate, LocalDateTime) requires API 26+ or desugaring
+
+**Solution**: Added Android desugaring library
+- **Why needed**: minSdk 28 supports java.time natively, BUT desugaring is industry best practice
+- **Benefits**:
+  - Future-proofs code if minSdk is lowered
+  - Ensures consistent behavior across all Android versions
+  - Enables full java.time API (Duration, Period, ZonedDateTime, etc.)
+  - Required by Android documentation for production apps
+- **Version**: 2.0.4 (latest stable as of Dec 2025)
+
+#### 2. LocalDate vs LocalDateTime - Semantic Correctness
+**Issue**: Database schema specifies date-only fields, but code used LocalDateTime (date + time)
+
+**Database Schema Analysis:**
+```sql
+-- WeightEntry
+weight_date TEXT NOT NULL  -- "Date of entry (YYYY-MM-DD)" ← Date only!
+
+-- GoalWeight
+target_date TEXT           -- Goal target date
+achieved_date TEXT         -- Achievement date
+```
+
+**Solution**: Use `LocalDate` for date-only fields, `LocalDateTime` for timestamps
+
+| Field | Type | Rationale |
+|-------|------|-----------|
+| WeightEntry.weightDate | `LocalDate` | Schema says "YYYY-MM-DD" - user enters weight on a date, not at specific time |
+| GoalWeight.targetDate | `LocalDate` | Target is a date ("reach goal by Dec 31"), not a specific time |
+| GoalWeight.achievedDate | `LocalDate` | Achievement is marked on a date, not precise timestamp |
+| *.createdAt, *.updatedAt | `LocalDateTime` | Audit timestamps need exact time for debugging/tracking |
+| User.lastLogin | `LocalDateTime` | Security tracking needs precise login time |
+
+**Benefits of Correct Typing:**
+- **Type safety**: Can't accidentally set time on date-only field
+- **Database alignment**: Java types match SQL schema semantics
+- **Better UX**: Date pickers for dates, datetime pickers for timestamps
+- **Storage efficiency**: DAO can store dates as "YYYY-MM-DD" (10 bytes) vs "YYYY-MM-DDTHH:MM:SS" (19 bytes)
+- **Comparison logic**: Date-only comparisons ignore time (e.g., "same day" checks)
+
+#### 3. Why Both LocalDate AND LocalDateTime Need Desugaring
+**Common misconception**: "We changed to LocalDate, so we don't need desugaring"
+
+**Reality**: BOTH are in java.time package (Java 8+)
+- `java.time.LocalDate` - API 26+
+- `java.time.LocalDateTime` - API 26+
+- `java.time.LocalTime` - API 26+
+- `java.time.ZonedDateTime` - API 26+
+
+**All require desugaring for minSdk < 26**
+
+Since we still use `LocalDateTime` for timestamps, desugaring is **mandatory**.
+Even if we only used `LocalDate`, desugaring would still be best practice.
+
+### Lessons Learned
+1. **Semantics matter** - Date fields should use LocalDate, timestamps should use LocalDateTime
+2. **Read the schema** - Database schema documentation reveals semantic intent ("YYYY-MM-DD" = date only)
+3. **Desugaring is not optional** - Industry standard for production Android apps using java.time
+4. **Type safety prevents bugs** - Can't accidentally call `.toLocalTime()` on a LocalDate field
+5. **Database storage matters** - Storing "2025-12-10" vs "2025-12-10T00:00:00" affects query performance
+6. **UI/UX alignment** - LocalDate → DatePicker, LocalDateTime → DateTimePicker (different UI components)
+
+### Technical Debt
+None identified
+
+### Test Coverage
+- All 40 tests passing
+- Tests updated to use LocalDate for date-only fields
+- Tests still use LocalDateTime for timestamp fields
+- Type safety enforced at compile time
+
+### PR Review Comments Addressed
+✅ **Critical: API Compatibility** - Added desugaring for java.time support
+✅ **Missing @NonNull** - User.updatedAt already had @NonNull annotation
+✅ **Inconsistent Field Types** - Fixed weightDate, targetDate, achievedDate to use LocalDate

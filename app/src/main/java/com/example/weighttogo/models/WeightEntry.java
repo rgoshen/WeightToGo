@@ -3,6 +3,7 @@ package com.example.weighttogo.models;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -15,7 +16,7 @@ public class WeightEntry {
     private long userId;
     private double weightValue;
     @NonNull private String weightUnit;
-    @NonNull private LocalDateTime weightDate;
+    @NonNull private LocalDate weightDate;
     @Nullable private String notes;
     @NonNull private LocalDateTime createdAt;
     @NonNull private LocalDateTime updatedAt;
@@ -59,11 +60,11 @@ public class WeightEntry {
         this.weightUnit = weightUnit;
     }
 
-    public LocalDateTime getWeightDate() {
+    public LocalDate getWeightDate() {
         return weightDate;
     }
 
-    public void setWeightDate(LocalDateTime weightDate) {
+    public void setWeightDate(LocalDate weightDate) {
         this.weightDate = weightDate;
     }
 

@@ -2,6 +2,7 @@ package com.example.weighttogo.models;
 
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.Assert.*;
@@ -102,7 +103,7 @@ public class GoalWeightTest {
     public void test_setTargetDate_withValidDate_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        LocalDateTime expectedDate = LocalDateTime.of(2025, 12, 31, 0, 0, 0);
+        LocalDate expectedDate = LocalDate.of(2025, 12, 31);
 
         // ACT
         goal.setTargetDate(expectedDate);
@@ -128,7 +129,7 @@ public class GoalWeightTest {
     public void test_setAchievedDate_withValidDate_setsValue() {
         // ARRANGE
         GoalWeight goal = new GoalWeight();
-        LocalDateTime expectedDate = LocalDateTime.of(2025, 12, 10, 0, 0, 0);
+        LocalDate expectedDate = LocalDate.of(2025, 12, 10);
 
         // ACT
         goal.setAchievedDate(expectedDate);

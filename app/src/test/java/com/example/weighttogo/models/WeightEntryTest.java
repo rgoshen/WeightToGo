@@ -2,6 +2,7 @@ package com.example.weighttogo.models;
 
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.Assert.*;
@@ -86,16 +87,16 @@ public class WeightEntryTest {
     }
 
     @Test
-    public void test_setWeightDate_withValidDateTime_setsValue() {
+    public void test_setWeightDate_withValidDate_setsValue() {
         // ARRANGE
         WeightEntry entry = new WeightEntry();
-        LocalDateTime expectedDateTime = LocalDateTime.of(2025, 12, 10, 8, 0, 0);
+        LocalDate expectedDate = LocalDate.of(2025, 12, 10);
 
         // ACT
-        entry.setWeightDate(expectedDateTime);
+        entry.setWeightDate(expectedDate);
 
         // ASSERT
-        assertEquals("Weight date should be set correctly", expectedDateTime, entry.getWeightDate());
+        assertEquals("Weight date should be set correctly", expectedDate, entry.getWeightDate());
     }
 
     @Test
@@ -158,7 +159,7 @@ public class WeightEntryTest {
         entry.setUserId(123L);
         entry.setWeightValue(175.5);
         entry.setWeightUnit("lbs");
-        entry.setWeightDate(LocalDateTime.of(2025, 12, 10, 8, 0, 0));
+        entry.setWeightDate(LocalDate.of(2025, 12, 10));
 
         // ACT
         String result = entry.toString();

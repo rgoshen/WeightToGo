@@ -3,6 +3,7 @@ package com.example.weighttogo.models;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -16,9 +17,9 @@ public class GoalWeight {
     private double goalWeight;
     @NonNull private String goalUnit;
     private double startWeight;
-    @Nullable private LocalDateTime targetDate;
+    @Nullable private LocalDate targetDate;
     private boolean isAchieved;
-    @Nullable private LocalDateTime achievedDate;
+    @Nullable private LocalDate achievedDate;
     @NonNull private LocalDateTime createdAt;
     @NonNull private LocalDateTime updatedAt;
     private boolean isActive;
@@ -69,11 +70,11 @@ public class GoalWeight {
         this.startWeight = startWeight;
     }
 
-    public LocalDateTime getTargetDate() {
+    public LocalDate getTargetDate() {
         return targetDate;
     }
 
-    public void setTargetDate(LocalDateTime targetDate) {
+    public void setTargetDate(LocalDate targetDate) {
         this.targetDate = targetDate;
     }
 
@@ -85,11 +86,11 @@ public class GoalWeight {
         this.isAchieved = isAchieved;
     }
 
-    public LocalDateTime getAchievedDate() {
+    public LocalDate getAchievedDate() {
         return achievedDate;
     }
 
-    public void setAchievedDate(LocalDateTime achievedDate) {
+    public void setAchievedDate(LocalDate achievedDate) {
         this.achievedDate = achievedDate;
     }
 
