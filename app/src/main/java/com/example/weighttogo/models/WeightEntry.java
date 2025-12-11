@@ -117,12 +117,18 @@ public class WeightEntry {
         this.isDeleted = isDeleted;
     }
 
+    /**
+     * Equality based on weightId (primary key).
+     * Note: This implementation assumes WeightEntry will not be subclassed.
+     * Two entries are equal if they have the same non-zero weightId.
+     * Uninitialized entries (weightId=0) are never equal to prevent false matches.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof WeightEntry)) return false;
         WeightEntry that = (WeightEntry) o;
-        return weightId == that.weightId;
+        return weightId != 0 && weightId == that.weightId;
     }
 
     @Override

@@ -146,12 +146,18 @@ public class User {
         this.isActive = isActive;
     }
 
+    /**
+     * Equality based on userId (primary key).
+     * Note: This implementation assumes User will not be subclassed.
+     * Two users are equal if they have the same non-zero userId.
+     * Uninitialized users (userId=0) are never equal to prevent false matches.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof User)) return false;
         User user = (User) o;
-        return userId == user.userId;
+        return userId != 0 && userId == user.userId;
     }
 
     @Override

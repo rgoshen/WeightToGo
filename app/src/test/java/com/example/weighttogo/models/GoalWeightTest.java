@@ -238,4 +238,14 @@ public class GoalWeightTest {
         // ACT & ASSERT
         assertEquals("Goals with same goalId should have same hashCode", goal1.hashCode(), goal2.hashCode());
     }
+
+    @Test
+    public void test_equals_withUninitializedGoals_returnsFalse() {
+        // ARRANGE
+        GoalWeight goal1 = new GoalWeight();  // goalId = 0 (uninitialized)
+        GoalWeight goal2 = new GoalWeight();  // goalId = 0 (uninitialized)
+
+        // ACT & ASSERT
+        assertNotEquals("Uninitialized goals (goalId=0) should not be equal", goal1, goal2);
+    }
 }

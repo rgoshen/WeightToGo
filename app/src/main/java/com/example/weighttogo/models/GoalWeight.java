@@ -139,12 +139,18 @@ public class GoalWeight {
         this.isActive = isActive;
     }
 
+    /**
+     * Equality based on goalId (primary key).
+     * Note: This implementation assumes GoalWeight will not be subclassed.
+     * Two goals are equal if they have the same non-zero goalId.
+     * Uninitialized goals (goalId=0) are never equal to prevent false matches.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof GoalWeight)) return false;
         GoalWeight that = (GoalWeight) o;
-        return goalId == that.goalId;
+        return goalId != 0 && goalId == that.goalId;
     }
 
     @Override

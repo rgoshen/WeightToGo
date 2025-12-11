@@ -213,4 +213,14 @@ public class WeightEntryTest {
         // ACT & ASSERT
         assertEquals("Entries with same weightId should have same hashCode", entry1.hashCode(), entry2.hashCode());
     }
+
+    @Test
+    public void test_equals_withUninitializedEntries_returnsFalse() {
+        // ARRANGE
+        WeightEntry entry1 = new WeightEntry();  // weightId = 0 (uninitialized)
+        WeightEntry entry2 = new WeightEntry();  // weightId = 0 (uninitialized)
+
+        // ACT & ASSERT
+        assertNotEquals("Uninitialized entries (weightId=0) should not be equal", entry1, entry2);
+    }
 }

@@ -891,3 +891,146 @@ None identified
 ✅ **Missing equals/hashCode** - Implemented for all models based on primary keys
 ✅ **Inconsistent Javadoc** - Added field-level documentation for all fields
 ✅ **Security documentation** - Added warnings for passwordHash and salt fields
+
+---
+
+## [2025-12-10] Fix: Complete Package Structure & Improve equals() - Completed
+
+### Work Completed
+**Package Structure Completion:**
+- Created missing package directories required by Phase 1.1:
+  - `app/src/main/java/com/example/weighttogo/adapters/.gitkeep`
+  - `app/src/main/java/com/example/weighttogo/database/.gitkeep`
+  - `app/src/main/java/com/example/weighttogo/utils/.gitkeep`
+  - `app/src/main/java/com/example/weighttogo/constants/.gitkeep`
+
+**Improved equals() Implementation:**
+- Updated User.equals() to handle uninitialized entities
+- Updated WeightEntry.equals() to handle uninitialized entities
+- Updated GoalWeight.equals() to handle uninitialized entities
+- Changed from `getClass() != o.getClass()` to `!(o instanceof ClassName)`
+- Added `id != 0 &&` check to prevent uninitialized entities from matching
+- Added comprehensive Javadoc explaining design decisions
+
+**Test Coverage:**
+- Added edge case tests for all three models:
+  - `test_equals_withUninitializedUsers_returnsFalse` (User)
+  - `test_equals_withUninitializedEntries_returnsFalse` (WeightEntry)
+  - `test_equals_withUninitializedGoals_returnsFalse` (GoalWeight)
+- **Total: 55 tests (23 User + 15 WeightEntry + 17 GoalWeight)**
+- All tests passing
+
+### Rationale
+
+#### 1. Missing Package Directories
+**Issue**: Phase 1.1 claimed to create full package structure, but was missing 4 directories
+- `adapters/` - for RecyclerView adapters
+- `database/` - for DBHelper and DAOs
+- `utils/` - for PasswordUtils, ValidationUtils, etc.
+- `constants/` - for app-wide constants
+
+**Solution**: Created directories with `.gitkeep` files
+- `.gitkeep` is Git convention for tracking empty directories
+- Directories will be populated in Phase 1.3 (database) and Phase 1.4 (utilities)
+- Phase 1.1 is now truly complete - all planned package structure exists
+
+**Why Critical**:
+- Architecture documentation specifies this structure
+- Phase 1.3 DAOs will fail if `database/` package doesn't exist
+- Phase 1.4 utils will fail if `utils/` package doesn't exist
+- Prevents future "package does not exist" compilation errors
+
+#### 2. Uninitialized Entity Equality Problem
+**Issue**: Original equals() implementation had a flaw:
+```java
+// BEFORE (problematic)
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return userId == user.userId;  // Two users with userId=0 would be equal!
+}
+```
+
+**Problem**: Two brand-new User objects (userId=0) would be considered equal
+- `new User().equals(new User())` would return `true`
+- This is semantically incorrect - they are different entities
+- Would cause bugs in Collections: `Set.add(newUser1)` then `Set.add(newUser2)` would only add one
+
+**Solution**: Added `id != 0 &&` check
+```java
+// AFTER (correct)
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof User)) return false;
+    User user = (User) o;
+    return userId != 0 && userId == user.userId;  // Uninitialized entities are never equal
+}
+```
+
+**Benefits:**
+- ✅ Two uninitialized entities are never equal (correct semantics)
+- ✅ Only persisted entities with real IDs can be equal
+- ✅ Safe to use in Collections before database insert
+- ✅ Prevents false matches in unit tests
+
+#### 3. instanceof vs getClass()
+**Issue**: Using `getClass() != o.getClass()` prevents proper subclass handling
+
+**Change**: `!(o instanceof ClassName)`
+
+**Rationale:**
+- More flexible for potential future subclassing
+- Standard Java practice for entity classes
+- Allows Hibernate/ORM proxies to work correctly (if we add JPA later)
+- Consistent with Joshua Bloch's "Effective Java" recommendations
+
+#### 4. Comprehensive Javadoc
+**Added to all equals() methods:**
+```java
+/**
+ * Equality based on userId (primary key).
+ * Note: This implementation assumes User will not be subclassed.
+ * Two users are equal if they have the same non-zero userId.
+ * Uninitialized users (userId=0) are never equal to prevent false matches.
+ */
+```
+
+**Benefits:**
+- Documents design decision (primary key equality)
+- Explains edge case handling (userId=0)
+- States assumptions (no subclassing expected)
+- Helps future developers understand intent
+
+### Lessons Learned
+1. **Package structure matters** - Can't claim "complete" if directories are missing
+2. **`.gitkeep` convention** - Standard way to track empty directories in Git
+3. **Uninitialized entity equality is a real bug** - Must handle id=0 case explicitly
+4. **instanceof is safer than getClass()** - Better for inheritance and proxies
+5. **Javadoc for non-obvious logic** - equals() implementation needs explanation
+6. **Edge case testing is critical** - Uninitialized entity tests caught a design flaw
+7. **Phase completion definition** - "Complete" means 100% of requirements, not "good enough"
+
+### Technical Debt
+None identified
+
+### Test Coverage
+- User: 23 tests (22 field/feature + 1 edge case)
+- WeightEntry: 15 tests (14 field/feature + 1 edge case)
+- GoalWeight: 17 tests (16 field/feature + 1 edge case)
+- **Total: 55 tests passing**
+
+### PR Review Comments Addressed
+✅ **Low: Consider making models immutable** - Acknowledged but deferred (requires builder pattern, incompatible with DAO cursor mapping)
+✅ **High: Missing package directories** - Created adapters, database, utils, constants packages
+✅ **Medium: Incomplete equals() implementation** - Added uninitialized entity check, changed to instanceof, added Javadoc
+
+### Phase 1.2 Final Status
+All model classes implemented with TDD and fully compliant with database schema:
+- ✅ User (23 tests) - 11 fields, equals/hashCode, Javadoc, nullability annotations
+- ✅ WeightEntry (15 tests) - 9 fields, equals/hashCode, Javadoc, nullability annotations
+- ✅ GoalWeight (17 tests) - 11 fields, equals/hashCode, Javadoc, nullability annotations
+- ✅ All packages created (activities, adapters, database, models, utils, constants)
+- **Total: 55 tests, 100% model coverage, Phase 1.1 + 1.2 complete**

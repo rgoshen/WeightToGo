@@ -280,4 +280,25 @@ public class UserTest {
         // ACT & ASSERT
         assertNotEquals("Users with different userId should have different hashCode", user1.hashCode(), user2.hashCode());
     }
+
+    @Test
+    public void test_equals_withUninitializedUsers_returnsFalse() {
+        // ARRANGE
+        User user1 = new User();  // userId = 0 (uninitialized)
+        User user2 = new User();  // userId = 0 (uninitialized)
+
+        // ACT & ASSERT
+        assertNotEquals("Uninitialized users (userId=0) should not be equal", user1, user2);
+    }
+
+    @Test
+    public void test_equals_withDifferentClass_returnsFalse() {
+        // ARRANGE
+        User user = new User();
+        user.setUserId(42L);
+        String notAUser = "not a user";
+
+        // ACT & ASSERT
+        assertNotEquals("User should not equal a String", user, notAUser);
+    }
 }
