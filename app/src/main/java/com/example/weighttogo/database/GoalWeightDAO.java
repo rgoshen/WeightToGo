@@ -19,6 +19,17 @@ import java.util.List;
 /**
  * Data Access Object for Goal Weight operations.
  * Handles all database CRUD operations for goal_weights table.
+ *
+ * <p><strong>Database Lifecycle:</strong> This DAO uses a singleton WeighToGoDBHelper instance.
+ * The helper manages the database connection lifecycle, so individual methods do NOT close
+ * the SQLiteDatabase instance obtained via getReadableDatabase() or getWritableDatabase().
+ * The singleton pattern ensures efficient connection pooling and prevents resource leaks.</p>
+ *
+ * <p><strong>Business Rules:</strong> Only one goal should be active per user at a time.
+ * Use deactivateAllGoalsForUser() before setting a new active goal to maintain this constraint.</p>
+ *
+ * <p><strong>Soft Deactivation:</strong> Uses soft deactivation (is_active flag) instead of deletion
+ * to preserve goal history and support analytics.</p>
  */
 public class GoalWeightDAO {
 
@@ -127,6 +138,14 @@ public class GoalWeightDAO {
 
     /**
      * Updates an existing goal.
+     *
+     * <p><strong>Return Value Semantics:</strong></p>
+     * <ul>
+     *   <li>Returns 1 if goal exists and was successfully updated</li>
+     *   <li>Returns 0 if goal doesn't exist (goal_id not found)</li>
+     *   <li>Returns 0 on database error (exception logged)</li>
+     * </ul>
+     * <p>Callers should check the return value to distinguish between these cases.</p>
      */
     public int updateGoal(@NonNull GoalWeight goal) {
         Log.d(TAG, "updateGoal: goal_id=" + goal.getGoalId());
@@ -141,11 +160,16 @@ public class GoalWeightDAO {
         values.put("is_active", goal.getIsActive() ? 1 : 0);
         values.put("is_achieved", goal.getIsAchieved() ? 1 : 0);
 
+        // Allow explicit NULL for optional date fields
         if (goal.getTargetDate() != null) {
             values.put("target_date", goal.getTargetDate().format(ISO_DATE_FORMATTER));
+        } else {
+            values.putNull("target_date");
         }
         if (goal.getAchievedDate() != null) {
             values.put("achieved_date", goal.getAchievedDate().format(ISO_DATE_FORMATTER));
+        } else {
+            values.putNull("achieved_date");
         }
 
         try {

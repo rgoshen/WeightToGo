@@ -17,8 +17,13 @@ import java.time.format.DateTimeFormatter;
  * Data Access Object for User operations.
  * Handles all database CRUD operations for users table.
  *
- * Security: NEVER log passwordHash or salt values.
- * All database operations use parameterized queries to prevent SQL injection.
+ * <p><strong>Database Lifecycle:</strong> This DAO uses a singleton WeighToGoDBHelper instance.
+ * The helper manages the database connection lifecycle, so individual methods do NOT close
+ * the SQLiteDatabase instance obtained via getReadableDatabase() or getWritableDatabase().
+ * The singleton pattern ensures efficient connection pooling and prevents resource leaks.</p>
+ *
+ * <p><strong>Security:</strong> NEVER log passwordHash or salt values.
+ * All database operations use parameterized queries to prevent SQL injection.</p>
  */
 public class UserDAO {
 
@@ -52,7 +57,7 @@ public class UserDAO {
         values.put("password_hash", user.getPasswordHash());  // Already hashed by caller
         values.put("salt", user.getSalt());
         values.put("created_at", user.getCreatedAt().format(ISO_FORMATTER));
-        values.put("updated_at", user.getUpdatedAt().format(ISO_FORMATTER));
+        values.put("updated_at", LocalDateTime.now().format(ISO_FORMATTER));
         values.put("is_active", user.getIsActive() ? 1 : 0);
 
         // Optional fields

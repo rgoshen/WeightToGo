@@ -20,7 +20,18 @@ import java.util.List;
  * Data Access Object for Weight Entry operations.
  * Handles all database CRUD operations for daily_weights table.
  *
- * Note: Uses soft delete (is_deleted flag) instead of hard delete.
+ * <p><strong>Naming Note:</strong> This class is named "WeightEntryDAO" and works with "WeightEntry"
+ * model objects, but the underlying database table is named "daily_weights" per the schema specification.
+ * This naming difference is intentional - Java uses "WeightEntry" for clarity, while SQL uses "daily_weights"
+ * to reflect that each entry represents a single day's weight measurement.</p>
+ *
+ * <p><strong>Database Lifecycle:</strong> This DAO uses a singleton WeighToGoDBHelper instance.
+ * The helper manages the database connection lifecycle, so individual methods do NOT close
+ * the SQLiteDatabase instance obtained via getReadableDatabase() or getWritableDatabase().
+ * The singleton pattern ensures efficient connection pooling and prevents resource leaks.</p>
+ *
+ * <p><strong>Soft Delete:</strong> Uses soft delete (is_deleted flag) instead of hard delete
+ * to preserve data and support undo functionality.</p>
  */
 public class WeightEntryDAO {
 
@@ -148,6 +159,14 @@ public class WeightEntryDAO {
 
     /**
      * Updates an existing weight entry.
+     *
+     * <p><strong>Return Value Semantics:</strong></p>
+     * <ul>
+     *   <li>Returns 1 if entry exists and was successfully updated</li>
+     *   <li>Returns 0 if entry doesn't exist (weight_id not found)</li>
+     *   <li>Returns 0 on database error (exception logged)</li>
+     * </ul>
+     * <p>Callers should check the return value to distinguish between these cases.</p>
      */
     public int updateWeightEntry(@NonNull WeightEntry entry) {
         Log.d(TAG, "updateWeightEntry: weight_id=" + entry.getWeightId());
@@ -160,8 +179,11 @@ public class WeightEntryDAO {
         values.put("weight_date", entry.getWeightDate().format(ISO_DATE_FORMATTER));
         values.put("updated_at", LocalDateTime.now().format(ISO_DATETIME_FORMATTER));
 
+        // Allow explicit NULL for notes
         if (entry.getNotes() != null) {
             values.put("notes", entry.getNotes());
+        } else {
+            values.putNull("notes");
         }
 
         try {
