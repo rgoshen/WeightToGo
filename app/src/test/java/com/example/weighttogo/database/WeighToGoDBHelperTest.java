@@ -36,6 +36,7 @@ public class WeighToGoDBHelperTest {
     public void tearDown() {
         if (dbHelper != null) {
             dbHelper.close();
+            dbHelper = null;  // Explicit null assignment to prevent accidental reuse
         }
         // Clean up database file
         context.deleteDatabase("weigh_to_go.db");
@@ -352,10 +353,46 @@ public class WeighToGoDBHelperTest {
         cursor.close();
     }
 
+    /**
+     * Test 12: onCreate creates index on weight_entries.weight_date
+     * Date-based queries (recent entries, date ranges) should be optimized
+     */
+    @Test
+    public void test_onCreate_createsIndexOnWeightDate() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_weight_entries_weight_date'",
+            null
+        );
+        assertTrue("Index idx_weight_entries_weight_date should exist", cursor.moveToFirst());
+        cursor.close();
+    }
+
+    /**
+     * Test 13: onCreate creates index on goal_weights.is_active
+     * Finding active goal (common query) should be optimized
+     */
+    @Test
+    public void test_onCreate_createsIndexOnGoalIsActive() {
+        // ACT
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // ASSERT - Check index exists
+        Cursor cursor = db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_goal_weights_is_active'",
+            null
+        );
+        assertTrue("Index idx_goal_weights_is_active should exist", cursor.moveToFirst());
+        cursor.close();
+    }
+
     // ========== EDGE CASE TESTS ==========
 
     /**
-     * Test 12: onUpgrade drops and recreates all tables
+     * Test 14: onUpgrade drops and recreates all tables
      * Simulates database upgrade scenario
      */
     @Test

@@ -50,14 +50,14 @@ public final class DateTimeConverter {
      */
     public static String toTimestamp(LocalDateTime dateTime) {
         if (dateTime == null) {
-            Log.w(TAG, "toTimestamp called with null LocalDateTime");
+            Log.w(TAG, "toTimestamp: called with null LocalDateTime");
             return null;
         }
 
         try {
             return dateTime.format(TIMESTAMP_FORMATTER);
         } catch (DateTimeException e) {
-            Log.e(TAG, "Error formatting LocalDateTime to timestamp: " + e.getMessage(), e);
+            Log.e(TAG, "toTimestamp: error formatting LocalDateTime '" + dateTime + "': " + e.getMessage(), e);
             return null;
         }
     }
@@ -70,14 +70,14 @@ public final class DateTimeConverter {
      */
     public static LocalDateTime fromTimestamp(String timestamp) {
         if (timestamp == null || timestamp.trim().isEmpty()) {
-            Log.w(TAG, "fromTimestamp called with null or empty string");
+            Log.w(TAG, "fromTimestamp: called with null or empty string");
             return null;
         }
 
         try {
             return LocalDateTime.parse(timestamp, TIMESTAMP_FORMATTER);
         } catch (DateTimeParseException e) {
-            Log.e(TAG, "Error parsing timestamp string: " + timestamp, e);
+            Log.e(TAG, "fromTimestamp: error parsing timestamp string '" + timestamp + "': " + e.getMessage(), e);
             return null;
         }
     }
@@ -90,14 +90,14 @@ public final class DateTimeConverter {
      */
     public static String toDateString(LocalDate date) {
         if (date == null) {
-            Log.w(TAG, "toDateString called with null LocalDate");
+            Log.w(TAG, "toDateString: called with null LocalDate");
             return null;
         }
 
         try {
             return date.format(DATE_FORMATTER);
         } catch (DateTimeException e) {
-            Log.e(TAG, "Error formatting LocalDate to date string: " + e.getMessage(), e);
+            Log.e(TAG, "toDateString: error formatting LocalDate '" + date + "': " + e.getMessage(), e);
             return null;
         }
     }
@@ -110,14 +110,14 @@ public final class DateTimeConverter {
      */
     public static LocalDate fromDateString(String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {
-            Log.w(TAG, "fromDateString called with null or empty string");
+            Log.w(TAG, "fromDateString: called with null or empty string");
             return null;
         }
 
         try {
             return LocalDate.parse(dateString, DATE_FORMATTER);
         } catch (DateTimeParseException e) {
-            Log.e(TAG, "Error parsing date string: " + dateString, e);
+            Log.e(TAG, "fromDateString: error parsing date string '" + dateString + "': " + e.getMessage(), e);
             return null;
         }
     }

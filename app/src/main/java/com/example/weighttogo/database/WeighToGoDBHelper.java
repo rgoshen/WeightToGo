@@ -177,6 +177,14 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             db.execSQL("CREATE INDEX idx_goal_weights_user_id ON " + TABLE_GOAL_WEIGHTS + "(user_id)");
             Log.d(TAG, "Created index: idx_goal_weights_user_id");
 
+            // Create index on weight_date for date-based queries (recent entries, date ranges, sorting)
+            db.execSQL("CREATE INDEX idx_weight_entries_weight_date ON " + TABLE_WEIGHT_ENTRIES + "(weight_date)");
+            Log.d(TAG, "Created index: idx_weight_entries_weight_date");
+
+            // Create index on is_active for finding active goal (common dashboard query)
+            db.execSQL("CREATE INDEX idx_goal_weights_is_active ON " + TABLE_GOAL_WEIGHTS + "(is_active)");
+            Log.d(TAG, "Created index: idx_goal_weights_is_active");
+
             // Create unique index on username (performance + uniqueness enforcement)
             db.execSQL("CREATE UNIQUE INDEX idx_users_username ON " + TABLE_USERS + "(username)");
             Log.d(TAG, "Created unique index: idx_users_username");
