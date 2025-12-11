@@ -363,6 +363,29 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - updateGoal(), deactivateGoal(), deactivateAllGoalsForUser()
   - **Logging**: Add TAG constant, log CRUD operations (Log.d/Log.i), errors (Log.e with exception)
 
+#### 1.4.1 PR Review Fixes - Round 5 (Completed 2025-12-10)
+- [x] Issue #1: Add resource leak documentation to all DAOs (singleton pattern explanation)
+  - UserDAO.java: Added database lifecycle Javadoc
+  - WeightEntryDAO.java: Added database lifecycle Javadoc
+  - GoalWeightDAO.java: Added database lifecycle + business rules Javadoc
+- [x] Issue #2: Add update validation/documentation (return value semantics)
+  - WeightEntryDAO.updateWeightEntry(): Documented return values (1=success, 0=not found/error)
+  - GoalWeightDAO.updateGoal(): Documented return values (1=success, 0=not found/error)
+- [x] Issue #3: Fix inconsistent timestamp handling
+  - UserDAO.insertUser() line 60: Changed from client-provided `user.getUpdatedAt()` to server-side `LocalDateTime.now()`
+  - All DAOs now use consistent server-side timestamps
+- [x] Issue #5: Fix NULL handling in update methods
+  - WeightEntryDAO.updateWeightEntry(): Added `values.putNull("notes")` for explicit NULL
+  - GoalWeightDAO.updateGoal(): Added `values.putNull("target_date")` and `values.putNull("achieved_date")` for explicit NULL
+  - Users can now clear optional fields (notes, target_date, achieved_date)
+- [x] Issue #6: Add schema naming documentation
+  - WeightEntryDAO.java: Added naming note explaining WeightEntry (Java) vs daily_weights (SQL)
+- [x] Run tests (`./gradlew test`) - All 91 tests passing
+- [x] Run lint (`./gradlew lint`) - Clean, no warnings
+- [x] Commit PR review fixes
+- [x] Push to origin
+- [x] Update project_summary.md with PR review fixes documentation
+
 ### 1.5 Phase 1 Validation
 - [ ] Run `./gradlew test` - all tests pass
 - [ ] Verify database creates on app launch
