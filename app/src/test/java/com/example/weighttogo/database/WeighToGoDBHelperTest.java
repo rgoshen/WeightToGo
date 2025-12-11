@@ -39,6 +39,10 @@ public class WeighToGoDBHelperTest {
         }
         // Clean up database file
         context.deleteDatabase("weigh_to_go.db");
+
+        // Reset singleton instance for test isolation
+        // This ensures each test gets a fresh database instance
+        WeighToGoDBHelper.resetInstance();
     }
 
     /**
@@ -85,10 +89,10 @@ public class WeighToGoDBHelperTest {
         // ASSERT - Check table schema
         cursor = db.rawQuery("PRAGMA table_info(users)", null);
         int columnCount = cursor.getCount();
-        assertEquals("users table should have 6 columns", 6, columnCount);
+        assertEquals("users table should have 11 columns", 11, columnCount);
 
         // Verify column names (order matters in PRAGMA table_info)
-        String[] expectedColumns = {"id", "username", "password_hash", "salt", "created_at", "last_login"};
+        String[] expectedColumns = {"id", "username", "password_hash", "salt", "created_at", "last_login", "email", "phone_number", "display_name", "updated_at", "is_active"};
         int index = 0;
         while (cursor.moveToNext()) {
             String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
@@ -236,8 +240,8 @@ public class WeighToGoDBHelperTest {
 
         // Insert test user
         db.execSQL(
-            "INSERT INTO users (username, password_hash, salt, created_at) " +
-            "VALUES ('testuser', 'hash123', 'salt456', '2025-12-10 10:00:00')"
+            "INSERT INTO users (username, password_hash, salt, created_at, updated_at, is_active) " +
+            "VALUES ('testuser', 'hash123', 'salt456', '2025-12-10 10:00:00', '2025-12-10 10:00:00', 1)"
         );
 
         // Get the inserted user ID
@@ -295,8 +299,8 @@ public class WeighToGoDBHelperTest {
 
         // Insert test data
         db.execSQL(
-            "INSERT INTO users (username, password_hash, salt, created_at) " +
-            "VALUES ('testuser', 'hash123', 'salt456', '2025-12-10 10:00:00')"
+            "INSERT INTO users (username, password_hash, salt, created_at, updated_at, is_active) " +
+            "VALUES ('testuser', 'hash123', 'salt456', '2025-12-10 10:00:00', '2025-12-10 10:00:00', 1)"
         );
 
         // Verify data exists

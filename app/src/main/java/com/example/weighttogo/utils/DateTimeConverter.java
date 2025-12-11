@@ -15,8 +15,11 @@ import java.time.format.DateTimeParseException;
  * - Dates: "yyyy-MM-dd"
  *
  * This class provides bidirectional conversion with proper validation and error handling.
+ *
+ * This is a utility class with only static methods. It is declared final and has a private
+ * constructor to prevent instantiation and inheritance.
  */
-public class DateTimeConverter {
+public final class DateTimeConverter {
 
     private static final String TAG = "DateTimeConverter";
 
@@ -27,6 +30,16 @@ public class DateTimeConverter {
     // SQLite-compatible date format
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
+
+    /**
+     * Private constructor to prevent instantiation.
+     * This is a utility class with only static methods.
+     *
+     * @throws AssertionError if instantiation is attempted
+     */
+    private DateTimeConverter() {
+        throw new AssertionError("DateTimeConverter is a utility class and should not be instantiated");
+    }
 
     /**
      * Converts a LocalDateTime to SQLite-compatible timestamp string.

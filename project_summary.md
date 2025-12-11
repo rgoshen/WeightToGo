@@ -1592,3 +1592,213 @@ Phase 1.4 (DAO implementation) will benefit from this comprehensive testing infr
 - DAOs can trust DateTimeConverter edge case handling
 - DAOs can rely on foreign key enforcement
 - DAO tests can follow same edge case testing pattern
+
+---
+
+## [2025-12-10] PR#5 Review Fixes: Database Schema & Code Quality - Completed
+
+### Work Completed
+**CRITICAL Fix - Database Schema Mismatch:**
+- Added 5 missing columns to users table:
+  - `email TEXT` - Optional email address
+  - `phone_number TEXT` - For SMS notifications (FR-5)
+  - `display_name TEXT` - User's display name
+  - `updated_at TEXT NOT NULL` - Last update timestamp
+  - `is_active INTEGER NOT NULL DEFAULT 1` - Account status flag
+- Updated test expectations from 6 to 11 columns
+- Fixed failing edge case tests (test_foreignKey_cascadeDelete, test_onUpgrade_dropsAndRecreatesTables)
+- Updated INSERT statements to include required `updated_at` column
+
+**HIGH Fix - BooleanConverter Utility:**
+- Created `utils/BooleanConverter.java` with two methods:
+  - `toInteger(boolean)` - Converts boolean to INTEGER (0/1)
+  - `fromInteger(int)` - Converts INTEGER to boolean (0=false, non-zero=true)
+- Made class final with private constructor (utility class pattern)
+- Created `utils/BooleanConverterTest.java` with 7 comprehensive tests:
+  - test_toInteger_withTrue_returns1
+  - test_toInteger_withFalse_returns0
+  - test_fromInteger_with1_returnsTrue
+  - test_fromInteger_with0_returnsFalse
+  - test_fromInteger_withNonZero_returnsTrue
+  - test_fromInteger_withMaxValue_returnsTrue
+  - test_fromInteger_withMinValue_returnsTrue
+- Followed strict TDD: RED → GREEN → REFACTOR
+
+**MEDIUM Fix - Production Migration TODO:**
+- Added comprehensive TODO comment in WeighToGoDBHelper.onUpgrade():
+  - Explains current implementation (drop/recreate tables)
+  - Lists production migration requirements (ALTER TABLE, preserve data, incremental migrations)
+  - Suggests Room Persistence Library for automated migrations
+- Added warning log message about data loss during upgrade
+
+**LOW Fixes:**
+1. **DateTimeConverter final with private constructor:**
+   - Made DateTimeConverter class final
+   - Added private constructor with AssertionError
+   - Added Javadoc explaining utility class pattern
+
+2. **BooleanConverter final with private constructor:**
+   - Made BooleanConverter class final
+   - Added private constructor with AssertionError
+   - Added Javadoc explaining utility class pattern
+
+3. **Singleton reset in test tearDown:**
+   - Added `WeighToGoDBHelper.resetInstance()` package-private method
+   - Updated `WeighToGoDBHelperTest.tearDown()` to call resetInstance()
+   - Ensures proper test isolation (fresh database instance per test)
+
+**Final Validation:**
+- All tests passing: 91 total (55 models + 17 DateTimeConverter + 7 BooleanConverter + 9 WeighToGoDBHelper + 3 other)
+- Lint clean (no warnings)
+- Build successful
+
+### Issues Encountered
+1. **Database schema incomplete** - Users table had 6 columns, User model has 11 fields
+2. **Test failures after schema fix** - Edge case tests inserted users without required `updated_at` column
+3. **Android Log not mocked** - Already resolved in previous phase with testOptions
+
+### Corrections Made
+1. **Added missing columns to CREATE_TABLE_USERS** - Now matches User model exactly
+2. **Fixed failing test INSERT statements** - Added `updated_at` and `is_active` columns to test data
+3. **Created BooleanConverter** - Handles boolean ↔ INTEGER (0/1) conversion for SQLite
+4. **Made utility classes final** - Prevents inheritance and instantiation (best practice)
+5. **Added singleton reset** - Proper test isolation for database tests
+
+### Rationale
+
+#### 1. Database Schema Mismatch (CRITICAL)
+**Issue**: Users table missing 5 columns meant DAOs would fail when trying to access these fields
+- `email` - Optional contact info
+- `phone_number` - **Critical for SMS notifications (FR-5)**
+- `display_name` - User preference for display
+- `updated_at` - Audit timestamp (tracks when record last changed)
+- `is_active` - Account status (soft delete support)
+
+**Impact**:
+- Without `phone_number`, entire FR-5 (SMS Notifications) feature blocked
+- Without `updated_at`, no audit trail for record changes
+- Without `is_active`, can't implement account deactivation
+- DAOs would fail with "column not found" errors
+
+**Solution**: Updated CREATE_TABLE_USERS to include all 11 columns from User model
+
+#### 2. Boolean/INTEGER Inconsistency (HIGH)
+**Issue**: SQLite has no BOOLEAN type, uses INTEGER (0/1)
+- Java models use `boolean isActive, isDeleted, isAchieved`
+- Database schema uses `INTEGER is_active, is_deleted, is_achieved`
+- Need conversion utility for DAO layer
+
+**Solution**: BooleanConverter utility
+```java
+// DAO layer - before database insert
+int isActiveInt = BooleanConverter.toInteger(user.getIsActive());
+
+// DAO layer - after database query
+boolean isActive = BooleanConverter.fromInteger(cursor.getInt(columnIndex));
+```
+
+**Benefits:**
+- ✅ Centralized conversion logic (single source of truth)
+- ✅ Type-safe in Java layer (boolean), compatible with SQLite (INTEGER)
+- ✅ Consistent behavior: 0=false, 1=true, any non-zero=true (SQLite convention)
+- ✅ Prevents bugs from manual 0/1 conversion scattered across DAOs
+
+#### 3. Production Migration Strategy (MEDIUM)
+**Issue**: Current onUpgrade() drops all tables (data loss)
+- Acceptable for development (no production users yet)
+- Unacceptable for production (would delete all user data)
+
+**Solution**: Added TODO with production migration checklist
+- ALTER TABLE for schema changes (add/rename columns)
+- Preserve user data during upgrades
+- Switch statement for incremental migrations (v1→v2→v3)
+- Test migration paths with sample data
+- Consider Room Persistence Library for automated migrations
+
+**Why TODO instead of implementing now:**
+- Version 1.0 not released yet - no production data to migrate
+- Future-proofs the code with clear requirements
+- Reminds future developers to implement proper migrations
+- Industry standard: document migration requirements early
+
+#### 4. Utility Class Pattern (LOW)
+**Issue**: Utility classes with only static methods should not be instantiable
+- DateTimeConverter has no state, only static methods
+- BooleanConverter has no state, only static methods
+- Shouldn't be able to call `new DateTimeConverter()`
+
+**Solution**: final class + private constructor
+```java
+public final class DateTimeConverter {
+    private DateTimeConverter() {
+        throw new AssertionError("DateTimeConverter is a utility class and should not be instantiated");
+    }
+
+    public static String toTimestamp(LocalDateTime dateTime) { ... }
+}
+```
+
+**Benefits:**
+- ✅ Prevents inheritance (final class)
+- ✅ Prevents instantiation (private constructor)
+- ✅ Clear intent (Javadoc explains why)
+- ✅ Fails fast if someone tries to instantiate (AssertionError)
+- ✅ Industry best practice (Joshua Bloch's "Effective Java")
+
+#### 5. Test Isolation (LOW)
+**Issue**: Singleton pattern shares state across tests
+- All tests use same WeighToGoDBHelper instance
+- Tests can affect each other (data leakage)
+- Non-deterministic test failures possible
+
+**Solution**: Reset singleton in tearDown()
+```java
+@After
+public void tearDown() {
+    if (dbHelper != null) {
+        dbHelper.close();
+    }
+    context.deleteDatabase("weigh_to_go.db");
+
+    // Reset singleton instance for test isolation
+    WeighToGoDBHelper.resetInstance();
+}
+```
+
+**Benefits:**
+- ✅ Each test gets fresh database instance
+- ✅ Tests can run in any order (no dependencies)
+- ✅ Prevents test interdependence bugs
+- ✅ Follows TDD best practice (isolated tests)
+
+### Lessons Learned
+1. **Always verify schema matches models** - Database schema is source of truth
+2. **PR reviews catch critical bugs** - Missing columns would have caused runtime failures
+3. **BooleanConverter prevents scattered logic** - Single utility better than manual conversion in every DAO
+4. **Production migration planning is not optional** - Document requirements even if not implementing yet
+5. **Utility class pattern prevents misuse** - final + private constructor enforces correct usage
+6. **Test isolation is critical** - Singleton pattern needs reset mechanism for testing
+7. **TDD for review fixes** - Created BooleanConverter with failing tests first
+
+### Technical Debt
+None identified - all review comments addressed
+
+### Test Coverage
+- DateTimeConverter: 17 tests (100% coverage, final + private constructor)
+- BooleanConverter: 7 tests (100% coverage, final + private constructor)
+- WeighToGoDBHelper: 9 tests (100% coverage, singleton reset working)
+- Total: 91 tests passing
+- Lint: Clean
+
+### PR Review Comments Status
+✅ **CRITICAL: Database Schema Mismatch** - Fixed (added 5 missing columns)
+✅ **HIGH: Boolean/INTEGER Inconsistency** - Fixed (created BooleanConverter)
+✅ **MEDIUM: Production Migration Strategy** - Fixed (added comprehensive TODO)
+✅ **LOW: DateTimeConverter utility class pattern** - Fixed (final + private constructor)
+✅ **LOW: BooleanConverter utility class pattern** - Fixed (final + private constructor)
+✅ **LOW: Test singleton reset** - Fixed (resetInstance() method + tearDown call)
+
+### Next Steps
+- Commit fixes with message: "fix(database): address PR review comments - schema, converters, test isolation"
+- Push to feature/FR1.3-database-helper branch
+- Update PR#5 with review resolution comments

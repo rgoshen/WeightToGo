@@ -45,7 +45,12 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             "password_hash TEXT NOT NULL, " +
             "salt TEXT NOT NULL, " +
             "created_at TEXT NOT NULL, " +
-            "last_login TEXT" +
+            "last_login TEXT, " +
+            "email TEXT, " +
+            "phone_number TEXT, " +
+            "display_name TEXT, " +
+            "updated_at TEXT NOT NULL, " +
+            "is_active INTEGER NOT NULL DEFAULT 1" +
         ")";
 
     // SQL: Create weight_entries table
@@ -105,6 +110,21 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
     }
 
     /**
+     * Reset singleton instance for testing purposes.
+     * Package-private visibility ensures this is only accessible from test code.
+     *
+     * WARNING: This should ONLY be called from unit tests during tearDown.
+     * Never call this from production code.
+     */
+    static synchronized void resetInstance() {
+        if (instance != null) {
+            instance.close();
+            instance = null;
+            Log.d(TAG, "Singleton instance reset for testing");
+        }
+    }
+
+    /**
      * Configure database before opening.
      * Enables foreign key constraints for referential integrity.
      *
@@ -152,7 +172,12 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
      * Called when database needs to be upgraded (version increase).
      * Currently drops and recreates all tables (acceptable for development).
      *
-     * Production apps should implement proper migration strategy.
+     * TODO: Implement production migration strategy
+     * - For production: implement ALTER TABLE statements for schema changes
+     * - Preserve user data during upgrades (no DROP TABLE)
+     * - Use switch statement to handle incremental migrations (v1→v2, v2→v3, etc.)
+     * - Test migration paths with sample data
+     * - Consider using Room Persistence Library for automated migrations
      *
      * @param db the database
      * @param oldVersion the old database version
@@ -161,6 +186,7 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+        Log.w(TAG, "WARNING: Data will be lost during upgrade. This is a development-only strategy.");
 
         try {
             // Drop existing tables
