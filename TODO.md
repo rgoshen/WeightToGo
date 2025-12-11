@@ -364,11 +364,11 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - **Logging**: Add TAG constant, log CRUD operations (Log.d/Log.i), errors (Log.e with exception)
 
 ### 1.5 Phase 1 Validation
-- [x] Run `./gradlew test` - all tests pass - Completed 2025-12-10 (30 tests passing)
+- [ ] Run `./gradlew test` - all tests pass
 - [ ] Verify database creates on app launch
 - [ ] Verify tables exist with correct schema
-- [x] Update TODO.md - Completed 2025-12-10
-- [x] Update project_summary.md - Completed 2025-12-10
+- [ ] Update TODO.md
+- [ ] Update project_summary.md
 - [ ] Merge to develop branch
 
 ---
