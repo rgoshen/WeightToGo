@@ -937,7 +937,48 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [ ] Screen rotation
 - [ ] App kill and restart
 
-### 8.4 Comprehensive Authentication Testing (DEFERRED from Phase 2.4)
+### 8.4 MainActivity Test Migration: Robolectric to Espresso
+**Rationale:** Phase 3.3 created 18 MainActivity integration tests, but 17 are blocked by Robolectric/Material3 theme incompatibility (see GH #12). This section migrates those tests to Espresso (instrumented tests) to unblock comprehensive dashboard testing.
+
+**Files to Create/Modify:**
+- Create: `app/src/androidTest/java/com/example/weighttogo/activities/MainActivityEspressoTest.java`
+- Delete: Commented sections from `app/src/test/java/com/example/weighttogo/activities/MainActivityTest.java`
+
+**Tests to Migrate (17 tests):**
+- [ ] test_onCreate_whenLoggedIn_initializesViews
+- [ ] test_loadWeightEntries_withNoEntries_showsEmptyState
+- [ ] test_loadWeightEntries_withEntries_hidesEmptyState
+- [ ] test_loadWeightEntries_withEntries_populatesRecyclerView
+- [ ] test_updateProgressCard_withActiveGoal_showsProgressData
+- [ ] test_updateProgressCard_withNoGoal_hidesProgressCard
+- [ ] test_calculateQuickStats_withData_showsCorrectValues
+- [ ] test_calculateQuickStats_withStreak_showsDayStreak
+- [ ] test_handleDeleteEntry_withConfirmation_deletesEntry
+- [ ] test_handleDeleteEntry_withCancel_doesNotDelete
+- [ ] test_fabClick_showsToastPlaceholder
+- [ ] test_bottomNavigation_homeSelected_staysOnMainActivity
+- [ ] test_bottomNavigation_otherItemSelected_showsToastPlaceholder
+- [ ] test_greetingText_showsTimeBasedGreeting
+- [ ] test_userName_displaysCurrentUserName
+- [ ] test_progressPercentage_calculatesCorrectly
+- [ ] test_progressBar_widthMatchesPercentage
+
+**Implementation Steps:**
+1. Create `MainActivityEspressoTest.java` with Espresso imports
+2. Migrate test setup (use ActivityScenarioRule instead of Robolectric)
+3. Migrate assertions (use Espresso matchers instead of findViewById)
+4. Run instrumented tests: `./gradlew connectedAndroidTest`
+5. Verify all 17 tests pass on emulator/device
+6. Delete commented code from `MainActivityTest.java`
+7. Update GH #12 with resolution details
+8. Update project_summary.md with migration notes
+
+**Expected Test Count After Migration:**
+- Unit tests (Robolectric): 197 tests (213 current - 17 migrated + 1 kept)
+- Instrumented tests (Espresso): 17 tests (MainActivity only)
+- Total: 214 tests
+
+### 8.5 Comprehensive Authentication Testing (DEFERRED from Phase 2.4)
 **Rationale:** Phase 2.4 implemented minimal integration tests (2 tests) for critical happy paths. This section implements comprehensive scenario testing for authentication flows.
 
 **Integration Tests (LoginActivityIntegrationTest.java):**
@@ -1003,17 +1044,17 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - Switch back to Sign In tab
   - Assert errors still cleared
 
-**Expected Test Count After Phase 8.4:**
+**Expected Test Count After Phase 8.5:**
 - Comprehensive authentication tests: ~12 additional tests
 - Total project tests: ~133 tests (121 current + 12 comprehensive)
 
-### 8.5 Final Test Suite
+### 8.6 Final Test Suite
 - [ ] Run `./gradlew clean test`
 - [ ] Run `./gradlew connectedAndroidTest` (if device available)
 - [ ] Run `./gradlew lint`
 - [ ] Fix any failures
 
-### 8.6 Phase 8 Validation
+### 8.7 Phase 8 Validation
 - [ ] All tests pass
 - [ ] No crashes in any scenario
 - [ ] Lint clean
