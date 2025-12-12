@@ -15,6 +15,7 @@ import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.database.WeightEntryDAO;
 import com.example.weighttogo.models.WeightEntry;
 import com.example.weighttogo.utils.DateUtils;
+import com.example.weighttogo.utils.WeightUtils;
 import com.google.android.material.button.MaterialButton;
 
 import java.time.LocalDate;
@@ -41,7 +42,6 @@ public class WeightEntryActivity extends AppCompatActivity {
     private static final String TAG = "WeightEntryActivity";
     private static final int MAX_DIGITS = 5;
     private static final String DECIMAL_POINT = ".";
-    private static final double LBS_TO_KG_CONVERSION = 0.453592;
 
     // =============================================================================================
     // INTENT EXTRAS CONSTANTS
@@ -449,9 +449,9 @@ public class WeightEntryActivity extends AppCompatActivity {
         double newValue = currentValue + amount;
 
         // Only validate max (allow building up from 0 with quick adjust)
-        double max = currentUnit.equals("lbs") ? 700.0 : 317.5;
+        double max = currentUnit.equals("lbs") ? WeightUtils.MAX_WEIGHT_LBS : WeightUtils.MAX_WEIGHT_KG;
 
-        if (newValue >= 0.0 && newValue <= max) {
+        if (newValue >= WeightUtils.MIN_WEIGHT && newValue <= max) {
             weightInput = new StringBuilder(String.format("%.1f", newValue));
             updateWeightDisplay();
             Log.d(TAG, "adjustWeight: Adjusted by " + amount + " to " + weightInput.toString());
@@ -510,10 +510,10 @@ public class WeightEntryActivity extends AppCompatActivity {
 
             if (newUnit.equals("kg")) {
                 // lbs to kg
-                value = value * LBS_TO_KG_CONVERSION;
+                value = WeightUtils.convertLbsToKg(value);
             } else {
                 // kg to lbs
-                value = value / LBS_TO_KG_CONVERSION;
+                value = WeightUtils.convertKgToLbs(value);
             }
 
             weightInput = new StringBuilder(String.format("%.1f", value));
@@ -672,8 +672,8 @@ public class WeightEntryActivity extends AppCompatActivity {
         }
 
         // Validate range based on current unit (allow 0 for placeholder/deletion scenario)
-        double min = 0.0;  // Changed from 50.0/22.7 to allow 0
-        double max = currentUnit.equals("lbs") ? 700.0 : 317.5;
+        double min = WeightUtils.MIN_WEIGHT;
+        double max = currentUnit.equals("lbs") ? WeightUtils.MAX_WEIGHT_LBS : WeightUtils.MAX_WEIGHT_KG;
 
         if (weight < min || weight > max) {
             String message = String.format("Weight must be between %.1f and %.1f %s",

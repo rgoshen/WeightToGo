@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.weighttogo.R;
 import com.example.weighttogo.models.WeightEntry;
 import com.example.weighttogo.utils.DateUtils;
+import com.example.weighttogo.utils.WeightUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -175,16 +176,16 @@ public class WeightEntryAdapter extends RecyclerView.Adapter<WeightEntryAdapter.
         // Convert previous weight to current entry's unit if they differ
         if (!current.getWeightUnit().equals(previous.getWeightUnit())) {
             if (current.getWeightUnit().equals("lbs") && previous.getWeightUnit().equals("kg")) {
-                // Convert previous kg to lbs: kg / 0.453592
-                previousWeight = previousWeight / 0.453592;
+                // Convert previous kg to lbs
+                previousWeight = WeightUtils.convertKgToLbs(previousWeight);
             } else if (current.getWeightUnit().equals("kg") && previous.getWeightUnit().equals("lbs")) {
-                // Convert previous lbs to kg: lbs * 0.453592
-                previousWeight = previousWeight * 0.453592;
+                // Convert previous lbs to kg
+                previousWeight = WeightUtils.convertLbsToKg(previousWeight);
             }
         }
 
         // Calculate trend: previous - current (positive = weight loss, negative = weight gain)
-        double diff = previousWeight - currentWeight;
+        double diff = WeightUtils.roundToOneDecimal(previousWeight - currentWeight);
         String unit = current.getWeightUnit(); // Trend shown in current entry's unit
 
         if (Math.abs(diff) < 0.1) {
