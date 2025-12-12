@@ -1103,6 +1103,51 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 
 ### Sub-phases:
 
+#### 6.0.0: Code Quality Review & Refactoring (DRY/SOLID) 📝
+**Goal:** Identify and fix code duplication and SOLID violations before major refactoring
+
+- [ ] 0.1 Extract unit conversion logic to WeightUtils (TDD)
+  - [ ] Write tests for convertBetweenUnits(weight, fromUnit, toUnit)
+    - [ ] test_convertBetweenUnits_lbsToKg_returnsCorrectValue
+    - [ ] test_convertBetweenUnits_kgToLbs_returnsCorrectValue
+    - [ ] test_convertBetweenUnits_sameUnit_returnsOriginalValue
+    - [ ] test_convertBetweenUnits_nullUnits_throwsException
+    - [ ] test_convertBetweenUnits_invalidUnits_throwsException
+  - [ ] Implement WeightUtils.convertBetweenUnits() method
+  - [ ] Refactor GoalDialogFragment lines 408-417 to use new method
+  - [ ] Refactor GoalDialogFragment lines 452-460 to use new method
+  - [ ] Remove duplicate conversion logic
+  - [ ] Verify all tests still pass
+  - [ ] Commit: `refactor: extract unit conversion logic to WeightUtils.convertBetweenUnits()`
+
+- [ ] 0.2 DRY Violations Audit
+  - [ ] Search for duplicate code patterns across activities
+  - [ ] Search for duplicate validation logic
+  - [ ] Search for duplicate formatting logic
+  - [ ] Identify candidates for utility method extraction
+  - [ ] Document findings in code review notes
+
+- [ ] 0.3 SOLID Principles Audit
+  - [ ] Single Responsibility: Review classes with multiple responsibilities
+  - [ ] Open/Closed: Identify hard-coded values that should be configurable
+  - [ ] Liskov Substitution: Check inheritance hierarchies (if any)
+  - [ ] Interface Segregation: Review large interfaces (if any)
+  - [ ] Dependency Inversion: Check for tight coupling to concrete classes
+  - [ ] Document findings and prioritize fixes
+
+- [ ] 0.4 Implement Priority Fixes
+  - [ ] Address critical DRY violations found in 0.2
+  - [ ] Address critical SOLID violations found in 0.3
+  - [ ] Write tests for each refactoring
+  - [ ] Run full test suite after each fix
+  - [ ] Commit: `refactor: fix DRY/SOLID violations (Phase 6.0.0)`
+
+- [ ] 0.5 Code Quality Validation
+  - [ ] Run ./gradlew test (expect all tests passing)
+  - [ ] Run ./gradlew lint (expect clean)
+  - [ ] Update project_summary.md with refactoring notes
+  - [ ] Commit: `docs: document Phase 6.0.0 code quality improvements`
+
 #### 6.0.1: Create UserPreferenceDAO (TDD) 📝
 - [ ] 1.1 Write 10 failing tests for UserPreferenceDAO
   - [ ] test_getPreference_withNonExistentKey_returnsDefaultValue
