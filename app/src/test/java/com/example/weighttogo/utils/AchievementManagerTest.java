@@ -427,7 +427,7 @@ public class AchievementManagerTest {
 
         goalWeightDAO.setNewActiveGoal(goal);
 
-        // No existing entries = FIRST_ENTRY + MILESTONE_5 + NEW_LOW all met
+        // No existing entries = FIRST_ENTRY + MILESTONE_5 met (NEW_LOW not awarded on first entry)
 
         // ACT
         List<Achievement> achievements = achievementManager.checkAchievements(testUserId, 175.0);

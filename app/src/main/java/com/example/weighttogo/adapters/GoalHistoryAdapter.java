@@ -96,6 +96,21 @@ public class GoalHistoryAdapter extends RecyclerView.Adapter<GoalHistoryAdapter.
     }
 
     /**
+     * Update the adapter's data and notify of changes.
+     * More efficient than calling notifyDataSetChanged() externally.
+     *
+     * @param newGoals updated list of goals
+     */
+    public void updateGoals(List<GoalWeight> newGoals) {
+        // Clear and update in place to maintain the same list reference
+        goals.clear();
+        if (newGoals != null && !newGoals.isEmpty()) {
+            goals.addAll(newGoals);
+        }
+        notifyDataSetChanged();  // For small lists this is acceptable; DiffUtil for larger lists
+    }
+
+    /**
      * ViewHolder for goal history items.
      */
     static class ViewHolder extends RecyclerView.ViewHolder {

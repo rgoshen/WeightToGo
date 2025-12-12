@@ -108,6 +108,41 @@ public class WeightEntryDAO {
     }
 
     /**
+     * Gets recent weight entries for streak calculation (optimized).
+     * Only fetches the most recent entries needed for streak detection.
+     * Prevents N+1 query problem by limiting data retrieval.
+     *
+     * @param userId user ID
+     * @param limit  maximum number of entries to retrieve (e.g., 30 for STREAK_30)
+     * @return list of recent weight entries, sorted by date descending
+     */
+    public List<WeightEntry> getRecentWeightEntriesForUser(long userId, int limit) {
+        Log.d(TAG, "getRecentWeightEntriesForUser: user_id=" + userId + ", limit=" + limit);
+
+        List<WeightEntry> entries = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        try (Cursor cursor = db.query(
+            WeighToGoDBHelper.TABLE_DAILY_WEIGHTS,
+            null,
+            "user_id = ? AND is_deleted = 0",
+            new String[]{String.valueOf(userId)},
+            null, null,
+            "weight_date DESC",
+            String.valueOf(limit)  // LIMIT clause for optimization
+        )) {
+            while (cursor != null && cursor.moveToNext()) {
+                entries.add(mapCursorToEntry(cursor));
+            }
+            Log.i(TAG, "getRecentWeightEntriesForUser: Found " + entries.size() + " recent entries");
+        } catch (Exception e) {
+            Log.e(TAG, "getRecentWeightEntriesForUser: Exception", e);
+        }
+
+        return entries;
+    }
+
+    /**
      * Gets a weight entry by ID.
      */
     @Nullable

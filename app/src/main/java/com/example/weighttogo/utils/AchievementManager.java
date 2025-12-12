@@ -144,7 +144,9 @@ public class AchievementManager {
      * Check for consecutive day streaks (7-day and 30-day).
      */
     private void checkStreaks(long userId, List<Achievement> newAchievements) {
-        List<WeightEntry> entries = weightEntryDAO.getWeightEntriesForUser(userId);
+        // Optimization: Only fetch recent 31 entries instead of all entries
+        // This prevents N+1 query problem for users with many entries
+        List<WeightEntry> entries = weightEntryDAO.getRecentWeightEntriesForUser(userId, 31);
 
         // Need at least 7 entries total for STREAK_7 (checkAchievements called after entry saved)
         if (entries.size() < 7) {
@@ -197,6 +199,9 @@ public class AchievementManager {
      * Calculate consecutive days with entries, including today.
      * Called after the new entry has been saved to the database.
      * Assumes entries are sorted by date descending.
+     *
+     * Note: Only counts streaks if there's an entry for today OR yesterday.
+     * Backfilled entries (older than yesterday) don't start/continue a streak.
      */
     private int calculateConsecutiveDaysIncludingToday(List<WeightEntry> entries) {
         if (entries.isEmpty()) {
@@ -204,18 +209,27 @@ public class AchievementManager {
         }
 
         LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
         LocalDate mostRecentDate = entries.get(0).getWeightDate();
 
         // Check if most recent entry is from today or yesterday
+        // If it's older (backfilled), don't count as part of active streak
+        if (mostRecentDate.isBefore(yesterday)) {
+            // Most recent entry is older than yesterday - this is a backfilled entry
+            // Don't award streak achievements for backfilled data
+            return 0;
+        }
+
+        // Check the gap between most recent entry and today
         long daysSinceLastEntry = ChronoUnit.DAYS.between(mostRecentDate, today);
 
         if (daysSinceLastEntry > 1) {
             // Streak is broken - gap of more than 1 day
-            return 1;
+            return 0;
         }
 
-        // Start counting streak from most recent entry
-        int streak = 1; // Count the most recent entry (today or yesterday)
+        // Start counting streak from most recent entry (today or yesterday)
+        int streak = 1;
         LocalDate previousDate = mostRecentDate;
 
         for (int i = 1; i < entries.size(); i++) {
@@ -245,17 +259,35 @@ public class AchievementManager {
         }
 
         double startWeight = activeGoal.getStartWeight();
-        double weightLost = Math.abs(startWeight - newWeight);
+        double goalWeight = activeGoal.getGoalWeight();
         String unit = activeGoal.getGoalUnit();
 
+        // Determine if this is a weight loss or weight gain goal
+        boolean isLossGoal = goalWeight < startWeight;
+        double weightChange = startWeight - newWeight;  // Positive = lost, Negative = gained
+
+        // Get absolute progress in correct direction
+        double progress = Math.abs(weightChange);
+
+        // Only award milestones if progressing in the right direction
+        boolean progressingCorrectly = (isLossGoal && weightChange > 0) || (!isLossGoal && weightChange < 0);
+
+        if (!progressingCorrectly) {
+            return;  // User is moving in wrong direction, don't award milestones
+        }
+
         // Check MILESTONE_5
-        if (weightLost >= 5.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_5")) {
+        if (progress >= 5.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_5")) {
             Achievement achievement = new Achievement();
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_5");
-            achievement.setTitle(String.format("5 %s Lost!", unit));
-            achievement.setDescription(String.format("You've lost 5 %s! You're making great progress!", unit));
+            achievement.setTitle(isLossGoal
+                ? String.format("5 %s Lost!", unit)
+                : String.format("5 %s Gained!", unit));
+            achievement.setDescription(isLossGoal
+                ? String.format("You've lost 5 %s! You're making great progress!", unit)
+                : String.format("You've gained 5 %s! You're making great progress!", unit));
             achievement.setValue(5.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);
@@ -269,13 +301,17 @@ public class AchievementManager {
         }
 
         // Check MILESTONE_10
-        if (weightLost >= 10.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_10")) {
+        if (progress >= 10.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_10")) {
             Achievement achievement = new Achievement();
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_10");
-            achievement.setTitle(String.format("10 %s Lost!", unit));
-            achievement.setDescription(String.format("Amazing! You've lost 10 %s!", unit));
+            achievement.setTitle(isLossGoal
+                ? String.format("10 %s Lost!", unit)
+                : String.format("10 %s Gained!", unit));
+            achievement.setDescription(isLossGoal
+                ? String.format("Amazing! You've lost 10 %s!", unit)
+                : String.format("Amazing! You've gained 10 %s!", unit));
             achievement.setValue(10.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);
@@ -289,13 +325,17 @@ public class AchievementManager {
         }
 
         // Check MILESTONE_25
-        if (weightLost >= 25.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_25")) {
+        if (progress >= 25.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_25")) {
             Achievement achievement = new Achievement();
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_25");
-            achievement.setTitle(String.format("25 %s Lost!", unit));
-            achievement.setDescription(String.format("Incredible! You've lost 25 %s! You're a superstar!", unit));
+            achievement.setTitle(isLossGoal
+                ? String.format("25 %s Lost!", unit)
+                : String.format("25 %s Gained!", unit));
+            achievement.setDescription(isLossGoal
+                ? String.format("Incredible! You've lost 25 %s! You're a superstar!", unit)
+                : String.format("Incredible! You've gained 25 %s! You're a superstar!", unit));
             achievement.setValue(25.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);

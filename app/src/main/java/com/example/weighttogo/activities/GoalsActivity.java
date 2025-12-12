@@ -250,7 +250,7 @@ public class GoalsActivity extends AppCompatActivity
         // Show/hide goal history section
         if (!goalHistory.isEmpty()) {
             goalHistorySection.setVisibility(View.VISIBLE);
-            adapter.notifyDataSetChanged();
+            adapter.updateGoals(goalHistory);  // Use adapter method instead of notifyDataSetChanged()
         } else {
             goalHistorySection.setVisibility(View.GONE);
         }

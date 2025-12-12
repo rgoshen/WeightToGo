@@ -405,13 +405,15 @@ public class GoalDialogFragment extends DialogFragment {
             String oldUnit = existingGoal.getGoalUnit();
             if (!oldUnit.equals(selectedUnit)) {
                 double currentStartWeight = existingGoal.getStartWeight();
-                if ("kg".equals(selectedUnit)) {
+                // Explicit conversion based on old and new units
+                if ("lbs".equals(oldUnit) && "kg".equals(selectedUnit)) {
                     // Converting from lbs to kg
                     goal.setStartWeight(WeightUtils.convertLbsToKg(currentStartWeight));
-                } else {
+                } else if ("kg".equals(oldUnit) && "lbs".equals(selectedUnit)) {
                     // Converting from kg to lbs
                     goal.setStartWeight(WeightUtils.convertKgToLbs(currentStartWeight));
                 }
+                // else: no conversion needed (shouldn't happen, but safe)
             }
 
             goal.setGoalUnit(selectedUnit);
@@ -448,11 +450,13 @@ public class GoalDialogFragment extends DialogFragment {
             // Convert start weight if unit was changed
             double startWeight = currentWeight;
             if (!currentUnit.equals(selectedUnit)) {
-                if ("kg".equals(selectedUnit)) {
+                // Explicit conversion based on current and selected units
+                if ("lbs".equals(currentUnit) && "kg".equals(selectedUnit)) {
                     startWeight = WeightUtils.convertLbsToKg(currentWeight);
-                } else {
+                } else if ("kg".equals(currentUnit) && "lbs".equals(selectedUnit)) {
                     startWeight = WeightUtils.convertKgToLbs(currentWeight);
                 }
+                // else: no conversion needed (shouldn't happen, but safe)
             }
             goal.setStartWeight(startWeight);
 
