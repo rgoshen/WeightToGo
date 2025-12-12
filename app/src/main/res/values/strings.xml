@@ -188,4 +188,23 @@
     <string name="cd_sign_in_facebook">Sign in with Facebook</string>
     <string name="cd_sign_in_apple">Sign in with Apple</string>
     <string name="cd_accessibility_settings">Open accessibility settings</string>
+
+    <!-- Goal Setting Dialog -->
+    <string name="dialog_set_goal_title">Set Your Goal Weight</string>
+    <string name="hint_goal_weight">Goal Weight</string>
+    <string name="label_target_date_optional">TARGET DATE (OPTIONAL)</string>
+    <string name="btn_select_target_date">Select Target Date</string>
+    <string name="no_target_date_selected">No target date selected</string>
+    <string name="target_date_format">Target: %s</string>
+
+    <!-- Goal Validation Error Messages -->
+    <string name="error_goal_required">Please enter a goal weight</string>
+    <string name="error_goal_same_as_current">Goal must differ from current weight</string>
+    <string name="error_goal_out_of_range_lbs">Goal must be between 0 and 700 lbs</string>
+    <string name="error_goal_out_of_range_kg">Goal must be between 0 and 317.5 kg</string>
+    <string name="error_target_date_past">Target date must be in the future</string>
+
+    <!-- Goal Success Messages -->
+    <string name="success_goal_created">Goal set successfully!</string>
+    <string name="success_goal_updated">Goal updated successfully!</string>
 </resources>

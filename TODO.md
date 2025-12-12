@@ -811,7 +811,7 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [x] Update TODO.md with Phase 8 regression test plan (8.6) ✅
 - [x] Update project_summary.md with Phase 4 PR feedback notes ✅
 - [x] Update project_summary.md with all 3 rounds of manual testing bugs ✅
-- [ ] Merge to main branch (after final user approval)
+- [x] Merge to main branch (after final user approval)
 
 **Phase 4 Summary:**
 - ✅ PR #14 opened with 8 commits (1 skeleton + 6 implementation + 1 manifest)
@@ -842,18 +842,19 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - [x] All 14 tests passing (238 total: 223 existing + 14 new + 1 example)
 - [x] Commit: `test: add AchievementDAO with 14 tests (TDD)`
 
-### 5.2 Commit 2: Goal Setting Dialog UI
-- [ ] Create `res/layout/dialog_set_goal.xml`
-  - [ ] Title, current weight display, goal weight input
-  - [ ] Unit toggle (lbs/kg), optional target date picker
-  - [ ] Cancel/Save buttons (Material Design 3)
-- [ ] Write `GoalUtilsTest.java` (8 tests)
-  - [ ] Validation: goal differs from current, within range, future date
-- [ ] Implement `utils/GoalUtils.java`
-  - [ ] validateGoal() with ValidationResult pattern
-- [ ] Add string resources to `res/values/strings.xml` (~10 strings)
-- [ ] All 8 tests passing
-- [ ] Commit: `feat: create goal setting dialog layout with validation`
+### 5.2 Commit 2: Goal Setting Dialog UI - COMPLETED 2025-12-12
+- [x] Create `res/layout/dialog_set_goal.xml`
+  - [x] Title, current weight display, goal weight input
+  - [x] Unit toggle (lbs/kg), optional target date picker
+  - [x] Cancel/Save buttons (Material Design 3)
+- [x] Write `GoalUtilsTest.java` (8 tests)
+  - [x] Validation: goal differs from current, within range, future date
+- [x] Implement `utils/GoalUtils.java`
+  - [x] isValidGoal() returns boolean (follows WeightUtils pattern)
+  - [x] isValidTargetDate() for optional date validation
+- [x] Add string resources to `res/values/strings.xml` (13 strings)
+- [x] All 8 tests passing (246 total: 238 existing + 8 new GoalUtils)
+- [x] Commit: `feat: create goal setting dialog layout with validation`
 
 ### 5.3 Commit 3: Wire Goal Dialog to MainActivity
 - [ ] Modify `activities/MainActivity.java`
