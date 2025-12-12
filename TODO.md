@@ -831,31 +831,150 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 ## Phase 5: Goal Weight Management
 **Branch:** `feature/FR3.0-goal-management`
 
-### 5.1 Goal Setting UI
-- [ ] Create goal setting dialog layout (or reuse existing)
-- [ ] Implement goal input validation
-- [ ] Save goal via GoalWeightDAO
-- [ ] Display current goal on dashboard
+### 5.1 Commit 1: AchievementDAO Implementation (TDD) - COMPLETED 2025-12-12
+- [x] Write `AchievementDAOTest.java` (14 tests)
+  - [x] CRUD operations: insertAchievement, getAchievementsForUser, getAchievementsByType
+  - [x] Notification tracking: getUnnotifiedAchievements, updateIsNotified
+  - [x] Duplicate detection: hasAchievementType
+  - [x] Edge cases: null goalId, empty lists, ordering, foreign key violations
+- [x] Implement `database/AchievementDAO.java`
+  - [x] Follow DAO patterns from Phase 1 (singleton, resource management, logging)
+  - [x] All 14 tests passing (238 total: 223 existing + 14 new + 1 example)
+- [x] Commit: `test: add AchievementDAO with 14 tests (TDD)`
 
-### 5.2 Progress Calculation
-- [ ] Calculate progress percentage
-- [ ] Update progress bar
-- [ ] Calculate "lbs to goal"
+### 5.2 Commit 2: Goal Setting Dialog UI
+- [ ] Create `res/layout/dialog_set_goal.xml`
+  - [ ] Title, current weight display, goal weight input
+  - [ ] Unit toggle (lbs/kg), optional target date picker
+  - [ ] Cancel/Save buttons (Material Design 3)
+- [ ] Write `GoalUtilsTest.java` (8 tests)
+  - [ ] Validation: goal differs from current, within range, future date
+- [ ] Implement `utils/GoalUtils.java`
+  - [ ] validateGoal() with ValidationResult pattern
+- [ ] Add string resources to `res/values/strings.xml` (~10 strings)
+- [ ] All 8 tests passing
+- [ ] Commit: `feat: create goal setting dialog layout with validation`
 
-### 5.3 Goal Achievement Detection
-- [ ] Write `AchievementManagerTest.java`
+### 5.3 Commit 3: Wire Goal Dialog to MainActivity
+- [ ] Modify `activities/MainActivity.java`
+  - [ ] Add showSetGoalDialog() method
+  - [ ] Add handleSaveGoal() method (validate + save via GoalWeightDAO)
+  - [ ] Add showDatePicker() method (optional target date)
+  - [ ] Add updateUnitButtonUI() helper
+- [ ] Integrate GoalUtils validation before save
+- [ ] Call GoalWeightDAO.setNewActiveGoal() on save
+- [ ] Refresh progress card after successful save
+- [ ] Manual testing: dialog shows, validates, saves to DB
+- [ ] Commit: `feat: wire goal setting dialog to MainActivity`
+
+### 5.4 Commit 4: Goals Screen Layout
+- [ ] Create `res/layout/activity_goals.xml`
+  - [ ] Header with back button
+  - [ ] Current goal card (expanded stats: days, pace, projection, avg weekly loss)
+  - [ ] Edit/Delete goal buttons
+  - [ ] Empty state (when no goal)
+  - [ ] Goal history RecyclerView
+  - [ ] FAB to add goal
+- [ ] Create `res/layout/item_goal_history.xml`
+  - [ ] Achievement badge (if achieved)
+  - [ ] Goal weight, dates, stats
+- [ ] Add ~20 new strings to `res/values/strings.xml`
+- [ ] Layout only (no Java logic yet)
+- [ ] Commit: `feat: create Goals screen layout (activity + history item)`
+
+### 5.5 Commit 5: GoalsActivity Implementation
+- [ ] Create `activities/GoalsActivity.java` (skeleton → full implementation)
+  - [ ] loadGoalData() - query active goal + history
+  - [ ] updateCurrentGoalCard() - display weights
+  - [ ] updateExpandedStats() - calculate days, pace, projection, avg weekly loss
+  - [ ] handleEditGoal() - show dialog pre-filled
+  - [ ] handleDeleteGoal() - deactivate with confirmation
+  - [ ] getCurrentWeight() - helper
+- [ ] Create `adapters/GoalHistoryAdapter.java`
+  - [ ] Bind goal history items
+  - [ ] Show achieved badge
+  - [ ] Calculate stats (lbs lost, duration)
+- [ ] Declare GoalsActivity in `AndroidManifest.xml`
+- [ ] Manual testing: screen shows, stats calculate correctly
+- [ ] Commit: `feat: implement GoalsActivity with expanded stats`
+
+### 5.6 Commit 6: Achievement Detection Logic
+- [ ] Write `AchievementManagerTest.java` (12 tests)
+  - [ ] GOAL_REACHED, FIRST_ENTRY, STREAK_7, STREAK_30
+  - [ ] MILESTONE_5, MILESTONE_10, MILESTONE_25
+  - [ ] NEW_LOW
+  - [ ] Duplicate prevention
 - [ ] Implement `utils/AchievementManager.java`
-  - checkGoalAchieved(userId, newWeight)
-  - markGoalAchieved(goalId)
-  - Trigger celebration/notification
+  - [ ] checkAchievements() - main entry point
+  - [ ] checkGoalReached() - detect goal completion
+  - [ ] checkFirstEntry() - first weight log
+  - [ ] checkStreaks() - 7-day and 30-day streaks
+  - [ ] checkMilestones() - 5, 10, 25 lbs lost
+  - [ ] checkNewLow() - new lowest weight
+- [ ] Modify `activities/MainActivity.java`
+  - [ ] Call AchievementManager.checkAchievements() in onActivityResult()
+  - [ ] Add showAchievementDialog() method
+  - [ ] Mark goal as achieved when GOAL_REACHED detected
+- [ ] All 12 tests passing (total: 258 tests)
+- [ ] Commit: `feat: implement achievement detection with AchievementManager`
 
-### 5.4 Phase 5 Validation
-- [ ] User can set goal weight
-- [ ] Goal displays on dashboard
-- [ ] Progress bar updates correctly
-- [ ] Goal achievement detected
-- [ ] Run `./gradlew test` - all tests pass
-- [ ] Merge to develop branch
+### 5.7 Commit 7: Wire Bottom Nav to GoalsActivity
+- [ ] Modify `activities/MainActivity.java`
+  - [ ] Update setupBottomNavigation() to navigate to GoalsActivity
+  - [ ] Remove placeholder toast
+- [ ] Modify `activities/GoalsActivity.java`
+  - [ ] Add back button functionality
+- [ ] Manual testing: navigation works
+- [ ] Commit: `feat: wire bottom navigation to GoalsActivity`
+
+### 5.8 Commit 8: Progress Card Edit Button
+- [ ] Modify `res/layout/activity_main.xml`
+  - [ ] Add edit button (32dp icon) to progress card header
+  - [ ] Add content description
+- [ ] Modify `activities/MainActivity.java`
+  - [ ] Bind editGoalButton in initViews()
+  - [ ] Navigate to GoalsActivity on click
+  - [ ] Show/hide based on goal existence
+- [ ] Add `cd_edit_goal` string resource
+- [ ] Manual testing: button shows, navigates correctly
+- [ ] Commit: `feat: add edit button to progress card`
+
+### 5.9 Phase 5 Validation
+**Automated Testing:**
+- [ ] Run `./gradlew test` - all tests pass (258 total: 223 existing + 35 new)
+- [ ] Run `./gradlew lint` - clean, no errors
+
+**Manual Testing - Goal Setting:**
+- [ ] Dialog shows from progress card edit button
+- [ ] Unit toggle works (lbs ↔ kg)
+- [ ] Date picker sets optional target date
+- [ ] Validation rejects same weight as current
+- [ ] Validation rejects out-of-range values
+- [ ] Save creates goal in database
+- [ ] Progress card updates after save
+
+**Manual Testing - Goals Screen:**
+- [ ] Current goal card shows all stats correctly
+- [ ] Expanded stats calculate (days, pace, projection, avg weekly loss)
+- [ ] Empty state shows when no goal
+- [ ] Goal history populates
+- [ ] Edit button shows pre-filled dialog
+- [ ] Delete button deactivates goal
+- [ ] Back button returns to MainActivity
+
+**Manual Testing - Achievements:**
+- [ ] GOAL_REACHED awarded when weight reaches goal
+- [ ] FIRST_ENTRY awarded on first weight log
+- [ ] STREAK_7 awarded after 7 consecutive days
+- [ ] MILESTONE_5 awarded after 5 lbs lost
+- [ ] Achievement dialog shows after weight entry
+- [ ] No duplicate achievements awarded
+
+**Documentation:**
+- [ ] Update TODO.md to mark Phase 5 complete
+- [ ] Update project_summary.md with Phase 5 notes
+- [ ] Create DDR-0002 for Goals screen design decisions
+- [ ] Merge to main branch
 
 ---
 
