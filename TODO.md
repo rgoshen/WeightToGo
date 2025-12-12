@@ -808,6 +808,7 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [ ] Variables: camelCase (nouns)
 - [ ] Constants: UPPER_SNAKE_CASE
 - [ ] No magic numbers (use named constants)
+  - [ ] WeightEntryAdapter: Extract TREND_THRESHOLD = 0.1 (line 172)
 
 ### 7.3 Code Cleanup
 - [ ] Remove all System.out.println (use Log.d/i/e)
@@ -815,12 +816,23 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [ ] Remove unused imports
 - [ ] Remove unused resources
 - [ ] Verify consistent 4-space indentation
+- [ ] Fix locale dependency in WeightEntryAdapter.java:115
+  - Replace `parts[1].toUpperCase()` with `parts[1].toUpperCase(Locale.US)`
+  - Prevents unexpected behavior on non-English locale devices
+- [ ] Refactor date formatting duplication
+  - Move `formatTime()` from WeightEntryAdapter to DateUtils
+  - Add DateUtils.formatTime(LocalDateTime) method
+  - Update WeightEntryAdapter to use DateUtils.formatTime()
 
 ### 7.4 Error Handling
 - [ ] Add try-catch for database operations
 - [ ] Add null checks for nullable data
 - [ ] Show user-friendly error messages
 - [ ] Log errors for debugging
+- [ ] Add @NonNull annotations to WeightEntryAdapter constructor
+  - Require non-null listener in constructor
+  - Remove null checks in onClick handlers (guaranteed non-null)
+  - Makes contract explicit and prevents runtime null issues
 
 ### 7.5 Performance Optimization (DEFERRED from Phase 2)
 - [ ] Move password hashing to background thread
@@ -829,6 +841,12 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - Update LoginActivity registration/login flows
   - Show loading indicator during hash computation
   - Test with realistic device (not just emulator)
+- [ ] Replace notifyDataSetChanged() with DiffUtil in MainActivity
+  - Current: Full RecyclerView redraw on every update (MainActivity.java:223)
+  - Create WeightEntryDiffCallback class
+  - Use DiffUtil.calculateDiff() for efficient updates
+  - Impact: Low for MVP (<100 entries), Medium for larger datasets
+  - Improves performance with large weight entry history
 - [ ] Profile app performance on older devices (API 28)
 - [ ] Optimize any other blocking UI operations identified
 
@@ -1118,9 +1136,18 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
   - Switch back to Sign In tab
   - Assert errors still cleared
 
+**Test Assertion Specificity Improvements:**
+- [ ] Enhance LoginActivityIntegrationTest with error state assertions
+  - Verify Snackbar is shown (not Toast) in Sign In mode
+  - Verify no field highlighting (no TextInputLayout.setError()) in Sign In mode
+  - Verify field highlighting IS present in Register mode
+  - Assert specific error messages match expected values
+  - Improves test coverage beyond integration behavior
+
 **Expected Test Count After Phase 8.5:**
 - Comprehensive authentication tests: ~12 additional tests
-- Total project tests: ~133 tests (121 current + 12 comprehensive)
+- Test assertion improvements: ~4 enhanced tests
+- Total project tests: ~137 tests (121 current + 16 comprehensive)
 
 ### 8.6 Final Test Suite
 - [ ] Run `./gradlew clean test`
