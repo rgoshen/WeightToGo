@@ -309,7 +309,9 @@ public class MainActivity extends AppCompatActivity
     private void updateProgressBar(double current, double start, double goal) {
         double totalRange = Math.abs(start - goal);
         double progress = Math.abs(start - current);
-        int percentageValue = (int) ((progress / totalRange) * 100);
+
+        // Prevent division by zero if start equals goal
+        int percentageValue = (totalRange == 0) ? 0 : (int) ((progress / totalRange) * 100);
 
         // Clamp percentage between 0 and 100
         final int percentage = Math.max(0, Math.min(100, percentageValue));

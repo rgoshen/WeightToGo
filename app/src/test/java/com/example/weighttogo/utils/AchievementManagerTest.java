@@ -139,8 +139,8 @@ public class AchievementManagerTest {
         // ARRANGE
         LocalDate today = LocalDate.now();
 
-        // Create 6 consecutive entries (including today = 7 total)
-        for (int i = 1; i <= 6; i++) {
+        // Create 7 consecutive entries (checkAchievements called after entry saved)
+        for (int i = 0; i < 7; i++) {
             WeightEntry entry = new WeightEntry();
             entry.setUserId(testUserId);
             entry.setWeightValue(180.0 - i);
@@ -152,7 +152,7 @@ public class AchievementManagerTest {
         }
 
         // ACT
-        List<Achievement> achievements = achievementManager.checkAchievements(testUserId, 179.0);
+        List<Achievement> achievements = achievementManager.checkAchievements(testUserId, 180.0);
 
         // ASSERT
         boolean hasStreak7 = achievements.stream()
@@ -169,8 +169,8 @@ public class AchievementManagerTest {
         // ARRANGE
         LocalDate today = LocalDate.now();
 
-        // Create 29 consecutive entries (including today = 30 total)
-        for (int i = 1; i <= 29; i++) {
+        // Create 30 consecutive entries (checkAchievements called after entry saved)
+        for (int i = 0; i < 30; i++) {
             WeightEntry entry = new WeightEntry();
             entry.setUserId(testUserId);
             entry.setWeightValue(180.0 - i * 0.1);
@@ -182,7 +182,7 @@ public class AchievementManagerTest {
         }
 
         // ACT
-        List<Achievement> achievements = achievementManager.checkAchievements(testUserId, 170.0);
+        List<Achievement> achievements = achievementManager.checkAchievements(testUserId, 180.0);
 
         // ASSERT
         boolean hasStreak30 = achievements.stream()
@@ -343,8 +343,8 @@ public class AchievementManagerTest {
         // ARRANGE
         LocalDate today = LocalDate.now();
 
-        // Create 6 consecutive entries
-        for (int i = 1; i <= 6; i++) {
+        // Create 7 consecutive entries (checkAchievements called after entry saved)
+        for (int i = 0; i < 7; i++) {
             WeightEntry entry = new WeightEntry();
             entry.setUserId(testUserId);
             entry.setWeightValue(180.0 - i);
@@ -356,7 +356,7 @@ public class AchievementManagerTest {
         }
 
         // First check - should award
-        List<Achievement> firstCheck = achievementManager.checkAchievements(testUserId, 179.0);
+        List<Achievement> firstCheck = achievementManager.checkAchievements(testUserId, 180.0);
         long firstCount = firstCheck.stream()
                 .filter(a -> "STREAK_7".equals(a.getAchievementType()))
                 .count();

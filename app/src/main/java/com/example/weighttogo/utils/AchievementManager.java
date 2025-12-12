@@ -146,12 +146,12 @@ public class AchievementManager {
     private void checkStreaks(long userId, List<Achievement> newAchievements) {
         List<WeightEntry> entries = weightEntryDAO.getWeightEntriesForUser(userId);
 
-        // Need at least 6 existing entries + 1 new entry (today) = 7 total for STREAK_7
-        if (entries.size() < 6) {
+        // Need at least 7 entries total for STREAK_7 (checkAchievements called after entry saved)
+        if (entries.size() < 7) {
             return;
         }
 
-        // Calculate current streak (including today which is being logged now)
+        // Calculate current streak (new entry already saved to DB)
         int currentStreak = calculateConsecutiveDaysIncludingToday(entries);
 
         // Check STREAK_7
@@ -195,28 +195,27 @@ public class AchievementManager {
 
     /**
      * Calculate consecutive days with entries, including today.
-     * Called when a new entry is being logged for today (not yet saved to DB).
+     * Called after the new entry has been saved to the database.
      * Assumes entries are sorted by date descending.
      */
     private int calculateConsecutiveDaysIncludingToday(List<WeightEntry> entries) {
         if (entries.isEmpty()) {
-            return 1; // Today would be the first entry
+            return 0; // No entries, no streak
         }
 
         LocalDate today = LocalDate.now();
         LocalDate mostRecentDate = entries.get(0).getWeightDate();
 
-        // Check if most recent entry is from yesterday
+        // Check if most recent entry is from today or yesterday
         long daysSinceLastEntry = ChronoUnit.DAYS.between(mostRecentDate, today);
 
-        if (daysSinceLastEntry != 1) {
-            // Streak is broken - today would start a new streak of 1
+        if (daysSinceLastEntry > 1) {
+            // Streak is broken - gap of more than 1 day
             return 1;
         }
 
-        // Most recent entry is from yesterday, so count from there
-        int streak = 1; // Count today
-        streak++; // Count yesterday (entries.get(0))
+        // Start counting streak from most recent entry
+        int streak = 1; // Count the most recent entry (today or yesterday)
         LocalDate previousDate = mostRecentDate;
 
         for (int i = 1; i < entries.size(); i++) {
@@ -247,6 +246,7 @@ public class AchievementManager {
 
         double startWeight = activeGoal.getStartWeight();
         double weightLost = Math.abs(startWeight - newWeight);
+        String unit = activeGoal.getGoalUnit();
 
         // Check MILESTONE_5
         if (weightLost >= 5.0 && !achievementDAO.hasAchievementType(userId, "MILESTONE_5")) {
@@ -254,8 +254,8 @@ public class AchievementManager {
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_5");
-            achievement.setTitle("5 lbs Lost!");
-            achievement.setDescription("You've lost 5 lbs! You're making great progress!");
+            achievement.setTitle(String.format("5 %s Lost!", unit));
+            achievement.setDescription(String.format("You've lost 5 %s! You're making great progress!", unit));
             achievement.setValue(5.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);
@@ -274,8 +274,8 @@ public class AchievementManager {
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_10");
-            achievement.setTitle("10 lbs Lost!");
-            achievement.setDescription("Amazing! You've lost 10 lbs!");
+            achievement.setTitle(String.format("10 %s Lost!", unit));
+            achievement.setDescription(String.format("Amazing! You've lost 10 %s!", unit));
             achievement.setValue(10.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);
@@ -294,8 +294,8 @@ public class AchievementManager {
             achievement.setUserId(userId);
             achievement.setGoalId(activeGoal.getGoalId());
             achievement.setAchievementType("MILESTONE_25");
-            achievement.setTitle("25 lbs Lost!");
-            achievement.setDescription("Incredible! You've lost 25 lbs! You're a superstar!");
+            achievement.setTitle(String.format("25 %s Lost!", unit));
+            achievement.setDescription(String.format("Incredible! You've lost 25 %s! You're a superstar!", unit));
             achievement.setValue(25.0);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);
@@ -329,12 +329,16 @@ public class AchievementManager {
 
         // Check if new weight is lower than previous minimum
         if (newWeight < minPreviousWeight) {
+            // Get unit from latest weight entry
+            WeightEntry latestEntry = weightEntryDAO.getLatestWeightEntry(userId);
+            String unit = (latestEntry != null) ? latestEntry.getWeightUnit() : "lbs";
+
             Achievement achievement = new Achievement();
             achievement.setUserId(userId);
             achievement.setAchievementType("NEW_LOW");
             achievement.setTitle("New Low!");
-            achievement.setDescription("You've reached a new lowest weight of " +
-                    String.format("%.1f lbs", newWeight) + "!");
+            achievement.setDescription(String.format("You've reached a new lowest weight of %.1f %s!",
+                    newWeight, unit));
             achievement.setValue(newWeight);
             achievement.setAchievedAt(LocalDateTime.now());
             achievement.setNotified(false);

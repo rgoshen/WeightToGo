@@ -75,6 +75,12 @@ public final class GoalUtils {
      * @return true if goal is valid, false otherwise
      */
     public static boolean isValidGoal(double currentWeight, double goalWeight, @NonNull String unit) {
+        // Runtime null check for unit parameter
+        if (unit == null) {
+            Log.e(TAG, "isValidGoal: unit parameter cannot be null");
+            return false;
+        }
+
         Log.d(TAG, "isValidGoal: current=" + currentWeight + ", goal=" + goalWeight + ", unit=" + unit);
 
         // Rule 1: Goal must differ from current weight

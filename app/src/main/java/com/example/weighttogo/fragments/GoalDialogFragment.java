@@ -9,6 +9,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.example.weighttogo.R;
@@ -234,6 +235,16 @@ public class GoalDialogFragment extends DialogFragment {
         return dialog;
     }
 
+    /**
+     * Called when the fragment's view hierarchy is being removed.
+     * Clear listener to prevent memory leaks.
+     */
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        listener = null;  // Clear listener to prevent memory leak
+    }
+
     // ============================================================
     // Private Helper Methods
     // ============================================================
@@ -277,15 +288,21 @@ public class GoalDialogFragment extends DialogFragment {
         unitLbs.setOnClickListener(v -> {
             selectedUnit = "lbs";
             updateUnitButtonUI("lbs");
-            textCurrentWeight.setText(String.format("%.1f lbs", currentWeight));
+            // Display current weight in lbs (convert if needed)
+            double displayWeight = "kg".equals(currentUnit)
+                ? WeightUtils.convertKgToLbs(currentWeight)
+                : currentWeight;
+            textCurrentWeight.setText(String.format("%.1f lbs", displayWeight));
         });
 
         unitKg.setOnClickListener(v -> {
             selectedUnit = "kg";
             updateUnitButtonUI("kg");
-            // Convert current weight to kg for display
-            double currentKg = WeightUtils.convertLbsToKg(currentWeight);
-            textCurrentWeight.setText(String.format("%.1f kg", currentKg));
+            // Display current weight in kg (convert if needed)
+            double displayWeight = "lbs".equals(currentUnit)
+                ? WeightUtils.convertLbsToKg(currentWeight)
+                : currentWeight;
+            textCurrentWeight.setText(String.format("%.1f kg", displayWeight));
         });
     }
 
@@ -478,17 +495,17 @@ public class GoalDialogFragment extends DialogFragment {
         if ("lbs".equals(selectedUnit)) {
             // Lbs active
             unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_active);
-            unitLbs.setTextColor(getResources().getColor(R.color.text_on_primary, null));
+            unitLbs.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_on_primary));
             // Kg inactive
             unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitKg.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            unitKg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
         } else {
             // Kg active
             unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_active);
-            unitKg.setTextColor(getResources().getColor(R.color.text_on_primary, null));
+            unitKg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_on_primary));
             // Lbs inactive
             unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitLbs.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            unitLbs.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
         }
     }
 }

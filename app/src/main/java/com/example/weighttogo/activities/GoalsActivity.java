@@ -306,10 +306,17 @@ public class GoalsActivity extends AppCompatActivity
         double currentWeight = getCurrentWeight();
         double startWeight = activeGoal.getStartWeight();
         double goalWeight = activeGoal.getGoalWeight();
-        double weightLost = Math.abs(startWeight - currentWeight);
+
+        // Check if user is making progress in the right direction
+        boolean isLossGoal = goalWeight < startWeight;
+        double weightChange = startWeight - currentWeight; // Positive = weight lost, Negative = weight gained
+        double weightLost = Math.abs(weightChange);
         double weightRemaining = Math.abs(currentWeight - goalWeight);
 
-        if (daysSinceStart > 0) {
+        // Validate that user is making progress in correct direction
+        boolean makingProgress = (isLossGoal && weightChange > 0) || (!isLossGoal && weightChange < 0);
+
+        if (daysSinceStart > 0 && makingProgress && weightLost > 0) {
             // Pace (lbs/week)
             double pace = (weightLost / daysSinceStart) * 7;
             String paceText = String.format(getString(R.string.pace_format), pace);
@@ -325,9 +332,9 @@ public class GoalsActivity extends AppCompatActivity
                 textProjection.setText("N/A");
             }
 
-            // Avg weekly loss
-            double avgWeeklyLoss = -((weightLost / daysSinceStart) * 7);
-            String avgText = String.format(getString(R.string.avg_weekly_format), avgWeeklyLoss);
+            // Avg weekly loss/gain
+            double avgWeeklyChange = (weightLost / daysSinceStart) * 7;
+            String avgText = String.format(getString(R.string.avg_weekly_format), avgWeeklyChange);
             textAvgWeeklyLoss.setText(avgText);
         } else {
             textPace.setText("N/A");
