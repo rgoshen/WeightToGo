@@ -351,21 +351,17 @@ public class AchievementManager {
 
     /**
      * Check if user reached a new lowest weight.
+     * Uses optimized SQL MIN() query instead of fetching all entries.
      */
     private void checkNewLow(long userId, double newWeight, List<Achievement> newAchievements) {
-        List<WeightEntry> entries = weightEntryDAO.getWeightEntriesForUser(userId);
+        // Optimized: Use SQL MIN() instead of loading all entries
+        Double minPreviousWeight = weightEntryDAO.getMinWeightForUser(userId);
 
-        if (entries.isEmpty()) {
+        if (minPreviousWeight == null) {
             // This is the first entry, so it's automatically a new low
             // But we don't award NEW_LOW for the first entry (it's not meaningful)
             return;
         }
-
-        // Find the minimum weight from all previous entries
-        double minPreviousWeight = entries.stream()
-                .mapToDouble(WeightEntry::getWeightValue)
-                .min()
-                .orElse(Double.MAX_VALUE);
 
         // Check if new weight is lower than previous minimum
         if (newWeight < minPreviousWeight) {

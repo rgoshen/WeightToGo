@@ -166,6 +166,40 @@ public class WeightEntryDAO {
     }
 
     /**
+     * Gets the minimum weight value for a user (optimized for NEW_LOW achievement).
+     * Uses SQL MIN() instead of fetching all entries.
+     *
+     * @param userId user ID
+     * @return minimum weight value, or null if no entries exist
+     */
+    @Nullable
+    public Double getMinWeightForUser(long userId) {
+        Log.d(TAG, "getMinWeightForUser: user_id=" + userId);
+
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        try (Cursor cursor = db.rawQuery(
+            "SELECT MIN(weight_value) as min_weight FROM " + WeighToGoDBHelper.TABLE_DAILY_WEIGHTS +
+            " WHERE user_id = ? AND is_deleted = 0",
+            new String[]{String.valueOf(userId)}
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int columnIndex = cursor.getColumnIndex("min_weight");
+                if (columnIndex != -1 && !cursor.isNull(columnIndex)) {
+                    double minWeight = cursor.getDouble(columnIndex);
+                    Log.i(TAG, "getMinWeightForUser: Found min weight = " + minWeight);
+                    return minWeight;
+                }
+            }
+            Log.i(TAG, "getMinWeightForUser: No entries found");
+        } catch (Exception e) {
+            Log.e(TAG, "getMinWeightForUser: Exception", e);
+        }
+
+        return null;
+    }
+
+    /**
      * Gets the most recent weight entry for a user.
      */
     @Nullable
