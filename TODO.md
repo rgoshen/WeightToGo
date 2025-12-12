@@ -936,17 +936,17 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [x] Manual testing: navigation works (deferred to Phase 5.9)
 - [x] Commit: `feat: wire bottom navigation to GoalsActivity`
 
-### 5.8 Commit 8: Progress Card Edit Button
-- [ ] Modify `res/layout/activity_main.xml`
-  - [ ] Add edit button (32dp icon) to progress card header
-  - [ ] Add content description
-- [ ] Modify `activities/MainActivity.java`
-  - [ ] Bind editGoalButton in initViews()
-  - [ ] Navigate to GoalsActivity on click
-  - [ ] Show/hide based on goal existence
-- [ ] Add `cd_edit_goal` string resource
-- [ ] Manual testing: button shows, navigates correctly
-- [ ] Commit: `feat: add edit button to progress card`
+### 5.8 Commit 8: Progress Card Edit Button ✅ Completed 2025-12-12
+- [x] Modify `res/layout/activity_main.xml`
+  - [x] Add edit button (32dp icon) to progress card header
+  - [x] Add content description
+- [x] Modify `activities/MainActivity.java`
+  - [x] Bind editGoalButton in initViews()
+  - [x] Navigate to GoalsActivity on click
+  - [x] Show/hide based on goal existence
+- [x] Add `cd_edit_goal` string resource (already exists)
+- [x] Manual testing: button shows, navigates correctly (deferred to Phase 5.9)
+- [x] Commit: `feat: add edit button to progress card`
 
 ### 5.9 Phase 5 Validation
 **Automated Testing:**

@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     private TextView goalWeightValue;
     private View progressBarFill;
     private TextView progressPercentage;
+    private ImageButton btnEditGoalFromCard;
 
     // Quick Stats
     private TextView totalLostValue;
@@ -161,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
         goalWeightValue = findViewById(R.id.goalWeightValue);
         progressBarFill = findViewById(R.id.progressBarFill);
         progressPercentage = findViewById(R.id.progressPercentage);
+        btnEditGoalFromCard = findViewById(R.id.btnEditGoalFromCard);
 
         // Quick Stats
         totalLostValue = findViewById(R.id.totalLostValue);
@@ -194,6 +196,11 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
             intent.putExtra(WeightEntryActivity.EXTRA_USER_ID, currentUserId);
             intent.putExtra(WeightEntryActivity.EXTRA_IS_EDIT_MODE, false);
             startActivityForResult(intent, REQUEST_CODE_WEIGHT_ENTRY);
+        });
+
+        btnEditGoalFromCard.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GoalsActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -245,10 +252,12 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
 
         if (activeGoal == null) {
             progressCard.setVisibility(View.GONE);
+            btnEditGoalFromCard.setVisibility(View.GONE);
             return;
         }
 
         progressCard.setVisibility(View.VISIBLE);
+        btnEditGoalFromCard.setVisibility(View.VISIBLE);
 
         // Get current weight from most recent entry (use cached list)
         double current = activeGoal.getStartWeight();
