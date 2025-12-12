@@ -184,8 +184,11 @@ public class GoalsActivity extends AppCompatActivity {
     private void setupFAB() {
         fabAddGoal.setOnClickListener(v -> {
             // Navigate to MainActivity and trigger goal dialog
+            // Use FLAG_ACTIVITY_CLEAR_TOP to return to existing MainActivity instance
+            // instead of creating a new one
             Intent intent = new Intent(this, MainActivity.class);
             intent.putExtra("SHOW_GOAL_DIALOG", true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             finish();
         });

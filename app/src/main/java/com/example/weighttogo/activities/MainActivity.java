@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
                 // Already on home, do nothing
                 return true;
             } else if (itemId == R.id.nav_trends) {
-                Toast.makeText(this, "Trends - Coming in Phase 5", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Trends - Coming in Phase 6", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_goals) {
                 Intent intent = new Intent(this, GoalsActivity.class);
@@ -620,6 +620,19 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     @Override
     public void onDeleteClick(WeightEntry entry) {
         handleDeleteEntry(entry);
+    }
+
+    /**
+     * Refresh data when returning to MainActivity.
+     * Called when navigating back from other screens (Goals, etc.).
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh all data from database
+        loadWeightEntries();
+        updateProgressCard();
+        calculateQuickStats();
     }
 
     /**
