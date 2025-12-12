@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.weighttogo.R;
 import com.example.weighttogo.adapters.WeightEntryAdapter;
 import com.example.weighttogo.database.GoalWeightDAO;
+import com.example.weighttogo.fragments.GoalDialogFragment;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.database.WeightEntryDAO;
@@ -25,6 +26,7 @@ import com.example.weighttogo.models.User;
 import com.example.weighttogo.models.WeightEntry;
 import com.example.weighttogo.utils.DateUtils;
 import com.example.weighttogo.utils.SessionManager;
+import com.example.weighttogo.utils.WeightUtils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -37,7 +39,9 @@ import java.util.List;
  * Main dashboard activity for WeightToGo app.
  * Displays user greeting, progress card, quick stats, and recent weight entries.
  */
-public class MainActivity extends AppCompatActivity implements WeightEntryAdapter.OnItemClickListener {
+public class MainActivity extends AppCompatActivity
+        implements WeightEntryAdapter.OnItemClickListener,
+                   GoalDialogFragment.GoalDialogListener {
 
     // Request Codes
     private static final int REQUEST_CODE_WEIGHT_ENTRY = 1001;
@@ -51,10 +55,14 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     // Progress Card
     private MaterialCardView progressCard;
     private TextView currentWeightValue;
+    private TextView currentWeightUnit;
     private TextView startWeightValue;
+    private TextView startWeightUnit;
     private TextView goalWeightValue;
+    private TextView goalWeightUnit;
     private View progressBarFill;
     private TextView progressPercentage;
+    private ImageButton btnEditGoalFromCard;
 
     // Quick Stats
     private TextView totalLostValue;
@@ -108,6 +116,11 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
         calculateQuickStats();
         updateGreeting();
         updateUserName();
+
+        // Check if we should show goal dialog (from GoalsActivity FAB)
+        if (getIntent().getBooleanExtra("SHOW_GOAL_DIALOG", false)) {
+            showSetGoalDialog();
+        }
     }
 
     /**
@@ -153,10 +166,14 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
         // Progress Card
         progressCard = findViewById(R.id.progressCard);
         currentWeightValue = findViewById(R.id.currentWeightValue);
+        currentWeightUnit = findViewById(R.id.currentWeightUnit);
         startWeightValue = findViewById(R.id.startWeightValue);
+        startWeightUnit = findViewById(R.id.startWeightUnit);
         goalWeightValue = findViewById(R.id.goalWeightValue);
+        goalWeightUnit = findViewById(R.id.goalWeightUnit);
         progressBarFill = findViewById(R.id.progressBarFill);
         progressPercentage = findViewById(R.id.progressPercentage);
+        btnEditGoalFromCard = findViewById(R.id.btnEditGoalFromCard);
 
         // Quick Stats
         totalLostValue = findViewById(R.id.totalLostValue);
@@ -191,6 +208,8 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
             intent.putExtra(WeightEntryActivity.EXTRA_IS_EDIT_MODE, false);
             startActivityForResult(intent, REQUEST_CODE_WEIGHT_ENTRY);
         });
+
+        btnEditGoalFromCard.setOnClickListener(v -> handleEditGoal());
     }
 
     /**
@@ -205,10 +224,11 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
                 // Already on home, do nothing
                 return true;
             } else if (itemId == R.id.nav_trends) {
-                Toast.makeText(this, "Trends - Coming in Phase 5", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Trends - Coming in Phase 6", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_goals) {
-                Toast.makeText(this, "Goals - Coming in Phase 6", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, GoalsActivity.class);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 Toast.makeText(this, "Profile - Coming in Phase 7", Toast.LENGTH_SHORT).show();
@@ -240,21 +260,40 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
 
         if (activeGoal == null) {
             progressCard.setVisibility(View.GONE);
+            btnEditGoalFromCard.setVisibility(View.GONE);
             return;
         }
 
         progressCard.setVisibility(View.VISIBLE);
+        btnEditGoalFromCard.setVisibility(View.VISIBLE);
+
+        // Get goal unit
+        String goalUnit = activeGoal.getGoalUnit();
 
         // Get current weight from most recent entry (use cached list)
         double current = activeGoal.getStartWeight();
         if (!weightEntries.isEmpty()) {
-            current = weightEntries.get(0).getWeightValue();
+            WeightEntry latestEntry = weightEntries.get(0);
+            current = latestEntry.getWeightValue();
+            String entryUnit = latestEntry.getWeightUnit();
+
+            // Convert if units don't match
+            if (!entryUnit.equals(goalUnit)) {
+                if ("kg".equals(goalUnit)) {
+                    current = WeightUtils.convertLbsToKg(current);
+                } else {
+                    current = WeightUtils.convertKgToLbs(current);
+                }
+            }
         }
 
         // Display weight values
         startWeightValue.setText(String.format("%.1f", activeGoal.getStartWeight()));
+        startWeightUnit.setText(goalUnit);
         currentWeightValue.setText(String.format("%.1f", current));
+        currentWeightUnit.setText(goalUnit);
         goalWeightValue.setText(String.format("%.1f", activeGoal.getGoalWeight()));
+        goalWeightUnit.setText(goalUnit);
 
         // Update progress bar
         updateProgressBar(current, activeGoal.getStartWeight(), activeGoal.getGoalWeight());
@@ -270,7 +309,9 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     private void updateProgressBar(double current, double start, double goal) {
         double totalRange = Math.abs(start - goal);
         double progress = Math.abs(start - current);
-        int percentageValue = (int) ((progress / totalRange) * 100);
+
+        // Prevent division by zero if start equals goal
+        int percentageValue = (totalRange == 0) ? 0 : (int) ((progress / totalRange) * 100);
 
         // Clamp percentage between 0 and 100
         final int percentage = Math.max(0, Math.min(100, percentageValue));
@@ -382,6 +423,97 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     }
 
     // ============================================================
+    // Goal Setting Dialog
+    // ============================================================
+
+    /**
+     * Shows the goal dialog fragment.
+     * Fragment handles all UI, validation, and database operations.
+     */
+    public void showSetGoalDialog() {
+        // Get current weight (latest entry)
+        double currentWeight = 0.0;
+        String currentUnit = "lbs";
+        if (!weightEntries.isEmpty()) {
+            WeightEntry latestEntry = weightEntries.get(0);
+            currentWeight = latestEntry.getWeightValue();
+            currentUnit = latestEntry.getWeightUnit();
+        }
+
+        // Validate we have a weight to set goal from
+        if (currentWeight <= 0.0) {
+            Toast.makeText(this, "Please add a weight entry first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create and show dialog fragment
+        GoalDialogFragment dialog = GoalDialogFragment.newInstance(
+                currentUserId,
+                currentWeight,
+                currentUnit
+        );
+        dialog.setListener(this);
+        dialog.show(getSupportFragmentManager(), "GoalDialogFragment");
+    }
+
+    /**
+     * Shows the goal dialog fragment in edit mode.
+     * Opens dialog with existing goal data for editing.
+     */
+    private void handleEditGoal() {
+        if (activeGoal == null) {
+            Toast.makeText(this, "No active goal to edit", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Get current weight (latest entry)
+        double currentWeight = 0.0;
+        String currentUnit = "lbs";
+        if (!weightEntries.isEmpty()) {
+            WeightEntry latestEntry = weightEntries.get(0);
+            currentWeight = latestEntry.getWeightValue();
+            currentUnit = latestEntry.getWeightUnit();
+        }
+
+        // Validate we have a weight
+        if (currentWeight <= 0.0) {
+            Toast.makeText(this, "No weight entries found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create and show dialog in edit mode
+        GoalDialogFragment dialog = GoalDialogFragment.newInstanceForEdit(
+                currentUserId,
+                currentWeight,
+                currentUnit,
+                activeGoal
+        );
+        dialog.setListener(this);
+        dialog.show(getSupportFragmentManager(), "GoalDialogFragment");
+    }
+
+    // ============================================================
+    // GoalDialogFragment.GoalDialogListener Implementation
+    // ============================================================
+
+    @Override
+    public void onGoalSaved(GoalWeight goal) {
+        // Refresh active goal reference
+        activeGoal = goal;
+
+        // Refresh UI
+        updateProgressCard();
+        calculateQuickStats();
+    }
+
+    @Override
+    public void onGoalSaveError(String errorMessage) {
+        // Error already shown via Toast in fragment
+        // Could log error or show additional UI feedback here
+        android.util.Log.e("MainActivity", "Goal save failed: " + errorMessage);
+    }
+
+    // ============================================================
     // WeightEntryAdapter.OnItemClickListener Implementation
     // ============================================================
 
@@ -400,6 +532,19 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
     @Override
     public void onDeleteClick(WeightEntry entry) {
         handleDeleteEntry(entry);
+    }
+
+    /**
+     * Refresh data when returning to MainActivity.
+     * Called when navigating back from other screens (Goals, etc.).
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh all data from database
+        loadWeightEntries();
+        updateProgressCard();
+        calculateQuickStats();
     }
 
     /**

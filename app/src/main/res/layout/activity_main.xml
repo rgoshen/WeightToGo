@@ -135,7 +135,21 @@
                         android:fontFamily="sans-serif-medium"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/trendBadge" />
+                        app:layout_constraintEnd_toStartOf="@id/btnEditGoalFromCard" />
+
+                    <!-- Edit Goal Button -->
+                    <ImageButton
+                        android:id="@+id/btnEditGoalFromCard"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="@dimen/spacing_small"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_edit"
+                        android:contentDescription="@string/cd_edit_goal"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toStartOf="@id/trendBadge"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="@id/progressTitle" />
 
                     <!-- Trend Badge -->
                     <TextView
@@ -196,6 +210,14 @@
                                 tools:text="185" />
 
                             <TextView
+                                android:id="@+id/startWeightUnit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                tools:text="kg" />
+
+                            <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_micro"
@@ -232,6 +254,14 @@
                                 tools:text="172" />
 
                             <TextView
+                                android:id="@+id/currentWeightUnit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                tools:text="kg" />
+
+                            <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_micro"
@@ -266,6 +296,14 @@
                                 android:textSize="28sp"
                                 android:textStyle="bold"
                                 tools:text="165" />
+
+                            <TextView
+                                android:id="@+id/goalWeightUnit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                tools:text="kg" />
 
                             <TextView
                                 android:layout_width="wrap_content"

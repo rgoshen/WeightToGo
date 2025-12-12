@@ -108,6 +108,41 @@ public class WeightEntryDAO {
     }
 
     /**
+     * Gets recent weight entries for streak calculation (optimized).
+     * Only fetches the most recent entries needed for streak detection.
+     * Prevents N+1 query problem by limiting data retrieval.
+     *
+     * @param userId user ID
+     * @param limit  maximum number of entries to retrieve (e.g., 30 for STREAK_30)
+     * @return list of recent weight entries, sorted by date descending
+     */
+    public List<WeightEntry> getRecentWeightEntriesForUser(long userId, int limit) {
+        Log.d(TAG, "getRecentWeightEntriesForUser: user_id=" + userId + ", limit=" + limit);
+
+        List<WeightEntry> entries = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        try (Cursor cursor = db.query(
+            WeighToGoDBHelper.TABLE_DAILY_WEIGHTS,
+            null,
+            "user_id = ? AND is_deleted = 0",
+            new String[]{String.valueOf(userId)},
+            null, null,
+            "weight_date DESC",
+            String.valueOf(limit)  // LIMIT clause for optimization
+        )) {
+            while (cursor != null && cursor.moveToNext()) {
+                entries.add(mapCursorToEntry(cursor));
+            }
+            Log.i(TAG, "getRecentWeightEntriesForUser: Found " + entries.size() + " recent entries");
+        } catch (Exception e) {
+            Log.e(TAG, "getRecentWeightEntriesForUser: Exception", e);
+        }
+
+        return entries;
+    }
+
+    /**
      * Gets a weight entry by ID.
      */
     @Nullable
@@ -127,6 +162,40 @@ public class WeightEntryDAO {
         } catch (Exception e) {
             Log.e(TAG, "getWeightEntryById: Exception", e);
         }
+        return null;
+    }
+
+    /**
+     * Gets the minimum weight value for a user (optimized for NEW_LOW achievement).
+     * Uses SQL MIN() instead of fetching all entries.
+     *
+     * @param userId user ID
+     * @return minimum weight value, or null if no entries exist
+     */
+    @Nullable
+    public Double getMinWeightForUser(long userId) {
+        Log.d(TAG, "getMinWeightForUser: user_id=" + userId);
+
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        try (Cursor cursor = db.rawQuery(
+            "SELECT MIN(weight_value) as min_weight FROM " + WeighToGoDBHelper.TABLE_DAILY_WEIGHTS +
+            " WHERE user_id = ? AND is_deleted = 0",
+            new String[]{String.valueOf(userId)}
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int columnIndex = cursor.getColumnIndex("min_weight");
+                if (columnIndex != -1 && !cursor.isNull(columnIndex)) {
+                    double minWeight = cursor.getDouble(columnIndex);
+                    Log.i(TAG, "getMinWeightForUser: Found min weight = " + minWeight);
+                    return minWeight;
+                }
+            }
+            Log.i(TAG, "getMinWeightForUser: No entries found");
+        } catch (Exception e) {
+            Log.e(TAG, "getMinWeightForUser: Exception", e);
+        }
+
         return null;
     }
 
