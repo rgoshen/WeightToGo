@@ -969,6 +969,17 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [ ] Goal history populates
 - [ ] Edit button shows pre-filled dialog
 - [ ] Delete button deactivates goal
+
+**Documentation:**
+- [ ] Create `docs/ddr/` directory
+- [ ] Create `docs/ddr/0001-goals-screen-layout.md`
+  - [ ] Document design decisions for Goals screen UI
+  - [ ] Explain card-based layout following MainActivity patterns
+  - [ ] Document stat grid rationale (2x2 layout)
+  - [ ] Document achievement badge design choices
+  - [ ] Document color usage (success green for achievements)
+  - [ ] Document empty state design
+  - [ ] Include visual references (layout descriptions)
 - [ ] Back button returns to MainActivity
 
 **Manual Testing - Achievements:**
