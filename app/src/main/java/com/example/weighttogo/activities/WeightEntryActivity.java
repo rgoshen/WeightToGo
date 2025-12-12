@@ -426,7 +426,8 @@ public class WeightEntryActivity extends AppCompatActivity {
 
     /**
      * Adjust weight value by specified amount.
-     * Validates range (50-700 lbs or 22.7-317.5 kg) and rounds to 1 decimal place.
+     * Allows building up from 0 (no min validation), but enforces max limit.
+     * Final validation happens in handleSave().
      *
      * @param amount the amount to add/subtract (positive or negative)
      */
@@ -444,16 +445,22 @@ public class WeightEntryActivity extends AppCompatActivity {
 
         double newValue = currentValue + amount;
 
-        // Validate range based on current unit
-        double min = currentUnit.equals("lbs") ? 50.0 : 22.7;
+        // Only validate max (allow building up from 0 with quick adjust)
         double max = currentUnit.equals("lbs") ? 700.0 : 317.5;
 
-        if (newValue >= min && newValue <= max) {
+        if (newValue >= 0.0 && newValue <= max) {
             weightInput = new StringBuilder(String.format("%.1f", newValue));
             updateWeightDisplay();
             Log.d(TAG, "adjustWeight: Adjusted by " + amount + " to " + weightInput.toString());
+        } else if (newValue < 0.0) {
+            // Don't allow negative weights
+            weightInput = new StringBuilder("0.0");
+            updateWeightDisplay();
+            Log.w(TAG, "adjustWeight: Cannot go below 0.0, reset to 0.0");
         } else {
-            Log.w(TAG, "adjustWeight: Value " + newValue + " out of range [" + min + ", " + max + "]");
+            // Exceeds max
+            Log.w(TAG, "adjustWeight: Value " + newValue + " exceeds max " + max);
+            Toast.makeText(this, "Maximum weight is " + (int)max + " " + currentUnit, Toast.LENGTH_SHORT).show();
         }
     }
 
