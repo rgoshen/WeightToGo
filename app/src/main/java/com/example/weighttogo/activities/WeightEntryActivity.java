@@ -262,7 +262,9 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Quick adjust
         setupQuickAdjustListeners();
 
-        // Unit toggle (stubbed - will implement in Commit 4)
+        // Unit toggle
+        setupUnitToggleListeners();
+
         // Save button (stubbed - will implement in Commit 6)
 
         Log.d(TAG, "setupClickListeners: Click listeners configured");
@@ -381,6 +383,72 @@ public class WeightEntryActivity extends AppCompatActivity {
         } else {
             Log.w(TAG, "adjustWeight: Value " + newValue + " out of range [" + min + ", " + max + "]");
         }
+    }
+
+    // =============================================================================================
+    // UNIT TOGGLE (Commit 4)
+    // =============================================================================================
+
+    /**
+     * Setup unit toggle button click listeners (lbs/kg).
+     */
+    private void setupUnitToggleListeners() {
+        unitLbs.setOnClickListener(v -> switchUnit("lbs"));
+        unitKg.setOnClickListener(v -> switchUnit("kg"));
+
+        // Initialize unit display with current unit
+        switchUnit(currentUnit);
+
+        Log.d(TAG, "setupUnitToggleListeners: Unit toggle configured");
+    }
+
+    /**
+     * Switch between lbs and kg units.
+     * Converts weight value and updates button backgrounds.
+     *
+     * @param newUnit the unit to switch to ("lbs" or "kg")
+     */
+    private void switchUnit(String newUnit) {
+        if (currentUnit.equals(newUnit)) {
+            return;  // Already in this unit
+        }
+
+        // Convert weight value
+        String current = weightInput.toString();
+        if (!current.isEmpty() && !current.equals("0.0")) {
+            double value = Double.parseDouble(current);
+
+            if (newUnit.equals("kg")) {
+                // lbs to kg
+                value = value * 0.453592;
+            } else {
+                // kg to lbs
+                value = value / 0.453592;
+            }
+
+            weightInput = new StringBuilder(String.format("%.1f", value));
+        }
+
+        currentUnit = newUnit;
+
+        // Update UI
+        updateWeightDisplay();
+        weightUnit.setText(currentUnit);
+
+        // Update button backgrounds
+        if (currentUnit.equals("lbs")) {
+            unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_active);
+            unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
+            unitLbs.setTextColor(getResources().getColor(R.color.text_on_primary, null));
+            unitKg.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        } else {
+            unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_active);
+            unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
+            unitKg.setTextColor(getResources().getColor(R.color.text_on_primary, null));
+            unitLbs.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        }
+
+        Log.d(TAG, "switchUnit: Switched to " + currentUnit + ", value = " + weightInput.toString());
     }
 
     // =============================================================================================
