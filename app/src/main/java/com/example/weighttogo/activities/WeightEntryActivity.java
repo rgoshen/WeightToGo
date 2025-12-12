@@ -12,6 +12,7 @@ import com.example.weighttogo.R;
 import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.database.WeightEntryDAO;
 import com.example.weighttogo.models.WeightEntry;
+import com.example.weighttogo.utils.DateUtils;
 import com.google.android.material.button.MaterialButton;
 
 import java.time.LocalDate;
@@ -252,9 +253,8 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Back button
         backButton.setOnClickListener(v -> finish());
 
-        // Date navigation (stubbed - will implement in Commit 5)
-        prevDateButton.setOnClickListener(v -> Log.d(TAG, "Previous date - coming in Commit 5"));
-        nextDateButton.setOnClickListener(v -> Log.d(TAG, "Next date - coming in Commit 5"));
+        // Date navigation
+        setupDateNavigationListeners();
 
         // Number pad
         setupNumberPadListeners();
@@ -268,6 +268,46 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Save button (stubbed - will implement in Commit 6)
 
         Log.d(TAG, "setupClickListeners: Click listeners configured");
+    }
+
+    // =============================================================================================
+    // DATE NAVIGATION (Commit 5)
+    // =============================================================================================
+
+    /**
+     * Setup date navigation button click listeners (previous/next).
+     */
+    private void setupDateNavigationListeners() {
+        prevDateButton.setOnClickListener(v -> navigateToPreviousDay());
+        nextDateButton.setOnClickListener(v -> navigateToNextDay());
+
+        Log.d(TAG, "setupDateNavigationListeners: Date navigation configured");
+    }
+
+    /**
+     * Navigate to previous day.
+     */
+    private void navigateToPreviousDay() {
+        currentDate = currentDate.minusDays(1);
+        updateDateDisplay(currentDate);
+        Log.d(TAG, "navigateToPreviousDay: Moved to " + currentDate);
+    }
+
+    /**
+     * Navigate to next day.
+     * Prevents moving beyond today's date.
+     */
+    private void navigateToNextDay() {
+        LocalDate tomorrow = currentDate.plusDays(1);
+        LocalDate today = LocalDate.now();
+
+        if (!tomorrow.isAfter(today)) {
+            currentDate = tomorrow;
+            updateDateDisplay(currentDate);
+            Log.d(TAG, "navigateToNextDay: Moved to " + currentDate);
+        } else {
+            Log.d(TAG, "navigateToNextDay: Cannot move to future date");
+        }
     }
 
     // =============================================================================================
@@ -484,8 +524,9 @@ public class WeightEntryActivity extends AppCompatActivity {
                     lastEntry.getWeightValue(), lastEntry.getWeightUnit());
             lastEntryValue.setText(value);
 
-            // Will format date in future commit when DateUtils is used
-            lastEntryDate.setText("(previous entry)");
+            // Format date using DateUtils
+            String date = "on " + DateUtils.formatDateShort(lastEntry.getWeightDate());
+            lastEntryDate.setText(date);
 
             Log.d(TAG, "loadPreviousEntry: Loaded previous entry");
         } else {
@@ -506,11 +547,11 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Update day number
         dayNumber.setText(String.valueOf(date.getDayOfMonth()));
 
-        // Update full date (will use DateUtils in future commit)
-        fullDate.setText(date.toString());
+        // Update full date using DateUtils
+        fullDate.setText(DateUtils.formatDateFull(date));
 
         // Update "Today" badge visibility
-        boolean isToday = date.equals(LocalDate.now());
+        boolean isToday = DateUtils.isToday(date);
         todayBadge.setVisibility(isToday ? View.VISIBLE : View.GONE);
 
         // Disable next button if today
