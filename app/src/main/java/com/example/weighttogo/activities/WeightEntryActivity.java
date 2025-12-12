@@ -259,7 +259,9 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Number pad
         setupNumberPadListeners();
 
-        // Quick adjust (stubbed - will implement in Commit 3)
+        // Quick adjust
+        setupQuickAdjustListeners();
+
         // Unit toggle (stubbed - will implement in Commit 4)
         // Save button (stubbed - will implement in Commit 6)
 
@@ -339,6 +341,51 @@ public class WeightEntryActivity extends AppCompatActivity {
             Log.d(TAG, "handleBackspace: Input = " + weightInput.toString());
         }
     }
+
+    // =============================================================================================
+    // QUICK ADJUST BUTTONS (Commit 3)
+    // =============================================================================================
+
+    /**
+     * Setup quick adjust button click listeners (-1, -0.5, +0.5, +1).
+     */
+    private void setupQuickAdjustListeners() {
+        adjustMinusOne.setOnClickListener(v -> adjustWeight(-1.0));
+        adjustMinusHalf.setOnClickListener(v -> adjustWeight(-0.5));
+        adjustPlusHalf.setOnClickListener(v -> adjustWeight(0.5));
+        adjustPlusOne.setOnClickListener(v -> adjustWeight(1.0));
+
+        Log.d(TAG, "setupQuickAdjustListeners: Quick adjust buttons configured");
+    }
+
+    /**
+     * Adjust weight value by specified amount.
+     * Validates range (50-700 lbs or 22.7-317.5 kg) and rounds to 1 decimal place.
+     *
+     * @param amount the amount to add/subtract (positive or negative)
+     */
+    private void adjustWeight(double amount) {
+        String current = weightInput.toString();
+        double currentValue = current.isEmpty() ? 0.0 : Double.parseDouble(current);
+
+        double newValue = currentValue + amount;
+
+        // Validate range based on current unit
+        double min = currentUnit.equals("lbs") ? 50.0 : 22.7;
+        double max = currentUnit.equals("lbs") ? 700.0 : 317.5;
+
+        if (newValue >= min && newValue <= max) {
+            weightInput = new StringBuilder(String.format("%.1f", newValue));
+            updateWeightDisplay();
+            Log.d(TAG, "adjustWeight: Adjusted by " + amount + " to " + weightInput.toString());
+        } else {
+            Log.w(TAG, "adjustWeight: Value " + newValue + " out of range [" + min + ", " + max + "]");
+        }
+    }
+
+    // =============================================================================================
+    // DATA LOADING
+    // =============================================================================================
 
     /**
      * Load existing entry data for edit mode.
