@@ -212,7 +212,8 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
                 Toast.makeText(this, "Trends - Coming in Phase 5", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_goals) {
-                Toast.makeText(this, "Goals - Coming in Phase 6", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, GoalsActivity.class);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 Toast.makeText(this, "Profile - Coming in Phase 7", Toast.LENGTH_SHORT).show();

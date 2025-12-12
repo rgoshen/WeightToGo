@@ -927,14 +927,14 @@ WeighToGo_Database_Architecture.md is the source of truth specification document
 - [x] All 12 tests passing (total: 270 tests - 246 + 12 + 12 existing)
 - [x] Commit: `test: add AchievementManager tests and implementation`
 
-### 5.7 Commit 7: Wire Bottom Nav to GoalsActivity
-- [ ] Modify `activities/MainActivity.java`
-  - [ ] Update setupBottomNavigation() to navigate to GoalsActivity
-  - [ ] Remove placeholder toast
-- [ ] Modify `activities/GoalsActivity.java`
-  - [ ] Add back button functionality
-- [ ] Manual testing: navigation works
-- [ ] Commit: `feat: wire bottom navigation to GoalsActivity`
+### 5.7 Commit 7: Wire Bottom Nav to GoalsActivity ✅ Completed 2025-12-12
+- [x] Modify `activities/MainActivity.java`
+  - [x] Update setupBottomNavigation() to navigate to GoalsActivity
+  - [x] Remove placeholder toast
+- [x] Modify `activities/GoalsActivity.java`
+  - [x] Back button functionality (already implemented in Phase 5.5)
+- [x] Manual testing: navigation works (deferred to Phase 5.9)
+- [x] Commit: `feat: wire bottom navigation to GoalsActivity`
 
 ### 5.8 Commit 8: Progress Card Edit Button
 - [ ] Modify `res/layout/activity_main.xml`
