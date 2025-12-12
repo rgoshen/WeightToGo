@@ -113,6 +113,11 @@ public class MainActivity extends AppCompatActivity implements WeightEntryAdapte
         calculateQuickStats();
         updateGreeting();
         updateUserName();
+
+        // Check if we should show goal dialog (from GoalsActivity FAB)
+        if (getIntent().getBooleanExtra("SHOW_GOAL_DIALOG", false)) {
+            showSetGoalDialog();
+        }
     }
 
     /**
