@@ -8,6 +8,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.example.weighttogo.R;
 import com.example.weighttogo.database.WeighToGoDBHelper;
@@ -40,6 +41,7 @@ public class WeightEntryActivity extends AppCompatActivity {
     private static final String TAG = "WeightEntryActivity";
     private static final int MAX_DIGITS = 5;
     private static final String DECIMAL_POINT = ".";
+    private static final double LBS_TO_KG_CONVERSION = 0.453592;
 
     // =============================================================================================
     // INTENT EXTRAS CONSTANTS
@@ -116,6 +118,7 @@ public class WeightEntryActivity extends AppCompatActivity {
     private long userId;
     private boolean isEditMode;
     private long editWeightId;
+    private WeightEntry currentEntry;  // Cached entry for edit mode
     private LocalDate currentDate;
     private String currentUnit = "lbs";
     private StringBuilder weightInput;
@@ -291,6 +294,11 @@ public class WeightEntryActivity extends AppCompatActivity {
      * Navigate to previous day.
      */
     private void navigateToPreviousDay() {
+        if (currentDate == null) {
+            currentDate = LocalDate.now();
+            Log.w(TAG, "navigateToPreviousDay: currentDate was null, initialized to today");
+        }
+
         currentDate = currentDate.minusDays(1);
         updateDateDisplay(currentDate);
         Log.d(TAG, "navigateToPreviousDay: Moved to " + currentDate);
@@ -301,6 +309,13 @@ public class WeightEntryActivity extends AppCompatActivity {
      * Prevents moving beyond today's date.
      */
     private void navigateToNextDay() {
+        if (currentDate == null) {
+            currentDate = LocalDate.now();
+            Log.w(TAG, "navigateToNextDay: currentDate was null, initialized to today");
+            updateDateDisplay(currentDate);
+            return;
+        }
+
         LocalDate tomorrow = currentDate.plusDays(1);
         LocalDate today = LocalDate.now();
 
@@ -349,11 +364,17 @@ public class WeightEntryActivity extends AppCompatActivity {
     private void handleNumberInput(String digit) {
         String current = weightInput.toString();
 
-        // Prevent leading zeros (except "0.")
+        // Prevent leading zeros (except when typing "0.")
         if (current.equals("0") && !digit.equals("0")) {
             weightInput = new StringBuilder(digit);
-        } else if (current.length() < MAX_DIGITS + 1) {  // +1 for decimal point
-            weightInput.append(digit);
+        } else if (current.equals("0") && digit.equals("0")) {
+            return; // Don't allow multiple leading zeros
+        } else {
+            // Count digits only (excluding decimal point)
+            long digitCount = current.chars().filter(c -> c != '.').count();
+            if (digitCount < MAX_DIGITS) {
+                weightInput.append(digit);
+            }
         }
 
         updateWeightDisplay();
@@ -411,7 +432,15 @@ public class WeightEntryActivity extends AppCompatActivity {
      */
     private void adjustWeight(double amount) {
         String current = weightInput.toString();
-        double currentValue = current.isEmpty() ? 0.0 : Double.parseDouble(current);
+        double currentValue;
+
+        try {
+            currentValue = current.isEmpty() ? 0.0 : Double.parseDouble(current);
+        } catch (NumberFormatException e) {
+            Log.w(TAG, "adjustWeight: Invalid number format: " + current);
+            Toast.makeText(this, "Invalid weight format", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         double newValue = currentValue + amount;
 
@@ -439,8 +468,8 @@ public class WeightEntryActivity extends AppCompatActivity {
         unitLbs.setOnClickListener(v -> switchUnit("lbs"));
         unitKg.setOnClickListener(v -> switchUnit("kg"));
 
-        // Initialize unit display with current unit
-        switchUnit(currentUnit);
+        // Initialize unit display with current unit (without conversion)
+        updateUnitButtonUI();
 
         Log.d(TAG, "setupUnitToggleListeners: Unit toggle configured");
     }
@@ -459,14 +488,22 @@ public class WeightEntryActivity extends AppCompatActivity {
         // Convert weight value
         String current = weightInput.toString();
         if (!current.isEmpty() && !current.equals("0.0")) {
-            double value = Double.parseDouble(current);
+            double value;
+
+            try {
+                value = Double.parseDouble(current);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "switchUnit: Invalid number format: " + current);
+                Toast.makeText(this, "Invalid weight format", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             if (newUnit.equals("kg")) {
                 // lbs to kg
-                value = value * 0.453592;
+                value = value * LBS_TO_KG_CONVERSION;
             } else {
                 // kg to lbs
-                value = value / 0.453592;
+                value = value / LBS_TO_KG_CONVERSION;
             }
 
             weightInput = new StringBuilder(String.format("%.1f", value));
@@ -476,22 +513,32 @@ public class WeightEntryActivity extends AppCompatActivity {
 
         // Update UI
         updateWeightDisplay();
+        updateUnitButtonUI();
+
+        Log.d(TAG, "switchUnit: Switched to " + currentUnit + ", value = " + weightInput.toString());
+    }
+
+    /**
+     * Update unit toggle button UI without performing conversion.
+     * Sets button backgrounds and text colors based on currentUnit.
+     */
+    private void updateUnitButtonUI() {
         weightUnit.setText(currentUnit);
 
-        // Update button backgrounds
+        // Update button backgrounds and text colors
         if (currentUnit.equals("lbs")) {
             unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_active);
             unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitLbs.setTextColor(getResources().getColor(R.color.text_on_primary, null));
-            unitKg.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            unitLbs.setTextColor(ContextCompat.getColor(this, R.color.text_on_primary));
+            unitKg.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
         } else {
             unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_active);
             unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitKg.setTextColor(getResources().getColor(R.color.text_on_primary, null));
-            unitLbs.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            unitKg.setTextColor(ContextCompat.getColor(this, R.color.text_on_primary));
+            unitLbs.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
         }
 
-        Log.d(TAG, "switchUnit: Switched to " + currentUnit + ", value = " + weightInput.toString());
+        Log.d(TAG, "updateUnitButtonUI: UI updated for " + currentUnit);
     }
 
     // =============================================================================================
@@ -500,17 +547,18 @@ public class WeightEntryActivity extends AppCompatActivity {
 
     /**
      * Load existing entry data for edit mode.
+     * Caches the entry to avoid redundant database queries.
      */
     private void loadExistingEntry() {
-        WeightEntry entry = weightEntryDAO.getWeightEntryById(editWeightId);
+        currentEntry = weightEntryDAO.getWeightEntryById(editWeightId);
 
-        if (entry != null) {
-            weightInput = new StringBuilder(String.format("%.1f", entry.getWeightValue()));
-            currentUnit = entry.getWeightUnit();
-            currentDate = entry.getWeightDate();
+        if (currentEntry != null) {
+            weightInput = new StringBuilder(String.format("%.1f", currentEntry.getWeightValue()));
+            currentUnit = currentEntry.getWeightUnit();
+            currentDate = currentEntry.getWeightDate();
 
             updateWeightDisplay();
-            Log.d(TAG, "loadExistingEntry: Loaded entry " + editWeightId);
+            Log.d(TAG, "loadExistingEntry: Loaded and cached entry " + editWeightId);
         } else {
             Log.w(TAG, "loadExistingEntry: Entry not found for weightId=" + editWeightId);
         }
@@ -602,7 +650,15 @@ public class WeightEntryActivity extends AppCompatActivity {
             return;
         }
 
-        double weight = Double.parseDouble(weightStr);
+        double weight;
+
+        try {
+            weight = Double.parseDouble(weightStr);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Invalid weight format", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "handleSave: Invalid number format: " + weightStr);
+            return;
+        }
 
         // Validate range based on current unit
         double min = currentUnit.equals("lbs") ? 50.0 : 22.7;
@@ -657,24 +713,23 @@ public class WeightEntryActivity extends AppCompatActivity {
 
     /**
      * Update existing weight entry in database.
+     * Uses cached currentEntry to avoid redundant database query.
      *
      * @param weight the weight value to save
      */
     private void updateExistingEntry(double weight) {
-        WeightEntry entry = weightEntryDAO.getWeightEntryById(editWeightId);
-
-        if (entry == null) {
+        if (currentEntry == null) {
             Toast.makeText(this, "Entry not found", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "updateExistingEntry: Entry not found for weightId=" + editWeightId);
+            Log.e(TAG, "updateExistingEntry: Cached entry is null for weightId=" + editWeightId);
             return;
         }
 
-        entry.setWeightValue(weight);
-        entry.setWeightUnit(currentUnit);
-        entry.setWeightDate(currentDate);
-        entry.setUpdatedAt(LocalDateTime.now());
+        currentEntry.setWeightValue(weight);
+        currentEntry.setWeightUnit(currentUnit);
+        currentEntry.setWeightDate(currentDate);
+        currentEntry.setUpdatedAt(LocalDateTime.now());
 
-        int rowsUpdated = weightEntryDAO.updateWeightEntry(entry);
+        int rowsUpdated = weightEntryDAO.updateWeightEntry(currentEntry);
 
         if (rowsUpdated == 1) {
             Log.i(TAG, "updateExistingEntry: Successfully updated weight entry: " + editWeightId);
