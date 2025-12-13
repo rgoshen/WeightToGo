@@ -452,7 +452,7 @@ public class WeightEntryActivity extends AppCompatActivity {
         double max = currentUnit.equals("lbs") ? WeightUtils.MAX_WEIGHT_LBS : WeightUtils.MAX_WEIGHT_KG;
 
         if (newValue >= WeightUtils.MIN_WEIGHT && newValue <= max) {
-            weightInput = new StringBuilder(String.format("%.1f", newValue));
+            weightInput = new StringBuilder(WeightUtils.formatWeight(newValue));
             updateWeightDisplay();
             Log.d(TAG, "adjustWeight: Adjusted by " + amount + " to " + weightInput.toString());
         } else if (newValue < 0.0) {
@@ -516,7 +516,7 @@ public class WeightEntryActivity extends AppCompatActivity {
                 value = WeightUtils.convertKgToLbs(value);
             }
 
-            weightInput = new StringBuilder(String.format("%.1f", value));
+            weightInput = new StringBuilder(WeightUtils.formatWeight(value));
         }
 
         currentUnit = newUnit;
