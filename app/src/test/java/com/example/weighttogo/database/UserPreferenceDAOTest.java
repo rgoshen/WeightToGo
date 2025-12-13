@@ -160,4 +160,20 @@ public class UserPreferenceDAOTest {
                 .count();
         assertEquals("Should only have one 'theme' preference", 1L, themeCount);
     }
+
+    /**
+     * Test 5: GET weight unit with no preference returns default "lbs".
+     *
+     * Tests FR6.0.1 - Weight unit convenience method.
+     * Verifies that getWeightUnit() returns "lbs" as the default
+     * when no weight_unit preference exists.
+     */
+    @Test
+    public void test_getWeightUnit_withNoPreference_returnsDefaultLbs() {
+        // ACT
+        String unit = userPreferenceDAO.getWeightUnit(testUserId);
+
+        // ASSERT
+        assertEquals("Should default to lbs", "lbs", unit);
+    }
 }
