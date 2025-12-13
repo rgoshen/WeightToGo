@@ -94,7 +94,7 @@ public class SettingsActivity extends AppCompatActivity {
             currentUnit = unit;
             updateUnitButtonUI();
             Toast.makeText(this,
-                    String.format("Weight unit updated to %s", unit),
+                    getString(R.string.weight_unit_updated, unit),
                     Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this,

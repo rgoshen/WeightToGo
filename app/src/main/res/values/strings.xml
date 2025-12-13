@@ -112,6 +112,8 @@
     <!-- Weight Preferences -->
     <string name="weight_preferences_title">Weight Preferences</string>
     <string name="weight_unit_label">Default weight unit for new entries</string>
+    <string name="weight_unit_description">Choose your preferred unit for weight tracking</string>
+    <string name="weight_unit_updated">Weight unit updated to %s</string>
 
     <!-- SMS/Notifications Screen -->
     <string name="sms_notifications_title">SMS Notifications</string>
