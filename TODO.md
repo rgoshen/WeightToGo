@@ -1120,33 +1120,36 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - [x] Verify all tests still pass
   - [x] Committed: 6 commits (3 tests + 2 implementations + 1 refactor)
 
-- [ ] 0.2 DRY Violations Audit
-  - [ ] Search for duplicate code patterns across activities
-  - [ ] Search for duplicate validation logic
-  - [ ] Search for duplicate formatting logic
-  - [ ] Identify candidates for utility method extraction
-  - [ ] Document findings in code review notes
+- [x] 0.2 DRY Violations Audit ✅ COMPLETED
+  - [x] Search for duplicate code patterns across activities
+  - [x] Search for duplicate validation logic
+  - [x] Search for duplicate formatting logic
+  - [x] Identify candidates for utility method extraction
+  - [x] Document findings in code review notes
 
-- [ ] 0.3 SOLID Principles Audit
-  - [ ] Single Responsibility: Review classes with multiple responsibilities
-  - [ ] Open/Closed: Identify hard-coded values that should be configurable
-  - [ ] Liskov Substitution: Check inheritance hierarchies (if any)
-  - [ ] Interface Segregation: Review large interfaces (if any)
-  - [ ] Dependency Inversion: Check for tight coupling to concrete classes
-  - [ ] Document findings and prioritize fixes
+- [x] 0.3 SOLID Principles Audit ✅ COMPLETED
+  - [x] Single Responsibility: Review classes with multiple responsibilities
+  - [x] Open/Closed: Identify hard-coded values that should be configurable
+  - [x] Liskov Substitution: Check inheritance hierarchies (if any)
+  - [x] Interface Segregation: Review large interfaces (if any)
+  - [x] Dependency Inversion: Check for tight coupling to concrete classes
+  - [x] Document findings and prioritize fixes
 
-- [ ] 0.4 Implement Priority Fixes
-  - [ ] Address critical DRY violations found in 0.2
-  - [ ] Address critical SOLID violations found in 0.3
-  - [ ] Write tests for each refactoring
-  - [ ] Run full test suite after each fix
-  - [ ] Commit: `refactor: fix DRY/SOLID violations (Phase 6.0.0)`
+- [x] 0.4 Implement Priority Fixes ✅ COMPLETED
+  - [x] Address critical DRY violations found in 0.2
+    - [x] Weight conversion duplication (GoalDialogFragment): 18 lines → 1 line
+    - [x] Weight formatting duplication (7 files, 21 callsites): centralized to WeightUtils
+    - [x] Null checking duplication (4 files, 12 callsites): centralized to ValidationUtils
+  - [x] Address critical SOLID violations found in 0.3
+  - [x] Write tests for each refactoring (added 9 new tests)
+  - [x] Run full test suite after each fix (28 commits, all passing)
+  - [x] Committed: 28 commits total (Red-Green-Refactor cycle)
 
-- [ ] 0.5 Code Quality Validation
-  - [ ] Run ./gradlew test (expect all tests passing)
-  - [ ] Run ./gradlew lint (expect clean)
-  - [ ] Update project_summary.md with refactoring notes
-  - [ ] Commit: `docs: document Phase 6.0.0 code quality improvements`
+- [x] 0.5 Code Quality Validation ✅ COMPLETED
+  - [x] Run ./gradlew test (all 279 tests passing)
+  - [x] Run ./gradlew lint (clean - 0 errors, 0 warnings)
+  - [x] Update project_summary.md with refactoring notes
+  - [x] Commit: `docs: document Phase 6.0.0 code quality improvements`
 
 #### 6.0.1: Create UserPreferenceDAO (TDD) 📝
 - [ ] 1.1 Write 10 failing tests for UserPreferenceDAO
