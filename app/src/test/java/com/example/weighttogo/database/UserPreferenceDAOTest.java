@@ -176,4 +176,53 @@ public class UserPreferenceDAOTest {
         // ASSERT
         assertEquals("Should default to lbs", "lbs", unit);
     }
+
+    /**
+     * Test 6: SET weight unit "lbs" returns true.
+     *
+     * Tests FR6.0.1 - Weight unit validation.
+     * Verifies that setWeightUnit() accepts "lbs" as a valid unit.
+     */
+    @Test
+    public void test_setWeightUnit_withValidLbs_returnsTrue() {
+        // ACT
+        boolean result = userPreferenceDAO.setWeightUnit(testUserId, "lbs");
+
+        // ASSERT
+        assertTrue("Should accept 'lbs' as valid unit", result);
+    }
+
+    /**
+     * Test 7: SET weight unit "kg" returns true.
+     *
+     * Tests FR6.0.1 - Weight unit validation.
+     * Verifies that setWeightUnit() accepts "kg" as a valid unit.
+     */
+    @Test
+    public void test_setWeightUnit_withValidKg_returnsTrue() {
+        // ACT
+        boolean result = userPreferenceDAO.setWeightUnit(testUserId, "kg");
+
+        // ASSERT
+        assertTrue("Should accept 'kg' as valid unit", result);
+    }
+
+    /**
+     * Test 8: SET weight unit with invalid value returns false.
+     *
+     * Tests FR6.0.1 - Weight unit validation.
+     * Verifies that setWeightUnit() rejects invalid units (case-sensitive).
+     * Only "lbs" and "kg" should be accepted.
+     */
+    @Test
+    public void test_setWeightUnit_withInvalidUnit_returnsFalse() {
+        // ARRANGE
+        String[] invalidUnits = {"pounds", "kilograms", "LBS", "KG", "grams", ""};
+
+        // ACT & ASSERT
+        for (String invalidUnit : invalidUnits) {
+            boolean result = userPreferenceDAO.setWeightUnit(testUserId, invalidUnit);
+            assertFalse("Should reject invalid unit: " + invalidUnit, result);
+        }
+    }
 }
