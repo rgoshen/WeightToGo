@@ -225,4 +225,60 @@ public class UserPreferenceDAOTest {
             assertFalse("Should reject invalid unit: " + invalidUnit, result);
         }
     }
+
+    /**
+     * Test 9: SET weight unit then GET returns correct unit.
+     *
+     * Tests FR6.0.1 - Weight unit round-trip functionality.
+     * Verifies that a weight unit set with setWeightUnit() can be
+     * retrieved correctly with getWeightUnit().
+     */
+    @Test
+    public void test_setWeightUnit_thenGet_returnsCorrectUnit() {
+        // ARRANGE
+        userPreferenceDAO.setWeightUnit(testUserId, "kg");
+
+        // ACT
+        String unit = userPreferenceDAO.getWeightUnit(testUserId);
+
+        // ASSERT
+        assertEquals("Should return stored unit", "kg", unit);
+    }
+
+    /**
+     * Test 10: GET preference isolates data by user.
+     *
+     * Tests FR6.0.1 - Multi-user data isolation.
+     * Verifies that preferences are isolated per user - different users
+     * can have different values for the same preference key.
+     */
+    @Test
+    public void test_getPreference_withMultipleUsers_isolatesData() {
+        // ARRANGE - Create second user
+        User user2 = createTestUser("user2");
+        long user2Id = 0;
+        try {
+            user2Id = userDAO.insertUser(user2);
+
+            // Set different preferences for each user
+            userPreferenceDAO.setWeightUnit(testUserId, "lbs");
+            userPreferenceDAO.setWeightUnit(user2Id, "kg");
+
+            // ACT
+            String user1Unit = userPreferenceDAO.getWeightUnit(testUserId);
+            String user2Unit = userPreferenceDAO.getWeightUnit(user2Id);
+
+            // ASSERT
+            assertEquals("User 1 should have lbs", "lbs", user1Unit);
+            assertEquals("User 2 should have kg", "kg", user2Unit);
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException("Failed to create second test user", e);
+        } finally {
+            // Cleanup
+            if (user2Id > 0) {
+                userDAO.deleteUser(user2Id);
+            }
+        }
+    }
 }
