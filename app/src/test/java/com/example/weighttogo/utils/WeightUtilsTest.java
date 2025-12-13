@@ -144,4 +144,21 @@ public class WeightUtilsTest {
         assertEquals("68 kg to kg should return 68.0",
                 weightKg, resultKg, DELTA);
     }
+
+    /**
+     * Test 8: Convert pounds to kilograms
+     */
+    @Test
+    public void test_convertBetweenUnits_withLbsToKg_returnsCorrectValue() {
+        // ARRANGE
+        double weightLbs = 150.0;
+        double expectedKg = 68.0; // 150 * 0.453592 ≈ 68.0
+
+        // ACT
+        double actualKg = WeightUtils.convertBetweenUnits(weightLbs, "lbs", "kg");
+
+        // ASSERT
+        assertEquals("150 lbs should convert to approximately 68.0 kg",
+                expectedKg, actualKg, DELTA);
+    }
 }
