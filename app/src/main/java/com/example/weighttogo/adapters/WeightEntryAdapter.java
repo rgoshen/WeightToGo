@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * RecyclerView adapter for displaying weight entry items.
@@ -113,7 +114,7 @@ public class WeightEntryAdapter extends RecyclerView.Adapter<WeightEntryAdapter.
 
         if (parts.length == 2) {
             holder.dayNumber.setText(parts[0]); // "26"
-            holder.monthName.setText(parts[1].toUpperCase()); // "NOV"
+            holder.monthName.setText(parts[1].toUpperCase(Locale.US)); // "NOV"
         }
     }
 
