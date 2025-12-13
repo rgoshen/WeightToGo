@@ -240,4 +240,24 @@ public class WeightUtilsTest {
         assertEquals("0.0 should format to '0.0'",
                 "0.0", result3);
     }
+
+    /**
+     * Test 13: Format weight with unit
+     */
+    @Test
+    public void test_formatWeightWithUnit_withValidValues_returnsFormattedString() {
+        // ARRANGE
+        double weightLbs = 150.0;
+        double weightKg = 68.0;
+
+        // ACT
+        String resultLbs = WeightUtils.formatWeightWithUnit(weightLbs, "lbs");
+        String resultKg = WeightUtils.formatWeightWithUnit(weightKg, "kg");
+
+        // ASSERT
+        assertEquals("150.0 lbs should format to '150.0 lbs'",
+                "150.0 lbs", resultLbs);
+        assertEquals("68.0 kg should format to '68.0 kg'",
+                "68.0 kg", resultKg);
+    }
 }
