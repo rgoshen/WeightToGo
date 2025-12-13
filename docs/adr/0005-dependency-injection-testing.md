@@ -187,6 +187,10 @@ public void testWithStaticMocks() {
 
 **Migration effort**: Low to Medium. Setter injection prepares architecture for Dagger/Hilt by making dependencies explicit.
 
+## Testing Strategy
+
+For detailed testing guidelines including when to use mocks vs real database, dependency injection patterns, and mock stubbing best practices, see **CONTRIBUTING.md § Testing Strategy**.
+
 ## References
 
 - [Mockito Documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html)
@@ -194,6 +198,7 @@ public void testWithStaticMocks() {
 - [Android Testing Best Practices](https://developer.android.com/training/testing)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [Dependency Injection Patterns](https://martinfowler.com/articles/injection.html)
+- **CONTRIBUTING.md** - Testing Strategy section
 
 ## Related ADRs
 

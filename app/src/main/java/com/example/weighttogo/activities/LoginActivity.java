@@ -140,8 +140,12 @@ public class LoginActivity extends AppCompatActivity {
      * Allows test code to inject mock DAOs.
      *
      * @param userDAO the UserDAO instance to use
+     * @throws IllegalArgumentException if userDAO is null
      */
     void setUserDAO(UserDAO userDAO) {
+        if (userDAO == null) {
+            throw new IllegalArgumentException("UserDAO cannot be null");
+        }
         this.userDAO = userDAO;
     }
 
@@ -150,8 +154,12 @@ public class LoginActivity extends AppCompatActivity {
      * Allows test code to inject mock SessionManager.
      *
      * @param sessionManager the SessionManager instance to use
+     * @throws IllegalArgumentException if sessionManager is null
      */
     void setSessionManager(SessionManager sessionManager) {
+        if (sessionManager == null) {
+            throw new IllegalArgumentException("SessionManager cannot be null");
+        }
         this.sessionManager = sessionManager;
     }
 

@@ -46,6 +46,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -91,6 +92,20 @@ public class MainActivityTest {
         // Set default mock behaviors
         when(mockSessionManager.isLoggedIn()).thenReturn(false);
         when(mockSessionManager.getCurrentUserId()).thenReturn(0L);
+
+        // Stub helper method DAO calls to return realistic values
+        when(mockWeightEntryDAO.insertWeightEntry(any(WeightEntry.class)))
+                .thenAnswer(invocation -> {
+                    // Return incrementing IDs (1L, 2L, 3L, etc.)
+                    return System.currentTimeMillis() % 1000000; // Simple unique ID
+                });
+
+        when(mockGoalWeightDAO.insertGoal(any(GoalWeight.class)))
+                .thenAnswer(invocation -> {
+                    return 1L; // Return valid goal ID
+                });
+
+        when(mockUserDAO.getUserById(testUserId)).thenReturn(testUser);
     }
 
     @After

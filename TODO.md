@@ -1655,7 +1655,7 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - OnItemClickListener (WeightEntryAdapter)
   - GoalDialogListener (GoalDialogFragment)
   - Interfaces allow behavior extension without modification
-
+    
 - ✅ **Interface Segregation**: Interfaces are small (1-2 methods each)
   - No "fat interfaces" requiring unnecessary implementations
 

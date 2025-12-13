@@ -242,29 +242,53 @@ public class WeightEntryActivity extends AppCompatActivity {
 
     /**
      * Set WeightEntryDAO instance (for testing only).
+     *
+     * @param weightEntryDAO the WeightEntryDAO instance to use
+     * @throws IllegalArgumentException if weightEntryDAO is null
      */
     void setWeightEntryDAO(WeightEntryDAO weightEntryDAO) {
+        if (weightEntryDAO == null) {
+            throw new IllegalArgumentException("WeightEntryDAO cannot be null");
+        }
         this.weightEntryDAO = weightEntryDAO;
     }
 
     /**
      * Set UserPreferenceDAO instance (for testing only).
+     *
+     * @param userPreferenceDAO the UserPreferenceDAO instance to use
+     * @throws IllegalArgumentException if userPreferenceDAO is null
      */
     void setUserPreferenceDAO(UserPreferenceDAO userPreferenceDAO) {
+        if (userPreferenceDAO == null) {
+            throw new IllegalArgumentException("UserPreferenceDAO cannot be null");
+        }
         this.userPreferenceDAO = userPreferenceDAO;
     }
 
     /**
      * Set AchievementManager instance (for testing only).
+     *
+     * @param achievementManager the AchievementManager instance to use
+     * @throws IllegalArgumentException if achievementManager is null
      */
     void setAchievementManager(AchievementManager achievementManager) {
+        if (achievementManager == null) {
+            throw new IllegalArgumentException("AchievementManager cannot be null");
+        }
         this.achievementManager = achievementManager;
     }
 
     /**
      * Set SMSNotificationManager instance (for testing only).
+     *
+     * @param smsManager the SMSNotificationManager instance to use
+     * @throws IllegalArgumentException if smsManager is null
      */
     void setSMSNotificationManager(SMSNotificationManager smsManager) {
+        if (smsManager == null) {
+            throw new IllegalArgumentException("SMSNotificationManager cannot be null");
+        }
         this.smsManager = smsManager;
     }
 

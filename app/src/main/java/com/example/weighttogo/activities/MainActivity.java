@@ -173,36 +173,66 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * Set UserDAO instance (for testing only).
+     *
+     * @param userDAO the UserDAO instance to use
+     * @throws IllegalArgumentException if userDAO is null
      */
     void setUserDAO(UserDAO userDAO) {
+        if (userDAO == null) {
+            throw new IllegalArgumentException("UserDAO cannot be null");
+        }
         this.userDAO = userDAO;
     }
 
     /**
      * Set WeightEntryDAO instance (for testing only).
+     *
+     * @param weightEntryDAO the WeightEntryDAO instance to use
+     * @throws IllegalArgumentException if weightEntryDAO is null
      */
     void setWeightEntryDAO(WeightEntryDAO weightEntryDAO) {
+        if (weightEntryDAO == null) {
+            throw new IllegalArgumentException("WeightEntryDAO cannot be null");
+        }
         this.weightEntryDAO = weightEntryDAO;
     }
 
     /**
      * Set GoalWeightDAO instance (for testing only).
+     *
+     * @param goalWeightDAO the GoalWeightDAO instance to use
+     * @throws IllegalArgumentException if goalWeightDAO is null
      */
     void setGoalWeightDAO(GoalWeightDAO goalWeightDAO) {
+        if (goalWeightDAO == null) {
+            throw new IllegalArgumentException("GoalWeightDAO cannot be null");
+        }
         this.goalWeightDAO = goalWeightDAO;
     }
 
     /**
      * Set SessionManager instance (for testing only).
+     *
+     * @param sessionManager the SessionManager instance to use
+     * @throws IllegalArgumentException if sessionManager is null
      */
     void setSessionManager(SessionManager sessionManager) {
+        if (sessionManager == null) {
+            throw new IllegalArgumentException("SessionManager cannot be null");
+        }
         this.sessionManager = sessionManager;
     }
 
     /**
      * Set DBHelper instance (for testing only).
+     *
+     * @param dbHelper the WeighToGoDBHelper instance to use
+     * @throws IllegalArgumentException if dbHelper is null
      */
     void setDbHelper(WeighToGoDBHelper dbHelper) {
+        if (dbHelper == null) {
+            throw new IllegalArgumentException("DBHelper cannot be null");
+        }
         this.dbHelper = dbHelper;
     }
 
