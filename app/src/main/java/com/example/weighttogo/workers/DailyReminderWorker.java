@@ -65,10 +65,10 @@ public class DailyReminderWorker extends Worker {
 
         Log.d(TAG, "doWork: Daily reminder worker started");
 
-        // Get current user ID from SessionManager
-        long userId = SessionManager.getInstance(context).getCurrentUserId();
+        // Get user ID from input data (thread-safe, passed from SettingsActivity)
+        long userId = getInputData().getLong("USER_ID", -1);
         if (userId == -1) {
-            Log.d(TAG, "doWork: No logged in user, skipping reminder");
+            Log.d(TAG, "doWork: No user ID provided, skipping reminder");
             return Result.success();
         }
 

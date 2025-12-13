@@ -69,11 +69,11 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText phoneNumberInput;
 
     // UI Elements - SMS Preferences
-    private SwitchCompat masterToggle;
-    private SwitchCompat goalAlertsToggle;
-    private SwitchCompat milestoneAlertsToggle;
-    private SwitchCompat reminderToggle;
-    private Button testMessageButton;
+    private SwitchCompat switchEnableSms;
+    private SwitchCompat switchGoalAlerts;
+    private SwitchCompat switchMilestoneAlerts;
+    private SwitchCompat switchDailyReminders;
+    private Button sendTestMessageButton;
 
     // Permission Launcher
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -104,10 +104,10 @@ public class SettingsActivity extends AppCompatActivity {
         // Load current preferences
         loadCurrentPreference();
 
-        // Load SMS-related preferences (stub until UI implemented)
-        // loadPhoneNumber();
-        // loadSmsPreferences();
-        // checkPermissions();
+        // Load SMS-related preferences
+        loadPhoneNumber();
+        loadSmsPreferences();
+        checkPermissions();
 
         // Setup click listeners last
         setupClickListeners();
@@ -133,10 +133,15 @@ public class SettingsActivity extends AppCompatActivity {
         unitLbs = findViewById(R.id.unitLbs);
         unitKg = findViewById(R.id.unitKg);
 
-        // SMS UI elements - will be null if layout not updated yet
-        // This is expected during development - SMS features will be fully functional
-        // once activity_settings.xml is updated with SMS UI components
-        Log.d(TAG, "initViews: Note - SMS UI elements stub (layout update pending)");
+        // SMS UI elements
+        permissionStatusBadge = findViewById(R.id.permissionStatusBadge);
+        grantPermissionButton = findViewById(R.id.grantPermissionButton);
+        phoneNumberInput = findViewById(R.id.phoneNumberInput);
+        switchEnableSms = findViewById(R.id.switchEnableSms);
+        switchGoalAlerts = findViewById(R.id.switchGoalAlerts);
+        switchMilestoneAlerts = findViewById(R.id.switchMilestoneAlerts);
+        switchDailyReminders = findViewById(R.id.switchDailyReminders);
+        sendTestMessageButton = findViewById(R.id.sendTestMessageButton);
     }
 
     /**
@@ -159,34 +164,34 @@ public class SettingsActivity extends AppCompatActivity {
         unitLbs.setOnClickListener(v -> saveWeightUnit("lbs"));
         unitKg.setOnClickListener(v -> saveWeightUnit("kg"));
 
-        // SMS click listeners (stub until UI implemented)
-        // if (grantPermissionButton != null) {
-        //     grantPermissionButton.setOnClickListener(v -> requestPermissions());
-        // }
-        // if (phoneNumberInput != null) {
-        //     phoneNumberInput.setOnEditorActionListener((v, actionId, event) -> {
-        //         if (actionId == EditorInfo.IME_ACTION_DONE) {
-        //             handleSavePhone();
-        //             return true;
-        //         }
-        //         return false;
-        //     });
-        // }
-        // if (masterToggle != null) {
-        //     masterToggle.setOnCheckedChangeListener((buttonView, isChecked) -> handleMasterToggle(isChecked));
-        // }
-        // if (goalAlertsToggle != null) {
-        //     goalAlertsToggle.setOnCheckedChangeListener((buttonView, isChecked) -> handleGoalAlertsToggle(isChecked));
-        // }
-        // if (milestoneAlertsToggle != null) {
-        //     milestoneAlertsToggle.setOnCheckedChangeListener((buttonView, isChecked) -> handleMilestoneAlertsToggle(isChecked));
-        // }
-        // if (reminderToggle != null) {
-        //     reminderToggle.setOnCheckedChangeListener((buttonView, isChecked) -> handleReminderToggle(isChecked));
-        // }
-        // if (testMessageButton != null) {
-        //     testMessageButton.setOnClickListener(v -> handleSendTestMessage());
-        // }
+        // SMS click listeners
+        if (grantPermissionButton != null) {
+            grantPermissionButton.setOnClickListener(v -> requestPermissions());
+        }
+        if (phoneNumberInput != null) {
+            phoneNumberInput.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    handleSavePhone();
+                    return true;
+                }
+                return false;
+            });
+        }
+        if (switchEnableSms != null) {
+            switchEnableSms.setOnCheckedChangeListener((buttonView, isChecked) -> handleMasterToggle(isChecked));
+        }
+        if (switchGoalAlerts != null) {
+            switchGoalAlerts.setOnCheckedChangeListener((buttonView, isChecked) -> handleGoalAlertsToggle(isChecked));
+        }
+        if (switchMilestoneAlerts != null) {
+            switchMilestoneAlerts.setOnCheckedChangeListener((buttonView, isChecked) -> handleMilestoneAlertsToggle(isChecked));
+        }
+        if (switchDailyReminders != null) {
+            switchDailyReminders.setOnCheckedChangeListener((buttonView, isChecked) -> handleReminderToggle(isChecked));
+        }
+        if (sendTestMessageButton != null) {
+            sendTestMessageButton.setOnClickListener(v -> handleSendTestMessage());
+        }
     }
 
     /**
@@ -279,7 +284,7 @@ public class SettingsActivity extends AppCompatActivity {
      * @param status "granted", "required", or "denied"
      */
     private void updatePermissionUI(String status) {
-        if (permissionStatusBadge == null || grantPermissionButton == null || masterToggle == null) {
+        if (permissionStatusBadge == null || grantPermissionButton == null || switchEnableSms == null) {
             Log.d(TAG, "updatePermissionUI: UI elements not initialized (stub)");
             return;
         }
@@ -291,8 +296,8 @@ public class SettingsActivity extends AppCompatActivity {
             grantPermissionButton.setVisibility(android.view.View.GONE);
 
             // Enable SMS toggles
-            masterToggle.setEnabled(true);
-            updateSmsTogglesEnabled(masterToggle.isChecked());
+            switchEnableSms.setEnabled(true);
+            updateSmsTogglesEnabled(switchEnableSms.isChecked());
 
         } else {
             permissionStatusBadge.setText(R.string.permission_required);
@@ -301,7 +306,7 @@ public class SettingsActivity extends AppCompatActivity {
             grantPermissionButton.setVisibility(android.view.View.VISIBLE);
 
             // Disable SMS toggles
-            masterToggle.setEnabled(false);
+            switchEnableSms.setEnabled(false);
             updateSmsTogglesEnabled(false);
         }
     }
@@ -310,14 +315,14 @@ public class SettingsActivity extends AppCompatActivity {
      * Enable/disable SMS child toggles based on master toggle state.
      */
     private void updateSmsTogglesEnabled(boolean enabled) {
-        if (goalAlertsToggle != null) {
-            goalAlertsToggle.setEnabled(enabled);
+        if (switchGoalAlerts != null) {
+            switchGoalAlerts.setEnabled(enabled);
         }
-        if (milestoneAlertsToggle != null) {
-            milestoneAlertsToggle.setEnabled(enabled);
+        if (switchMilestoneAlerts != null) {
+            switchMilestoneAlerts.setEnabled(enabled);
         }
-        if (reminderToggle != null) {
-            reminderToggle.setEnabled(enabled);
+        if (switchDailyReminders != null) {
+            switchDailyReminders.setEnabled(enabled);
         }
     }
 
@@ -424,8 +429,8 @@ public class SettingsActivity extends AppCompatActivity {
      * Load SMS preferences from database.
      */
     private void loadSmsPreferences() {
-        if (masterToggle == null || goalAlertsToggle == null ||
-                milestoneAlertsToggle == null || reminderToggle == null) {
+        if (switchEnableSms == null || switchGoalAlerts == null ||
+                switchMilestoneAlerts == null || switchDailyReminders == null) {
             Log.d(TAG, "loadSmsPreferences: SMS toggles not initialized (stub)");
             return;
         }
@@ -434,22 +439,22 @@ public class SettingsActivity extends AppCompatActivity {
 
         String smsEnabled = userPreferenceDAO.getPreference(userId,
                 SMSNotificationManager.KEY_SMS_ENABLED, "false");
-        masterToggle.setChecked("true".equals(smsEnabled));
+        switchEnableSms.setChecked("true".equals(smsEnabled));
 
         String goalAlerts = userPreferenceDAO.getPreference(userId,
                 SMSNotificationManager.KEY_GOAL_ALERTS, "true");
-        goalAlertsToggle.setChecked("true".equals(goalAlerts));
+        switchGoalAlerts.setChecked("true".equals(goalAlerts));
 
         String milestoneAlerts = userPreferenceDAO.getPreference(userId,
                 SMSNotificationManager.KEY_MILESTONE_ALERTS, "true");
-        milestoneAlertsToggle.setChecked("true".equals(milestoneAlerts));
+        switchMilestoneAlerts.setChecked("true".equals(milestoneAlerts));
 
         String reminderEnabled = userPreferenceDAO.getPreference(userId,
                 SMSNotificationManager.KEY_REMINDER_ENABLED, "false");
-        reminderToggle.setChecked("true".equals(reminderEnabled));
+        switchDailyReminders.setChecked("true".equals(reminderEnabled));
 
         // Update child toggle enabled state based on master
-        updateSmsTogglesEnabled(masterToggle.isChecked());
+        updateSmsTogglesEnabled(switchEnableSms.isChecked());
     }
 
     /**
@@ -524,10 +529,19 @@ public class SettingsActivity extends AppCompatActivity {
      * Runs every 24 hours at 9:00 AM.
      *
      * Phase 7.6 - Commit 28: Daily Reminder Scheduling
+     * Fixed: Pass userId via WorkManager Data to avoid thread safety issues
      */
     private void scheduleDailyReminder() {
         // Cancel existing work first
         WorkManager.getInstance(this).cancelUniqueWork("daily_reminder");
+
+        // Get current user ID from SessionManager (safe on UI thread)
+        long userId = SessionManager.getInstance(this).getCurrentUserId();
+
+        // Pass userId to worker via input data (thread-safe)
+        androidx.work.Data inputData = new androidx.work.Data.Builder()
+                .putLong("USER_ID", userId)
+                .build();
 
         // Create constraints (requires battery not low)
         Constraints constraints = new Constraints.Builder()
@@ -545,6 +559,7 @@ public class SettingsActivity extends AppCompatActivity {
         )
         .setConstraints(constraints)
         .setInitialDelay(initialDelayMillis, TimeUnit.MILLISECONDS)
+        .setInputData(inputData)
         .build();
 
         // Enqueue work
@@ -554,8 +569,8 @@ public class SettingsActivity extends AppCompatActivity {
                 reminderWork
         );
 
-        Log.i(TAG, "scheduleDailyReminder: Daily reminder scheduled with " +
-                initialDelayMillis / 1000 / 60 + " minutes initial delay");
+        Log.i(TAG, "scheduleDailyReminder: Daily reminder scheduled for user " + userId +
+                " with " + initialDelayMillis / 1000 / 60 + " minutes initial delay");
     }
 
     /**
