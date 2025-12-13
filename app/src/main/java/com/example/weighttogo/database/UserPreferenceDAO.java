@@ -7,9 +7,12 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.weighttogo.models.UserPreference;
 import com.example.weighttogo.utils.DateTimeConverter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Data Access Object for user_preferences table.
@@ -107,5 +110,57 @@ public class UserPreferenceDAO {
         }
 
         return false;
+    }
+
+    /**
+     * Gets all preferences for a user (package-private for testing).
+     * Used by tests to verify UPSERT behavior (no duplicate keys).
+     *
+     * @param userId the user ID
+     * @return list of all preferences for the user (never null)
+     */
+    @NonNull
+    List<UserPreference> getAllPreferences(long userId) {
+        Log.d(TAG, "getAllPreferences: user_id=" + userId);
+
+        List<UserPreference> preferences = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        try (Cursor cursor = db.query(
+                WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                null,
+                "user_id = ?",
+                new String[]{String.valueOf(userId)},
+                null, null, null
+        )) {
+            while (cursor != null && cursor.moveToNext()) {
+                preferences.add(mapCursorToUserPreference(cursor));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "getAllPreferences: Exception", e);
+        }
+
+        return preferences;
+    }
+
+    /**
+     * Maps a database cursor to a UserPreference object.
+     *
+     * @param cursor the cursor positioned at a row
+     * @return UserPreference object with data from cursor
+     */
+    private UserPreference mapCursorToUserPreference(@NonNull Cursor cursor) {
+        UserPreference pref = new UserPreference();
+        pref.setPreferenceId(cursor.getLong(cursor.getColumnIndexOrThrow("preference_id")));
+        pref.setUserId(cursor.getLong(cursor.getColumnIndexOrThrow("user_id")));
+        pref.setPrefKey(cursor.getString(cursor.getColumnIndexOrThrow("pref_key")));
+        pref.setPrefValue(cursor.getString(cursor.getColumnIndexOrThrow("pref_value")));
+
+        String createdStr = cursor.getString(cursor.getColumnIndexOrThrow("created_at"));
+        String updatedStr = cursor.getString(cursor.getColumnIndexOrThrow("updated_at"));
+        pref.setCreatedAt(DateTimeConverter.fromTimestamp(createdStr));
+        pref.setUpdatedAt(DateTimeConverter.fromTimestamp(updatedStr));
+
+        return pref;
     }
 }
