@@ -1917,6 +1917,11 @@ public class WeightUnitPreferenceIntegrationTest {
 - [ ] MVC architecture compliance verified
 - [ ] Merge to main branch
 
+### 8.14 Other Code Quality Checks
+- [ ] Inconsistent null annotations
+- [ ] Excessive logging (performance + PII risk)
+- [ ] Look for test coverage gaps (edge cases, concurrency)
+
 ---
 
 ## Phase 9: Final Testing
