@@ -1440,15 +1440,17 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 - **Testing:** Build PASSED (prevents runtime crash)
 
 **Additional Enhancements Identified (Deferred):**
-- [ ] Issue #3: SMS Rate Limiting (Enhancement)
+- [ ] Issue #3: SMS Rate Limiting (Enhancement) → **GitHub Issue #20**
   - Current: `sendAchievementBatch()` sends all SMS immediately
   - Risk: Multiple rapid SMS could spam user, trigger carrier filters
   - Recommendation: Limit to most significant achievement or add delays
   - Status: **DEFERRED** to Phase 8 (low priority, not blocking)
-- [ ] Issue #4: Hard-Coded Reminder Time (Enhancement)
+  - GitHub: https://github.com/rgoshen/WeightToGo/issues/20
+- [ ] Issue #4: Hard-Coded Reminder Time (Enhancement) → **GitHub Issue #21**
   - Current: 9:00 AM hard-coded in SettingsActivity.calculateInitialDelay()
   - Recommendation: User-configurable reminder time preference
   - Status: **DEFERRED** to future phase (nice-to-have, not blocking)
+  - GitHub: https://github.com/rgoshen/WeightToGo/issues/21
 
 **Validation:**
 - [x] Build: PASSED (343 tests, 3 expected Robolectric failures) ✅
