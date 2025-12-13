@@ -1181,41 +1181,41 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - [x] Update project_summary.md with implementation notes (✅ Committed: 02e9c43)
 - [x] 1.5 Push branch: `git push -u origin feature/FR6.0.1-user-preference-dao` ✅
 
-#### 6.0.2: Refactor WeightEntryActivity 📝
-- [ ] 2.1 Write 3 integration tests (RED)
-  - [ ] test_onCreate_loadsGlobalWeightUnit
-  - [ ] test_onCreate_withUserPreferringKg_initializesKgUnit
-  - [ ] test_onCreate_withNoPreference_defaultsToLbs
-- [ ] 2.2 Remove unit toggle from WeightEntryActivity (GREEN)
-  - [ ] Remove unitLbs and unitKg TextView fields
-  - [ ] Remove setupUnitToggleListeners() method
-  - [ ] Remove switchUnit() method (lines 493-529)
-  - [ ] Remove updateUnitButtonUI() method (lines 535-552)
-  - [ ] Add UserPreferenceDAO field
-  - [ ] Load unit from UserPreferenceDAO in onCreate()
-  - [ ] Keep weightUnit TextView as read-only display
-- [ ] 2.3 Update activity_weight_entry.xml
-  - [ ] Remove unitLbs and unitKg TextViews (lines 317-350)
-  - [ ] Adjust layout spacing
-- [ ] 2.4 Commit: `test: add WeightEntryActivity preference integration tests`
-- [ ] 2.5 Commit: `refactor: use global weight unit preference in WeightEntryActivity`
+#### 6.0.2: Refactor WeightEntryActivity ✅
+- [x] 2.1 Write 3 integration tests (RED) ✅
+  - [x] test_onCreate_loadsGlobalWeightUnit (✅ Committed: b2ecead)
+  - [x] test_onCreate_withUserPreferringKg_initializesKgUnit (✅ Committed: b2ecead)
+  - [x] test_onCreate_withNoPreference_defaultsToLbs (✅ Committed: b2ecead)
+- [x] 2.2 Remove unit toggle from WeightEntryActivity (GREEN) ✅
+  - [x] Remove unitLbs and unitKg TextView fields (✅ Committed: 85f44a6)
+  - [x] Remove setupUnitToggleListeners() method (✅ Committed: 85f44a6)
+  - [x] Remove switchUnit() method (✅ Committed: 85f44a6)
+  - [x] Remove updateUnitButtonUI() method (✅ Committed: 85f44a6)
+  - [x] Add UserPreferenceDAO field (✅ Committed: 85f44a6)
+  - [x] Load unit from UserPreferenceDAO in onCreate() (✅ Committed: 85f44a6)
+  - [x] Keep weightUnit TextView as read-only display (✅ Committed: 85f44a6)
+- [x] 2.3 Update activity_weight_entry.xml ✅
+  - [x] Remove unitLbs and unitKg TextViews (✅ Committed: 85f44a6)
+  - [x] Layout spacing adjusted automatically (✅ Committed: 85f44a6)
+- [x] 2.4 Commit: `test: add WeightEntryActivity preference integration tests` (✅ Committed: b2ecead)
+- [x] 2.5 Commit: `refactor: use global weight unit preference in WeightEntryActivity` (✅ Committed: 85f44a6)
 
-#### 6.0.3: Refactor GoalDialogFragment 📝
-- [ ] 3.1 Write 2 tests (RED)
-  - [ ] test_onCreate_loadsGlobalWeightUnit
-  - [ ] test_unitToggle_doesNotExist
-- [ ] 3.2 Remove unit toggle from GoalDialogFragment (GREEN)
-  - [ ] Remove unitLbs and unitKg fields
-  - [ ] Remove setupUnitToggle() method
-  - [ ] Remove updateUnitButtonUI() method
-  - [ ] Remove selectedUnit state variable
-  - [ ] Add UserPreferenceDAO field
-  - [ ] Load unit from UserPreferenceDAO in onCreate()
-- [ ] 3.3 Update dialog_set_goal.xml
-  - [ ] Remove unitLbs and unitKg TextViews
-  - [ ] Adjust layout spacing
-- [ ] 3.4 Commit: `test: add GoalDialogFragment preference tests`
-- [ ] 3.5 Commit: `refactor: use global weight unit preference in GoalDialogFragment`
+#### 6.0.3: Refactor GoalDialogFragment ✅
+- [x] 3.1 Write 2 tests (RED) ✅
+  - [x] test_onCreate_loadsGlobalWeightUnit (✅ Committed: 5ec7459)
+  - [x] test_unitToggle_doesNotExist (✅ Committed: 5ec7459, later removed after toggle deletion)
+- [x] 3.2 Remove unit toggle from GoalDialogFragment (GREEN) ✅
+  - [x] Remove unitLbs and unitKg fields (✅ Committed: 97c0e9d)
+  - [x] Remove setupUnitToggle() method (✅ Committed: 97c0e9d)
+  - [x] Remove updateUnitButtonUI() method (✅ Committed: 97c0e9d)
+  - [x] Keep selectedUnit state variable, load from preference (✅ Committed: 97c0e9d)
+  - [x] Add UserPreferenceDAO field (✅ Committed: 97c0e9d)
+  - [x] Load unit from UserPreferenceDAO in onCreate() (✅ Committed: 97c0e9d)
+- [x] 3.3 Update dialog_set_goal.xml ✅
+  - [x] Remove unit_lbs and unit_kg TextViews (✅ Committed: 97c0e9d)
+  - [x] Layout spacing adjusted automatically (✅ Committed: 97c0e9d)
+- [x] 3.4 Commit: `test: add GoalDialogFragment preference tests` (✅ Committed: 5ec7459)
+- [x] 3.5 Commit: `refactor: use global weight unit preference in GoalDialogFragment` (✅ Committed: 97c0e9d)
 
 #### 6.0.4: Create SettingsActivity 📝
 - [ ] 4.1 Rename layout file
