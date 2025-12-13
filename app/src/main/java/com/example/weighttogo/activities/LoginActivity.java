@@ -116,6 +116,30 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     // =============================================================================================
+    // TESTING SETTERS (Package-Private)
+    // =============================================================================================
+
+    /**
+     * Set UserDAO instance (for testing only).
+     * Allows test code to inject mock DAOs.
+     *
+     * @param userDAO the UserDAO instance to use
+     */
+    void setUserDAO(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    /**
+     * Set SessionManager instance (for testing only).
+     * Allows test code to inject mock SessionManager.
+     *
+     * @param sessionManager the SessionManager instance to use
+     */
+    void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+    }
+
+    // =============================================================================================
     // UI INITIALIZATION
     // =============================================================================================
 

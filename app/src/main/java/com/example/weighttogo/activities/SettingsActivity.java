@@ -124,6 +124,35 @@ public class SettingsActivity extends AppCompatActivity {
                 new AchievementDAO(dbHelper));
     }
 
+    // =============================================================================================
+    // TESTING SETTERS (Package-Private)
+    // =============================================================================================
+
+    /**
+     * Set UserDAO instance (for testing only).
+     */
+    void setUserDAO(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    /**
+     * Set UserPreferenceDAO instance (for testing only).
+     */
+    void setUserPreferenceDAO(UserPreferenceDAO userPreferenceDAO) {
+        this.userPreferenceDAO = userPreferenceDAO;
+    }
+
+    /**
+     * Set SMSNotificationManager instance (for testing only).
+     */
+    void setSMSNotificationManager(SMSNotificationManager smsManager) {
+        this.smsManager = smsManager;
+    }
+
+    // =============================================================================================
+    // VIEW INITIALIZATION
+    // =============================================================================================
+
     /**
      * Initialize view references
      */
