@@ -1,10 +1,15 @@
 package com.example.weighttogo.database;
 
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+
+import com.example.weighttogo.utils.DateTimeConverter;
+
+import java.time.LocalDateTime;
 
 /**
  * Data Access Object for user_preferences table.
@@ -61,5 +66,46 @@ public class UserPreferenceDAO {
 
         Log.d(TAG, "getPreference: Key not found, returning default");
         return defaultValue;
+    }
+
+    /**
+     * Sets a preference value for a user (UPSERT).
+     * Uses INSERT OR REPLACE to handle both insert and update.
+     *
+     * @param userId the user ID
+     * @param key the preference key
+     * @param value the preference value
+     * @return true if successful, false otherwise
+     */
+    public boolean setPreference(long userId, @NonNull String key, @NonNull String value) {
+        Log.d(TAG, "setPreference: user_id=" + userId + ", key=" + key);
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("user_id", userId);
+        values.put("pref_key", key);
+        values.put("pref_value", value);
+
+        String now = DateTimeConverter.toTimestamp(LocalDateTime.now());
+        values.put("created_at", now);
+        values.put("updated_at", now);
+
+        try {
+            long result = db.insertWithOnConflict(
+                    WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_REPLACE
+            );
+
+            if (result > 0) {
+                Log.i(TAG, "setPreference: Successfully set key=" + key);
+                return true;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "setPreference: Exception", e);
+        }
+
+        return false;
     }
 }
