@@ -93,10 +93,10 @@ public class WeighToGoDBHelperTest {
         // ASSERT - Check table schema
         try (Cursor cursor = db.rawQuery("PRAGMA table_info(users)", null)) {
             int columnCount = cursor.getCount();
-            assertEquals("users table should have 11 columns", 11, columnCount);
+            assertEquals("users table should have 12 columns", 12, columnCount);
 
             // Verify column names (order matters in PRAGMA table_info)
-            String[] expectedColumns = {"user_id", "username", "password_hash", "salt", "created_at", "last_login", "email", "phone_number", "display_name", "updated_at", "is_active"};
+            String[] expectedColumns = {"user_id", "username", "password_hash", "salt", "password_algorithm", "created_at", "last_login", "email", "phone_number", "display_name", "updated_at", "is_active"};
             int index = 0;
             while (cursor.moveToNext()) {
                 String columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"));
@@ -523,36 +523,62 @@ public class WeighToGoDBHelperTest {
     // ========== EDGE CASE TESTS ==========
 
     /**
-     * Test 21: onUpgrade drops and recreates all 5 tables
-     * Simulates database upgrade scenario
+     * Test 21: onUpgrade v1->v2 adds password_algorithm column (Phase 8.6)
+     * Simulates incremental migration that preserves user data
      */
     @Test
-    public void test_onUpgrade_dropsAndRecreatesTables() {
-        // ARRANGE
+    public void test_onUpgrade_v1ToV2_addsPasswordAlgorithmColumn() {
+        // ARRANGE - Create a v1 database by manually creating the old schema
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        // Insert test data
+        // Drop existing table and create v1 schema (without password_algorithm)
+        db.execSQL("DROP TABLE IF EXISTS users");
+        db.execSQL(
+            "CREATE TABLE users (" +
+            "user_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "username TEXT NOT NULL UNIQUE, " +
+            "password_hash TEXT NOT NULL, " +
+            "salt TEXT NOT NULL, " +
+            "created_at TEXT NOT NULL, " +
+            "last_login TEXT, " +
+            "email TEXT, " +
+            "phone_number TEXT, " +
+            "display_name TEXT, " +
+            "updated_at TEXT NOT NULL, " +
+            "is_active INTEGER NOT NULL DEFAULT 1)"
+        );
+
+        // Insert test user into v1 schema
         db.execSQL(
             "INSERT INTO users (username, password_hash, salt, created_at, updated_at, is_active) " +
             "VALUES ('testuser', 'hash123', 'salt456', '2025-12-10 10:00:00', '2025-12-10 10:00:00', 1)"
         );
 
-        // Verify data exists
-        try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM users", null)) {
-            cursor.moveToFirst();
-            int userCountBefore = cursor.getInt(0);
-            assertEquals("Should have 1 user before upgrade", 1, userCountBefore);
+        // Verify v1 schema has 11 columns
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(users)", null)) {
+            assertEquals("v1 schema should have 11 columns", 11, cursor.getCount());
         }
 
-        // ACT - Trigger onUpgrade (simulates version 1 -> 2)
+        // ACT - Trigger onUpgrade (v1 -> v2 adds password_algorithm)
         dbHelper.onUpgrade(db, 1, 2);
 
-        // ASSERT - Tables should be recreated (data lost, but tables exist)
-        // Check users table exists and is empty
+        // ASSERT - User data should be preserved
         try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM users", null)) {
             cursor.moveToFirst();
             int userCountAfter = cursor.getInt(0);
-            assertEquals("Users table should be empty after upgrade", 0, userCountAfter);
+            assertEquals("User should be preserved after upgrade", 1, userCountAfter);
+        }
+
+        // ASSERT - password_algorithm column should exist with default value
+        try (Cursor cursor = db.rawQuery("SELECT password_algorithm FROM users WHERE username = 'testuser'", null)) {
+            assertTrue("User should exist", cursor.moveToFirst());
+            String algorithm = cursor.getString(0);
+            assertEquals("password_algorithm should default to SHA256", "SHA256", algorithm);
+        }
+
+        // ASSERT - v2 schema should have 12 columns
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(users)", null)) {
+            assertEquals("v2 schema should have 12 columns", 12, cursor.getCount());
         }
 
         // Check daily_weights table exists
