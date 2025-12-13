@@ -683,4 +683,36 @@ public class UserDAOTest {
         assertNotNull("User should exist in new session", retrievedUser);
         assertEquals("Phone should persist across sessions", phone, retrievedUser.getPhoneNumber());
     }
+
+    /**
+     * Test 25: updatePassword() migrates SHA256 user to bcrypt
+     * Tests Phase 8.6 - Password algorithm migration.
+     */
+    @Test
+    public void test_updatePassword_migratesToBcrypt_success() throws DatabaseException {
+        // ARRANGE: Create SHA256 user
+        User user = new User();
+        user.setUsername("migrationtest_" + System.currentTimeMillis());
+        user.setPasswordHash("old_sha256_hash");
+        user.setSalt("old_salt");
+        user.setPasswordAlgorithm("SHA256");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+        assertTrue("User should be inserted", userId > 0);
+
+        // ACT: Migrate to bcrypt
+        String bcryptHash = "$2a$12$randomBcryptHashHereForTesting1234567890123456789012";
+        boolean updated = userDAO.updatePassword(userId, bcryptHash, "", "BCRYPT");
+
+        // ASSERT
+        assertTrue("Update should succeed", updated);
+
+        User migrated = userDAO.getUserById(userId);
+        assertNotNull("User should exist after migration", migrated);
+        assertEquals("Algorithm should be BCRYPT", "BCRYPT", migrated.getPasswordAlgorithm());
+        assertEquals("Hash should be updated", bcryptHash, migrated.getPasswordHash());
+        assertEquals("Salt should be empty (bcrypt handles salt internally)", "", migrated.getSalt());
+    }
 }
