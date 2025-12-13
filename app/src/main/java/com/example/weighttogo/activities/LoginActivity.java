@@ -21,6 +21,9 @@ import com.example.weighttogo.utils.PasswordUtils;
 import com.example.weighttogo.utils.PasswordUtilsV2;
 import com.example.weighttogo.utils.SessionManager;
 import com.example.weighttogo.utils.ValidationUtils;
+
+import static com.example.weighttogo.utils.PasswordUtilsV2.ALGORITHM_BCRYPT;
+import static com.example.weighttogo.utils.PasswordUtilsV2.ALGORITHM_SHA256;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -284,7 +287,7 @@ public class LoginActivity extends AppCompatActivity {
         Log.i(TAG, "handleSignIn: Authentication successful for user_id: " + user.getUserId());
 
         // LAZY MIGRATION: If user is still on SHA256, migrate to bcrypt (Phase 8.6)
-        if ("SHA256".equals(user.getPasswordAlgorithm())) {
+        if (ALGORITHM_SHA256.equals(user.getPasswordAlgorithm())) {
             Log.i(TAG, "handleSignIn: Migrating user_id=" + user.getUserId() + " from SHA256 to bcrypt");
 
             // Hash password with bcrypt on background thread
@@ -299,7 +302,7 @@ public class LoginActivity extends AppCompatActivity {
                                 user.getUserId(),
                                 bcryptHash,
                                 "",  // bcrypt handles salt internally
-                                "BCRYPT"
+                                ALGORITHM_BCRYPT
                             );
 
                             if (updated) {
@@ -394,7 +397,7 @@ public class LoginActivity extends AppCompatActivity {
                     newUser.setUsername(username);
                     newUser.setPasswordHash(passwordHash);
                     newUser.setSalt("");  // bcrypt handles salt internally
-                    newUser.setPasswordAlgorithm("BCRYPT");  // New users use bcrypt
+                    newUser.setPasswordAlgorithm(ALGORITHM_BCRYPT);  // New users use bcrypt
                     newUser.setDisplayName(username);  // Default display name to username
                     newUser.setCreatedAt(LocalDateTime.now());
                     newUser.setUpdatedAt(LocalDateTime.now());

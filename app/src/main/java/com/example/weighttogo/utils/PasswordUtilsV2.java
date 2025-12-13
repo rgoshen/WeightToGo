@@ -27,6 +27,10 @@ public class PasswordUtilsV2 {
     private static final String TAG = "PasswordUtilsV2";
     private static final int BCRYPT_COST = 12;  // 2^12 iterations (~300ms on modern hardware)
 
+    // Password algorithm constants (public for use in LoginActivity and other components)
+    public static final String ALGORITHM_SHA256 = "SHA256";
+    public static final String ALGORITHM_BCRYPT = "BCRYPT";
+
     /**
      * Hash password using bcrypt.
      * Salt is generated and embedded automatically by bcrypt.
@@ -110,10 +114,10 @@ public class PasswordUtilsV2 {
                                          @NonNull String salt) {
         Log.d(TAG, "verifyPassword: Verifying password with algorithm: " + algorithm);
 
-        if ("BCRYPT".equals(algorithm)) {
+        if (ALGORITHM_BCRYPT.equals(algorithm)) {
             return verifyPasswordBcrypt(password, storedHash);
 
-        } else if ("SHA256".equals(algorithm)) {
+        } else if (ALGORITHM_SHA256.equals(algorithm)) {
             // Delegate to legacy SHA256 verification
             return PasswordUtils.verifyPassword(password, salt, storedHash);
 
