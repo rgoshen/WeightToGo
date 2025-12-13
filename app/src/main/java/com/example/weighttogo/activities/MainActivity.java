@@ -237,8 +237,8 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                Toast.makeText(this, "Profile - Coming in Phase 7", Toast.LENGTH_SHORT).show();
-                return true;
+                // Profile disabled - future enhancement (see TODO.md Phase 12)
+                return false;
             }
 
             return false;

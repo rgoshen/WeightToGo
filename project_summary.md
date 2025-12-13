@@ -1,5 +1,186 @@
 # Project Summary - Weigh to Go!
 
+## [2025-12-12] UX Enhancement: Disabled Navigation Buttons (Trends & Profile)
+
+### Executive Summary
+Implemented visually obvious disabled state for unimplemented Trends and Profile features in bottom navigation. These buttons are now greyed out with explicit `android:enabled="false"` and custom color state selector, providing clear visual feedback that features are planned but not yet available.
+
+### Problem Addressed
+- Bottom navigation had 4 buttons (Home, Trends, Goals, Profile)
+- Only Home and Goals were functional; Trends and Profile showed toast messages
+- Disabled buttons looked identical to inactive buttons (confusing UX)
+- No documentation about when these features would be implemented
+
+### Solution Implemented
+
+#### 1. Visual Disabled State Enhancement
+**File:** `app/src/main/res/color/bottom_nav_color.xml`
+
+Added explicit disabled state using `@color/text_disabled` (#BDBDBD - light grey):
+```xml
+<!-- Disabled items (Trends, Profile - future enhancements) -->
+<item android:color="@color/text_disabled" android:state_enabled="false" />
+```
+
+**Before:** Disabled buttons used same color as inactive buttons (#757575 text_secondary)
+**After:** Disabled buttons use lighter grey (#BDBDBD text_disabled), making them OBVIOUSLY greyed out
+
+#### 2. Menu Configuration
+**File:** `app/src/main/res/menu/bottom_nav_menu.xml`
+
+Added `android:enabled="false"` to both Trends and Profile items:
+```xml
+<item
+    android:id="@+id/nav_trends"
+    android:enabled="false"
+    android:icon="@drawable/ic_chart"
+    android:title="@string/nav_trends" />
+
+<item
+    android:id="@+id/nav_profile"
+    android:enabled="false"
+    android:icon="@drawable/ic_profile"
+    android:title="@string/nav_profile" />
+```
+
+#### 3. Navigation Handlers
+**File:** `app/src/main/java/com/example/weighttogo/activities/MainActivity.java`
+
+Updated navigation handlers to return `false` instead of showing toast:
+```java
+} else if (itemId == R.id.nav_trends) {
+    // Trends disabled - future enhancement (see TODO.md Phase 11)
+    return false;
+} else if (itemId == R.id.nav_profile) {
+    // Profile disabled - future enhancement (see TODO.md Phase 12)
+    return false;
+}
+```
+
+**Before:** Clicked buttons showed toast "Coming in Phase 6" (outdated message)
+**After:** Buttons don't respond to clicks, visually greyed out, references future phases
+
+#### 4. Future Enhancement Documentation
+**File:** `TODO.md`
+
+Added comprehensive implementation plans:
+- **Phase 11: Trends Screen** (248 lines)
+  - Interactive charts with MPAndroidChart library
+  - Weight progress visualization
+  - Statistics and analytics dashboard
+  - Estimated effort: 5-7 days
+  - Estimated tests: +30 tests
+  - Estimated LOC: ~800 lines
+
+- **Phase 12: User Profile Management** (281 lines)
+  - Personal information editing
+  - Account settings
+  - Profile picture upload
+  - Theme preferences
+  - Data export/import
+  - Estimated effort: 3-4 days
+  - Estimated tests: +25 tests
+  - Estimated LOC: ~600 lines
+
+#### 5. Roadmap Update
+**File:** `README.md`
+
+Updated roadmap to reflect current state:
+
+**Version 1.0 (Current):**
+- Marked all core features as completed ✅
+- Added note: "Bottom navigation includes disabled 'Trends' and 'Profile' buttons (greyed out). These features are planned for post-launch (see Version 2.0 below)."
+
+**Version 2.0 (Future):**
+- Moved Trends from Version 1.1 to Version 2.0 (post-launch)
+- Added Profile Management to Version 2.0
+- Both features link to TODO.md for implementation details
+
+### Design Rationale
+
+**Why Keep Disabled Buttons?**
+1. **Roadmap Transparency** - Shows users what features are coming
+2. **Design Symmetry** - Bottom navigation looks balanced (4 items)
+3. **Common Pattern** - Many apps show upcoming features as disabled
+4. **No Work Wasted** - Icons and layouts already created
+5. **Clear Expectations** - Visual feedback sets proper user expectations
+
+**Why NOT Keep Them?**
+- Alternative was to remove buttons entirely until features ready
+- Decided against: would require menu restructuring, potential user confusion
+
+### Technical Details
+
+**Color Values:**
+- Active (selected): `@color/primary_teal` (#00897B)
+- Inactive (unselected): `@color/text_secondary` (#757575)
+- **Disabled (new):** `@color/text_disabled` (#BDBDBD)
+
+**Material Design 3 Behavior:**
+- `android:enabled="false"` prevents click events
+- Color state selector applies different colors based on state
+- State priority: disabled > checked > default
+
+### Impact
+
+**User Experience:**
+- Clearer communication about feature availability
+- No confusing toast messages on disabled features
+- Obvious visual distinction between inactive and disabled states
+
+**Development:**
+- Comprehensive implementation plans ready for Trends and Profile
+- Roadmap aligned across README.md, TODO.md, and project_summary.md
+- Technical debt documented and prioritized
+
+**Testing:**
+- No new tests required (disabled state is XML configuration)
+- Future phases include comprehensive test plans
+
+### Bug Fix: SettingsActivity Back Button
+**Issue:** Back button in SettingsActivity header not working
+
+**Root Cause:** Layout had custom `ImageButton` with `android:id="@+id/backButton"`, but SettingsActivity wasn't initializing it or setting click listener.
+
+**Fix:**
+```java
+// Added field declaration
+private ImageButton backButton;
+
+// Added initialization in initViews()
+backButton = findViewById(R.id.backButton);
+
+// Added click listener in setupClickListeners()
+backButton.setOnClickListener(v -> finish());
+```
+
+**First Attempted Fix (INCORRECT):**
+- Tried using ActionBar up button: `getSupportActionBar().setDisplayHomeAsUpEnabled(true)`
+- Failed because layout uses custom ImageButton, not ActionBar
+
+**Correct Fix:**
+- Followed same pattern as WeightEntryActivity and GoalsActivity
+- Initialize custom back button and set click listener to `finish()`
+
+### Files Modified
+1. `app/src/main/res/color/bottom_nav_color.xml` - Added disabled state
+2. `app/src/main/res/menu/bottom_nav_menu.xml` - Added `android:enabled="false"`
+3. `app/src/main/java/com/example/weighttogo/activities/MainActivity.java` - Updated navigation handlers
+4. `app/src/main/java/com/example/weighttogo/activities/SettingsActivity.java` - Fixed back button
+5. `TODO.md` - Added Phase 11 (Trends) and Phase 12 (Profile)
+6. `README.md` - Updated roadmap section
+7. `project_summary.md` - This documentation
+
+### Commits
+- `docs: enhance disabled navigation buttons and document future phases`
+
+### Next Steps
+1. Complete current sprint (Phase 6 finalization)
+2. Phase 11 (Trends) - Post-launch enhancement
+3. Phase 12 (Profile) - Post-launch enhancement
+
+---
+
 ## [2025-12-12] Phase 6.0 Complete: Global Weight Unit Preference System
 
 ### Executive Summary
