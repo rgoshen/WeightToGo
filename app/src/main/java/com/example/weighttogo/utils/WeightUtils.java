@@ -127,7 +127,12 @@ public final class WeightUtils {
             return value;
         }
 
-        // Stub for different units
+        // Convert lbs to kg
+        if ("lbs".equals(fromUnit) && "kg".equals(toUnit)) {
+            return convertLbsToKg(value);
+        }
+
+        // Stub for other conversions
         return 0.0;
     }
 
