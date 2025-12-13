@@ -277,4 +277,72 @@ public final class ValidationUtils {
         Log.d(TAG, "formatPhoneE164: prepended + to phone number");
         return e164;
     }
+
+    /**
+     * Gets specific validation error message for phone number.
+     * Returns string resource key (not localized string).
+     *
+     * **Error Priority:**
+     * 1. Required (null/empty)
+     * 2. Invalid characters (letters, special chars except +)
+     * 3. Too short (< 10 digits)
+     * 4. Too long (> 15 digits)
+     * 5. Invalid E.164 pattern
+     *
+     * **Usage Example:**
+     * <pre>
+     * String error = ValidationUtils.getPhoneValidationError(phoneNumber);
+     * if (error != null) {
+     *     // Show error message from string resource
+     *     phoneInput.setError(getString(R.string.valueOf(error)));
+     * }
+     * </pre>
+     *
+     * @param phoneNumber the phone number to validate
+     * @return String resource key (e.g., "error_phone_required"), or null if valid
+     */
+    @Nullable
+    public static String getPhoneValidationError(@Nullable String phoneNumber) {
+        // Priority 1: Check null or empty
+        if (isNullOrEmpty(phoneNumber)) {
+            Log.d(TAG, "getPhoneValidationError: phone is null or empty");
+            return "error_phone_required";
+        }
+
+        // Remove whitespace for validation
+        String cleanPhone = phoneNumber.replaceAll("\\s+", "");
+
+        // Priority 2: Check for invalid characters (only digits and + allowed)
+        // Allow optional + at start, then only digits
+        if (!cleanPhone.matches("^\\+?[0-9]+$")) {
+            Log.d(TAG, "getPhoneValidationError: phone contains invalid characters");
+            return "error_phone_invalid_chars";
+        }
+
+        // Count digits only (exclude + sign)
+        String digitsOnly = cleanPhone.replaceAll("\\+", "");
+        int digitCount = digitsOnly.length();
+
+        // Priority 3: Check too short
+        if (digitCount < 10) {
+            Log.d(TAG, "getPhoneValidationError: phone is too short (" + digitCount + " digits)");
+            return "error_phone_too_short";
+        }
+
+        // Priority 4: Check too long
+        if (digitCount > 15) {
+            Log.d(TAG, "getPhoneValidationError: phone is too long (" + digitCount + " digits)");
+            return "error_phone_too_long";
+        }
+
+        // Priority 5: Check E.164 pattern (validates first digit cannot be 0)
+        if (!PHONE_PATTERN.matcher(cleanPhone).matches()) {
+            Log.d(TAG, "getPhoneValidationError: phone does not match E.164 pattern");
+            return "error_phone_invalid";
+        }
+
+        // Valid phone number
+        Log.d(TAG, "getPhoneValidationError: phone is valid");
+        return null;
+    }
 }
