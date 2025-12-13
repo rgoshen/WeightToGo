@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.telephony.SmsManager;
 
+import com.example.weighttogo.database.AchievementDAO;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.UserPreferenceDAO;
 import com.example.weighttogo.models.User;
@@ -45,6 +46,9 @@ public class SMSNotificationManagerTest {
     @Mock
     private UserPreferenceDAO mockUserPreferenceDAO;
 
+    @Mock
+    private AchievementDAO mockAchievementDAO;
+
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -72,7 +76,7 @@ public class SMSNotificationManagerTest {
     public void test_hasSmsSendPermission_withGranted_returnsTrue() {
         // ARRANGE
         grantSmsPermissions();
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.hasSmsSendPermission();
@@ -89,7 +93,7 @@ public class SMSNotificationManagerTest {
         // ARRANGE
         // Note: This test cannot easily deny permissions in Robolectric
         // We'll mark as passing if method exists and doesn't throw
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT & ASSERT
         // Method should exist and return a boolean
@@ -105,7 +109,7 @@ public class SMSNotificationManagerTest {
     public void test_hasPostNotificationsPermission_android13Plus_checksPermission() {
         // ARRANGE
         grantSmsPermissions();
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.hasPostNotificationsPermission();
@@ -139,7 +143,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_SMS_ENABLED, "false"))
                 .thenReturn("true");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.canSendSms(userId);
@@ -162,7 +166,7 @@ public class SMSNotificationManagerTest {
         mockUser.setPhoneNumber(null);
         when(mockUserDAO.getUserById(userId)).thenReturn(mockUser);
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.canSendSms(userId);
@@ -190,7 +194,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_SMS_ENABLED, "false"))
                 .thenReturn("false");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.canSendSms(userId);
@@ -220,7 +224,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_SMS_ENABLED, "false"))
                 .thenReturn("true");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.canSendSms(userId);
@@ -261,7 +265,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_GOAL_ALERTS, "true"))
                 .thenReturn("true");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.sendGoalAchievedSms(userId, goalWeight, unit);
@@ -295,7 +299,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_GOAL_ALERTS, "true"))
                 .thenReturn("false");  // Goal alerts disabled
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.sendGoalAchievedSms(userId, goalWeight, unit);
@@ -330,7 +334,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_MILESTONE_ALERTS, "true"))
                 .thenReturn("true");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.sendMilestoneSms(userId, milestone, unit);
@@ -364,7 +368,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_MILESTONE_ALERTS, "true"))
                 .thenReturn("false");  // Milestone alerts disabled
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.sendMilestoneSms(userId, milestone, unit);
@@ -397,7 +401,7 @@ public class SMSNotificationManagerTest {
         when(mockUserPreferenceDAO.getPreference(userId, SMSNotificationManager.KEY_REMINDER_ENABLED, "false"))
                 .thenReturn("true");
 
-        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO);
+        smsManager = SMSNotificationManager.getInstance(context, mockUserDAO, mockUserPreferenceDAO, mockAchievementDAO);
 
         // ACT
         boolean result = smsManager.sendDailyReminderSms(userId);

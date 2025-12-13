@@ -10,8 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.example.weighttogo.R;
+import com.example.weighttogo.database.AchievementDAO;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.UserPreferenceDAO;
+import com.example.weighttogo.models.Achievement;
 import com.example.weighttogo.models.User;
 
 /**
@@ -51,6 +53,7 @@ public class SMSNotificationManager {
     private final Context context;
     private final UserDAO userDAO;
     private final UserPreferenceDAO userPreferenceDAO;
+    private final AchievementDAO achievementDAO;
 
     /**
      * Private constructor for singleton pattern.
@@ -58,13 +61,16 @@ public class SMSNotificationManager {
      * @param context Application context
      * @param userDAO UserDAO instance
      * @param userPreferenceDAO UserPreferenceDAO instance
+     * @param achievementDAO AchievementDAO instance
      */
     private SMSNotificationManager(@NonNull Context context,
                                     @NonNull UserDAO userDAO,
-                                    @NonNull UserPreferenceDAO userPreferenceDAO) {
+                                    @NonNull UserPreferenceDAO userPreferenceDAO,
+                                    @NonNull AchievementDAO achievementDAO) {
         this.context = context.getApplicationContext();
         this.userDAO = userDAO;
         this.userPreferenceDAO = userPreferenceDAO;
+        this.achievementDAO = achievementDAO;
     }
 
     /**
@@ -74,13 +80,15 @@ public class SMSNotificationManager {
      * @param context Application context
      * @param userDAO UserDAO instance
      * @param userPreferenceDAO UserPreferenceDAO instance
+     * @param achievementDAO AchievementDAO instance
      * @return Singleton instance
      */
     public static synchronized SMSNotificationManager getInstance(@NonNull Context context,
                                                                    @NonNull UserDAO userDAO,
-                                                                   @NonNull UserPreferenceDAO userPreferenceDAO) {
+                                                                   @NonNull UserPreferenceDAO userPreferenceDAO,
+                                                                   @NonNull AchievementDAO achievementDAO) {
         if (instance == null) {
-            instance = new SMSNotificationManager(context, userDAO, userPreferenceDAO);
+            instance = new SMSNotificationManager(context, userDAO, userPreferenceDAO, achievementDAO);
             Log.d(TAG, "getInstance: Created new SMSNotificationManager instance");
         }
         return instance;
@@ -277,6 +285,83 @@ public class SMSNotificationManager {
 
         // Send SMS
         return sendSms(user.getPhoneNumber(), message, "Daily reminder");
+    }
+
+    /**
+     * Sends SMS for achievement and marks as notified.
+     *
+     * Supports all achievement types: GOAL_REACHED, FIRST_ENTRY, STREAK_7, STREAK_30,
+     * MILESTONE_5, MILESTONE_10, MILESTONE_25, MILESTONE_50, NEW_LOW
+     *
+     * @param achievement Achievement to notify about
+     * @return true if SMS sent successfully, false if skipped/failed
+     */
+    public boolean sendAchievementSms(@NonNull Achievement achievement) {
+        Log.d(TAG, "sendAchievementSms: Processing achievement type=" + achievement.getAchievementType());
+
+        long userId = achievement.getUserId();
+        String achievementType = achievement.getAchievementType();
+        boolean smsSent = false;
+
+        // Handle different achievement types
+        switch (achievementType) {
+            case "GOAL_REACHED":
+                // Check goal alerts preference
+                String goalAlertsEnabled = userPreferenceDAO.getPreference(userId, KEY_GOAL_ALERTS, "true");
+                if ("true".equals(goalAlertsEnabled)) {
+                    Double goalWeight = achievement.getValue();
+                    if (goalWeight != null) {
+                        // Get user's weight unit preference (default to lbs)
+                        String unit = userPreferenceDAO.getPreference(userId, "weight_unit_preference", "lbs");
+                        smsSent = sendGoalAchievedSms(userId, goalWeight, unit);
+                    }
+                }
+                break;
+
+            case "MILESTONE_5":
+            case "MILESTONE_10":
+            case "MILESTONE_25":
+            case "MILESTONE_50":
+                // Check milestone alerts preference
+                String milestoneAlertsEnabled = userPreferenceDAO.getPreference(userId, KEY_MILESTONE_ALERTS, "true");
+                if ("true".equals(milestoneAlertsEnabled)) {
+                    Double milestoneValue = achievement.getValue();
+                    if (milestoneValue != null) {
+                        String unit = userPreferenceDAO.getPreference(userId, "weight_unit_preference", "lbs");
+                        smsSent = sendMilestoneSms(userId, milestoneValue.intValue(), unit);
+                    }
+                }
+                break;
+
+            case "FIRST_ENTRY":
+            case "STREAK_7":
+            case "STREAK_30":
+            case "NEW_LOW":
+                // These use milestone alerts preference for now
+                // Could add separate preferences in future
+                String streakAlertsEnabled = userPreferenceDAO.getPreference(userId, KEY_MILESTONE_ALERTS, "true");
+                if ("true".equals(streakAlertsEnabled)) {
+                    // For now, skip SMS for these types (would need new message templates)
+                    Log.d(TAG, "sendAchievementSms: Skipping SMS for " + achievementType + " (no template)");
+                }
+                break;
+
+            default:
+                Log.w(TAG, "sendAchievementSms: Unknown achievement type: " + achievementType);
+                break;
+        }
+
+        // Mark achievement as notified if SMS was sent
+        if (smsSent) {
+            int updated = achievementDAO.updateIsNotified(achievement.getAchievementId(), true);
+            if (updated > 0) {
+                Log.i(TAG, "sendAchievementSms: Marked achievement as notified: " + achievement.getAchievementId());
+            } else {
+                Log.w(TAG, "sendAchievementSms: Failed to mark achievement as notified");
+            }
+        }
+
+        return smsSent;
     }
 
     /**
