@@ -474,4 +474,194 @@ public class UserDAOTest {
         assertNotNull("Exact case should return user", exactMatch);
         assertNull("Different case should not return user (case-sensitive)", lowerMatch);
     }
+
+    // =============================================================================================
+    // PHONE NUMBER UPDATE TESTS (6 tests) - Phase 7.2 Commit 5
+    // =============================================================================================
+
+    /**
+     * Test 19: updatePhoneNumber() with valid phone updates successfully
+     */
+    @Test
+    public void test_updatePhoneNumber_withValidPhone_returnsTrue() throws DatabaseException {
+        // ARRANGE - Insert a user without phone number
+        User user = new User();
+        user.setUsername("phonetest");
+        user.setPasswordHash("hash");
+        user.setSalt("salt");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+
+        String validPhone = "+12025551234";  // E.164 format
+
+        // ACT
+        boolean result = userDAO.updatePhoneNumber(userId, validPhone);
+
+        // ASSERT
+        assertTrue("Update should return true", result);
+
+        // Verify phone was updated
+        User updatedUser = userDAO.getUserById(userId);
+        assertNotNull("User should exist", updatedUser);
+        assertEquals("Phone number should be updated", validPhone, updatedUser.getPhoneNumber());
+    }
+
+    /**
+     * Test 20: updatePhoneNumber() with null phone clears the field
+     */
+    @Test
+    public void test_updatePhoneNumber_withNullPhone_clearsPhone() throws DatabaseException {
+        // ARRANGE - Insert user with phone number
+        User user = new User();
+        user.setUsername("clearponetest");
+        user.setPasswordHash("hash");
+        user.setSalt("salt");
+        user.setPhoneNumber("+12025551234");  // Initial phone
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+
+        // Verify phone is set
+        User beforeUpdate = userDAO.getUserById(userId);
+        assertNotNull("Phone should be set initially", beforeUpdate.getPhoneNumber());
+
+        // ACT - Clear phone by passing null
+        boolean result = userDAO.updatePhoneNumber(userId, null);
+
+        // ASSERT
+        assertTrue("Update should return true", result);
+
+        // Verify phone was cleared
+        User afterUpdate = userDAO.getUserById(userId);
+        assertNotNull("User should still exist", afterUpdate);
+        assertNull("Phone number should be null", afterUpdate.getPhoneNumber());
+    }
+
+    /**
+     * Test 21: updatePhoneNumber() with invalid user ID returns false
+     */
+    @Test
+    public void test_updatePhoneNumber_withInvalidUserId_returnsFalse() throws DatabaseException {
+        // ACT - Try to update phone for non-existent user
+        boolean result = userDAO.updatePhoneNumber(99999, "+12025551234");
+
+        // ASSERT
+        assertFalse("Update with invalid user ID should return false", result);
+    }
+
+    /**
+     * Test 22: updatePhoneNumber() updates the updated_at timestamp
+     */
+    @Test
+    public void test_updatePhoneNumber_updatesUpdatedAtTimestamp() throws DatabaseException {
+        // ARRANGE - Insert user
+        User user = new User();
+        user.setUsername("timestamptest");
+        user.setPasswordHash("hash");
+        user.setSalt("salt");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+
+        // Get original updated_at timestamp
+        User beforeUpdate = userDAO.getUserById(userId);
+        LocalDateTime originalUpdatedAt = beforeUpdate.getUpdatedAt();
+
+        // Wait a moment to ensure timestamp difference
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // ACT - Update phone number
+        boolean result = userDAO.updatePhoneNumber(userId, "+12025551234");
+
+        // ASSERT
+        assertTrue("Update should return true", result);
+
+        // Verify updated_at changed
+        User afterUpdate = userDAO.getUserById(userId);
+        assertNotNull("User should exist", afterUpdate);
+        assertNotNull("Updated_at should not be null", afterUpdate.getUpdatedAt());
+        assertTrue("Updated_at should be after original timestamp",
+                afterUpdate.getUpdatedAt().isAfter(originalUpdatedAt));
+    }
+
+    /**
+     * Test 23: updatePhoneNumber() preserves other user fields
+     */
+    @Test
+    public void test_updatePhoneNumber_preservesOtherFields() throws DatabaseException {
+        // ARRANGE - Insert user with all fields populated
+        User user = new User();
+        user.setUsername("preservetest");
+        user.setPasswordHash("hash123");
+        user.setSalt("salt456");
+        user.setEmail("test@example.com");
+        user.setDisplayName("Test User");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setLastLogin(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+
+        // ACT - Update only phone number
+        boolean result = userDAO.updatePhoneNumber(userId, "+12025551234");
+
+        // ASSERT
+        assertTrue("Update should return true", result);
+
+        // Verify all other fields remain unchanged
+        User afterUpdate = userDAO.getUserById(userId);
+        assertNotNull("User should exist", afterUpdate);
+        assertEquals("Username should be preserved", "preservetest", afterUpdate.getUsername());
+        assertEquals("Password hash should be preserved", "hash123", afterUpdate.getPasswordHash());
+        assertEquals("Salt should be preserved", "salt456", afterUpdate.getSalt());
+        assertEquals("Email should be preserved", "test@example.com", afterUpdate.getEmail());
+        assertEquals("Display name should be preserved", "Test User", afterUpdate.getDisplayName());
+        assertNotNull("Last login should be preserved", afterUpdate.getLastLogin());
+        assertTrue("Active status should be preserved", afterUpdate.isActive());
+        assertEquals("Phone should be updated", "+12025551234", afterUpdate.getPhoneNumber());
+    }
+
+    /**
+     * Test 24: updatePhoneNumber() integration - phone persists across sessions
+     */
+    @Test
+    public void test_updatePhoneNumber_integration_persistsAcrossSessions() throws DatabaseException {
+        // ARRANGE - Insert user and update phone
+        User user = new User();
+        user.setUsername("persisttest");
+        user.setPasswordHash("hash");
+        user.setSalt("salt");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true);
+        long userId = userDAO.insertUser(user);
+
+        String phone = "+12025551234";
+        boolean updateResult = userDAO.updatePhoneNumber(userId, phone);
+        assertTrue("Update should succeed", updateResult);
+
+        // ACT - Close and reopen database (simulate new session)
+        db.close();
+        dbHelper.close();
+
+        // Reinitialize database and DAO
+        dbHelper = WeighToGoDBHelper.getInstance(context);
+        db = dbHelper.getWritableDatabase();
+        userDAO = new UserDAO(dbHelper);
+
+        // Retrieve user in new session
+        User retrievedUser = userDAO.getUserById(userId);
+
+        // ASSERT - Phone should persist
+        assertNotNull("User should exist in new session", retrievedUser);
+        assertEquals("Phone should persist across sessions", phone, retrievedUser.getPhoneNumber());
+    }
 }

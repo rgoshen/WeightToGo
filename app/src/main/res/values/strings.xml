@@ -175,6 +175,13 @@
     <string name="error_invalid_username">Username is invalid (3-20 chars, alphanumeric + underscore)</string>
     <string name="error_invalid_password">Password is invalid (6+ chars, at least 1 digit)</string>
 
+    <!-- Phone Validation Errors (Phase 7.1) -->
+    <string name="error_phone_required">Phone number is required</string>
+    <string name="error_phone_invalid">Invalid phone number format. Use 10 digits (e.g., 2025551234)</string>
+    <string name="error_phone_too_short">Phone number must be at least 10 digits</string>
+    <string name="error_phone_too_long">Phone number cannot exceed 15 digits</string>
+    <string name="error_phone_invalid_chars">Phone number can only contain digits and + symbol</string>
+
     <!-- Success Messages -->
     <string name="success_account_created">Account created successfully!</string>
     <string name="success_weight_saved">Weight entry saved!</string>
@@ -250,4 +257,16 @@
     <!-- Confirm Delete Goal Dialog -->
     <string name="confirm_delete_goal_title">Delete Goal?</string>
     <string name="confirm_delete_goal_message">Are you sure you want to delete this goal? This action cannot be undone.</string>
+
+    <!-- SMS Message Templates (Phase 7.3) -->
+    <string name="sms_goal_achieved">Congrats! You reached your goal weight of %1$.1f %2$s! 🎉</string>
+    <string name="sms_first_entry">Welcome to Weigh to Go! You logged your first weight entry! 📊</string>
+    <string name="sms_streak_7">Amazing! You\'re on a 7-day logging streak! Keep it up! 🔥</string>
+    <string name="sms_streak_30">Incredible! 30 days in a row! You\'re crushing it! 💪</string>
+    <string name="sms_milestone_5">Great progress! You\'ve lost %1$d %2$s! 🎯</string>
+    <string name="sms_milestone_10">Awesome! You\'ve lost %1$d %2$s! Halfway to your next milestone! 🏆</string>
+    <string name="sms_milestone_25">WOW! You\'ve lost %1$d %2$s! That\'s a major achievement! 🌟</string>
+    <string name="sms_new_low">New personal best! You hit a new low weight of %1$.1f %2$s! 🎊</string>
+    <string name="sms_daily_reminder">Don\'t forget to log your weight today! Stay on track with Weigh to Go! ⚖️</string>
+    <string name="sms_test_message">This is a test message from Weigh to Go! Your SMS notifications are working! ✅</string>
 </resources>

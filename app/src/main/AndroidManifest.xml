@@ -5,6 +5,9 @@
     <!-- SMS Permission for goal achievement notifications -->
     <uses-permission android:name="android.permission.SEND_SMS" />
 
+    <!-- Push notification permission (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Telephony feature - not required so app works on devices without SMS -->
     <uses-feature
         android:name="android.hardware.telephony"
