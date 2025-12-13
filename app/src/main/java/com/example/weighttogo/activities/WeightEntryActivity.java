@@ -224,6 +224,42 @@ public class WeightEntryActivity extends AppCompatActivity {
         Log.d(TAG, "initDataLayer: Data layer initialized with achievement and SMS managers");
     }
 
+    // =============================================================================================
+    // TESTING SETTERS (Package-Private)
+    // =============================================================================================
+
+    /**
+     * Set WeightEntryDAO instance (for testing only).
+     */
+    void setWeightEntryDAO(WeightEntryDAO weightEntryDAO) {
+        this.weightEntryDAO = weightEntryDAO;
+    }
+
+    /**
+     * Set UserPreferenceDAO instance (for testing only).
+     */
+    void setUserPreferenceDAO(UserPreferenceDAO userPreferenceDAO) {
+        this.userPreferenceDAO = userPreferenceDAO;
+    }
+
+    /**
+     * Set AchievementManager instance (for testing only).
+     */
+    void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
+    }
+
+    /**
+     * Set SMSNotificationManager instance (for testing only).
+     */
+    void setSMSNotificationManager(SMSNotificationManager smsManager) {
+        this.smsManager = smsManager;
+    }
+
+    // =============================================================================================
+    // USER PREFERENCES
+    // =============================================================================================
+
     /**
      * Load user preferences from database.
      * Only loads in add mode; edit mode uses unit from existing entry.

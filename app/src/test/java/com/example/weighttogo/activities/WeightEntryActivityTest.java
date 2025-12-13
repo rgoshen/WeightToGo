@@ -12,6 +12,8 @@ import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.database.WeightEntryDAO;
 import com.example.weighttogo.models.User;
 import com.example.weighttogo.models.WeightEntry;
+import com.example.weighttogo.utils.AchievementManager;
+import com.example.weighttogo.utils.SMSNotificationManager;
 import com.example.weighttogo.utils.SessionManager;
 
 import org.junit.After;
@@ -19,6 +21,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -31,6 +35,7 @@ import java.time.LocalDateTime;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * Regression tests for WeightEntryActivity.
@@ -49,6 +54,8 @@ import static org.junit.Assert.assertTrue;
  * Resolution: Will be migrated to Espresso instrumented tests in Phase 8.4
  * Tracking: Same issue affects MainActivityTest (17 tests commented out)
  *
+ * **Phase 8A Refactoring**: Converted to use Mockito mocks instead of real database.
+ *
  * These tests document the 4 bugs found during Phase 4 manual testing:
  * 1. Number input at 0.0 appends after decimal (0.08 instead of 8)
  * 2. Default display shows 172.0 but validation rejects it
@@ -59,42 +66,27 @@ import static org.junit.Assert.assertTrue;
 @Config(sdk = 30)
 public class WeightEntryActivityTest {
 
-    private Context context;
-    private WeighToGoDBHelper dbHelper;
-    private WeightEntryDAO weightEntryDAO;
-    private UserDAO userDAO;
-    private UserPreferenceDAO userPreferenceDAO;
-    private SessionManager sessionManager;
-    private long testUserId;
-    private User testUser;
+    @Mock private WeightEntryDAO mockWeightEntryDAO;
+    @Mock private UserPreferenceDAO mockUserPreferenceDAO;
+    @Mock private AchievementManager mockAchievementManager;
+    @Mock private SMSNotificationManager mockSmsManager;
+    @Mock private SessionManager mockSessionManager;
+
     private ActivityController<WeightEntryActivity> activityController;
     private WeightEntryActivity activity;
+    private long testUserId;
 
     @Before
-    public void setUp() throws DatabaseException {
-        context = RuntimeEnvironment.getApplication();
-        dbHelper = WeighToGoDBHelper.getInstance(context);
-        weightEntryDAO = new WeightEntryDAO(dbHelper);
-        userDAO = new UserDAO(dbHelper);
-        userPreferenceDAO = new UserPreferenceDAO(dbHelper);
-        sessionManager = SessionManager.getInstance(context);
+    public void setUp() {
+        // Initialize Mockito mocks
+        MockitoAnnotations.openMocks(this);
 
-        // Create test user
-        testUser = new User();
-        testUser.setUsername("weightentry_testuser_" + System.currentTimeMillis());
-        testUser.setPasswordHash("test_hash");
-        testUser.setSalt("test_salt");
-        testUser.setPasswordAlgorithm("SHA256");
-        testUser.setDisplayName("Weight Entry Test User");
-        testUser.setCreatedAt(LocalDateTime.now());
-        testUser.setUpdatedAt(LocalDateTime.now());
-        testUser.setActive(true);
+        // Test user data
+        testUserId = 1L;
 
-        testUserId = userDAO.insertUser(testUser);
-        assertTrue("Test user should be created", testUserId > 0);
-
-        testUser.setUserId(testUserId);
-        sessionManager.createSession(testUser);
+        // Set default mock behaviors
+        when(mockSessionManager.isLoggedIn()).thenReturn(true);
+        when(mockSessionManager.getCurrentUserId()).thenReturn(testUserId);
     }
 
     @After
