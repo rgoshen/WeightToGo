@@ -16,6 +16,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.example.weighttogo.R;
 import com.example.weighttogo.database.AchievementDAO;
@@ -26,10 +30,14 @@ import com.example.weighttogo.models.User;
 import com.example.weighttogo.utils.SMSNotificationManager;
 import com.example.weighttogo.utils.SessionManager;
 import com.example.weighttogo.utils.ValidationUtils;
+import com.example.weighttogo.workers.DailyReminderWorker;
 import androidx.appcompat.widget.SwitchCompat;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * SettingsActivity - Centralized settings management screen
@@ -496,11 +504,80 @@ public class SettingsActivity extends AppCompatActivity {
                 SMSNotificationManager.KEY_REMINDER_ENABLED,
                 isChecked ? "true" : "false");
 
+        // Schedule or cancel WorkManager daily reminder (Phase 7.6 - Commit 28)
+        if (isChecked) {
+            scheduleDailyReminder();
+        } else {
+            WorkManager.getInstance(this).cancelUniqueWork("daily_reminder");
+            Log.d(TAG, "handleReminderToggle: Daily reminder work cancelled");
+        }
+
         Toast.makeText(this,
                 "Daily reminders " + (isChecked ? "enabled" : "disabled"),
                 Toast.LENGTH_SHORT).show();
 
         Log.d(TAG, "handleReminderToggle: Daily reminders " + (isChecked ? "enabled" : "disabled"));
+    }
+
+    /**
+     * Schedule daily reminder WorkManager periodic work.
+     * Runs every 24 hours at 9:00 AM.
+     *
+     * Phase 7.6 - Commit 28: Daily Reminder Scheduling
+     */
+    private void scheduleDailyReminder() {
+        // Cancel existing work first
+        WorkManager.getInstance(this).cancelUniqueWork("daily_reminder");
+
+        // Create constraints (requires battery not low)
+        Constraints constraints = new Constraints.Builder()
+                .setRequiresBatteryNotLow(true)
+                .build();
+
+        // Calculate initial delay to next 9:00 AM
+        long initialDelayMillis = calculateInitialDelay();
+
+        // Create periodic work request (24 hours interval, 1 hour flex)
+        PeriodicWorkRequest reminderWork = new PeriodicWorkRequest.Builder(
+                DailyReminderWorker.class,
+                24, TimeUnit.HOURS,
+                1, TimeUnit.HOURS  // Flex interval allows execution within 1 hour window
+        )
+        .setConstraints(constraints)
+        .setInitialDelay(initialDelayMillis, TimeUnit.MILLISECONDS)
+        .build();
+
+        // Enqueue work
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "daily_reminder",
+                ExistingPeriodicWorkPolicy.REPLACE,
+                reminderWork
+        );
+
+        Log.i(TAG, "scheduleDailyReminder: Daily reminder scheduled with " +
+                initialDelayMillis / 1000 / 60 + " minutes initial delay");
+    }
+
+    /**
+     * Calculate initial delay to next 9:00 AM.
+     * If current time is after 9:00 AM today, schedules for 9:00 AM tomorrow.
+     *
+     * @return delay in milliseconds
+     */
+    private long calculateInitialDelay() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nextReminder = now.withHour(9).withMinute(0).withSecond(0).withNano(0);
+
+        // If we've passed 9:00 AM today, schedule for tomorrow
+        if (now.isAfter(nextReminder)) {
+            nextReminder = nextReminder.plusDays(1);
+        }
+
+        long delayMillis = Duration.between(now, nextReminder).toMillis();
+        Log.d(TAG, "calculateInitialDelay: Next reminder at " + nextReminder +
+                " (delay: " + delayMillis / 1000 / 60 + " minutes)");
+
+        return delayMillis;
     }
 
     // =============================================================================================
