@@ -14,10 +14,12 @@ import androidx.fragment.app.DialogFragment;
 
 import com.example.weighttogo.R;
 import com.example.weighttogo.database.GoalWeightDAO;
+import com.example.weighttogo.database.UserPreferenceDAO;
 import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.models.GoalWeight;
 import com.example.weighttogo.utils.DateUtils;
 import com.example.weighttogo.utils.GoalUtils;
+import com.example.weighttogo.utils.SessionManager;
 import com.example.weighttogo.utils.WeightUtils;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
@@ -83,6 +85,7 @@ public class GoalDialogFragment extends DialogFragment {
 
     // DAOs
     private GoalWeightDAO goalWeightDAO;
+    private UserPreferenceDAO userPreferenceDAO;
 
     // Arguments (parsed from Bundle)
     private long userId;
@@ -93,8 +96,6 @@ public class GoalDialogFragment extends DialogFragment {
     // UI Elements
     private TextView textCurrentWeight;
     private TextInputEditText inputGoalWeight;
-    private TextView unitLbs;
-    private TextView unitKg;
     private TextView btnSelectTargetDate;
     private TextView textSelectedTargetDate;
 
@@ -188,6 +189,7 @@ public class GoalDialogFragment extends DialogFragment {
         // Initialize DAOs
         WeighToGoDBHelper dbHelper = WeighToGoDBHelper.getInstance(requireContext());
         goalWeightDAO = new GoalWeightDAO(dbHelper);
+        userPreferenceDAO = new UserPreferenceDAO(dbHelper);
 
         // Load existing goal if in edit mode
         if (existingGoalId > 0) {
@@ -198,14 +200,25 @@ public class GoalDialogFragment extends DialogFragment {
             } else {
                 // Goal not found, treat as create mode
                 existingGoalId = -1;
-                selectedUnit = currentUnit;
+                selectedUnit = loadUserPreferenceUnit();
                 selectedTargetDate = null;
             }
         } else {
-            // Create mode
-            selectedUnit = currentUnit;
+            // Create mode - load from user preference
+            selectedUnit = loadUserPreferenceUnit();
             selectedTargetDate = null;
         }
+    }
+
+    /**
+     * Loads the user's preferred weight unit from UserPreferenceDAO.
+     * Used in create mode to initialize selectedUnit.
+     *
+     * @return the user's preferred unit ("lbs" or "kg"), defaults to "lbs"
+     */
+    private String loadUserPreferenceUnit() {
+        long currentUserId = SessionManager.getInstance(requireContext()).getCurrentUserId();
+        return userPreferenceDAO.getWeightUnit(currentUserId);
     }
 
     @NonNull
@@ -219,7 +232,6 @@ public class GoalDialogFragment extends DialogFragment {
         initViews(dialogView);
 
         // Setup interactions
-        setupUnitToggle();
         setupDatePicker();
 
         // Create dialog
@@ -257,8 +269,6 @@ public class GoalDialogFragment extends DialogFragment {
     private void initViews(View dialogView) {
         textCurrentWeight = dialogView.findViewById(R.id.text_current_weight);
         inputGoalWeight = dialogView.findViewById(R.id.input_goal_weight);
-        unitLbs = dialogView.findViewById(R.id.unit_lbs);
-        unitKg = dialogView.findViewById(R.id.unit_kg);
         btnSelectTargetDate = dialogView.findViewById(R.id.btn_select_target_date);
         textSelectedTargetDate = dialogView.findViewById(R.id.text_selected_target_date);
 
@@ -276,34 +286,6 @@ public class GoalDialogFragment extends DialogFragment {
                 textSelectedTargetDate.setVisibility(View.VISIBLE);
             }
         }
-
-        // Set initial unit toggle state
-        updateUnitButtonUI(selectedUnit);
-    }
-
-    /**
-     * Setup unit toggle button listeners (lbs/kg switching).
-     */
-    private void setupUnitToggle() {
-        unitLbs.setOnClickListener(v -> {
-            selectedUnit = "lbs";
-            updateUnitButtonUI("lbs");
-            // Display current weight in lbs (convert if needed)
-            double displayWeight = "kg".equals(currentUnit)
-                ? WeightUtils.convertKgToLbs(currentWeight)
-                : currentWeight;
-            textCurrentWeight.setText(WeightUtils.formatWeightWithUnit(displayWeight, "lbs"));
-        });
-
-        unitKg.setOnClickListener(v -> {
-            selectedUnit = "kg";
-            updateUnitButtonUI("kg");
-            // Display current weight in kg (convert if needed)
-            double displayWeight = "lbs".equals(currentUnit)
-                ? WeightUtils.convertLbsToKg(currentWeight)
-                : currentWeight;
-            textCurrentWeight.setText(WeightUtils.formatWeightWithUnit(displayWeight, "kg"));
-        });
     }
 
     /**
@@ -473,26 +455,4 @@ public class GoalDialogFragment extends DialogFragment {
         }
     }
 
-    /**
-     * Updates unit toggle button UI (active/inactive state).
-     *
-     * @param selectedUnit The currently selected unit ("lbs" or "kg")
-     */
-    private void updateUnitButtonUI(String selectedUnit) {
-        if ("lbs".equals(selectedUnit)) {
-            // Lbs active
-            unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_active);
-            unitLbs.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_on_primary));
-            // Kg inactive
-            unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitKg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
-        } else {
-            // Kg active
-            unitKg.setBackgroundResource(R.drawable.bg_unit_toggle_active);
-            unitKg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_on_primary));
-            // Lbs inactive
-            unitLbs.setBackgroundResource(R.drawable.bg_unit_toggle_inactive);
-            unitLbs.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
-        }
-    }
 }
