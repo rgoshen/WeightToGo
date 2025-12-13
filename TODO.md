@@ -1178,8 +1178,8 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - [x] Verify UPSERT pattern (no duplicate keys)
 - [x] 1.4 Update documentation
   - [x] Update TODO.md with completion status
-  - [ ] Update project_summary.md with implementation notes
-- [ ] 1.5 Push branch: `git push -u origin feature/FR6.0.1-user-preference-dao`
+  - [x] Update project_summary.md with implementation notes (✅ Committed: 02e9c43)
+- [x] 1.5 Push branch: `git push -u origin feature/FR6.0.1-user-preference-dao` ✅
 
 #### 6.0.2: Refactor WeightEntryActivity 📝
 - [ ] 2.1 Write 3 integration tests (RED)
