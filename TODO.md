@@ -1268,12 +1268,12 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - [x] Document Phase 6.0 refactoring approach
   - [x] Explain migration strategy (Keep Column)
   - [x] List test coverage (13 new tests: 10 unit + 3 integration @Ignored)
-- [x] 6.3 Update TODO.md (in progress)
+- [x] 6.3 Update TODO.md
   - [x] Mark Phase 6.0 complete
-  - [ ] Update remaining Phase 7 SMS tasks
-- [ ] 6.4 Run full test suite
-  - [ ] ./gradlew test (expect 289 passing - 10 from Phase 6.0.1)
-  - [ ] ./gradlew lint (expect clean)
+  - [x] Update Phase 7 SMS tasks (kept for future work)
+- [x] 6.4 Run full test suite (✅ Committed: 5e686b4)
+  - [x] ./gradlew test (289 tests passing - 10 from Phase 6.0.1, 17 ignored)
+  - [x] ./gradlew lint (clean - 0 errors, 0 warnings)
 - [x] 6.5 Commit 50c0f2e: `feat: add weight unit preference strings and update SettingsActivity`
 - [x] 6.6 Commit 5088b70: `docs: document Phase 6.0 global weight unit preference implementation`
 
@@ -1284,8 +1284,8 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 - [x] SettingsActivity displays weight unit preference
 - [x] Settings accessible from MainActivity
 - [x] All 10 new unit tests passing (3 integration tests @Ignored for Phase 8.9)
-- [x] No regression in existing features
-- [ ] Lint clean (to be verified in 6.4)
+- [x] No regression in existing features (289 tests passing)
+- [x] Lint clean (0 errors, 0 warnings)
 - [x] Manual testing checklist complete
 
 **Test Count:** 279 (Phase 6.0.0 baseline) + 10 (Phase 6.0.1 unit tests) = 289 tests
