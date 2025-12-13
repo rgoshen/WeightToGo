@@ -9,6 +9,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import com.example.weighttogo.R;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.UserPreferenceDAO;
 import com.example.weighttogo.models.User;
@@ -165,41 +166,157 @@ public class SMSNotificationManager {
 
     /**
      * Sends SMS for goal achievement.
-     * Stub implementation - will be implemented in Commit 13.
      *
      * @param userId User ID
      * @param goalWeight Goal weight achieved
      * @param unit Weight unit (lbs/kg)
-     * @return false (stub)
+     * @return true if SMS sent successfully, false otherwise
      */
     public boolean sendGoalAchievedSms(long userId, double goalWeight, String unit) {
-        Log.d(TAG, "sendGoalAchievedSms: Stub - not implemented yet");
-        return false;
+        Log.d(TAG, "sendGoalAchievedSms: Checking conditions for user_id=" + userId);
+
+        // Check if we can send SMS
+        if (!canSendSms(userId)) {
+            Log.d(TAG, "sendGoalAchievedSms: Cannot send SMS (canSendSms returned false)");
+            return false;
+        }
+
+        // Check if goal alerts are enabled
+        String goalAlertsEnabled = userPreferenceDAO.getPreference(userId, KEY_GOAL_ALERTS, "true");
+        if (!"true".equals(goalAlertsEnabled)) {
+            Log.d(TAG, "sendGoalAchievedSms: Goal alerts disabled in preferences");
+            return false;
+        }
+
+        // Get user phone number
+        User user = userDAO.getUserById(userId);
+        if (user == null || user.getPhoneNumber() == null) {
+            Log.w(TAG, "sendGoalAchievedSms: User or phone number not found");
+            return false;
+        }
+
+        // Get message template and format
+        String messageTemplate = context.getString(R.string.sms_goal_achieved);
+        String message = String.format(messageTemplate, goalWeight, unit);
+
+        // Send SMS
+        return sendSms(user.getPhoneNumber(), message, "Goal achieved");
     }
 
     /**
      * Sends SMS for milestone achievement.
-     * Stub implementation - will be implemented in Commit 13.
      *
      * @param userId User ID
      * @param milestone Milestone amount (e.g., 5, 10, 25)
      * @param unit Weight unit (lbs/kg)
-     * @return false (stub)
+     * @return true if SMS sent successfully, false otherwise
      */
     public boolean sendMilestoneSms(long userId, int milestone, String unit) {
-        Log.d(TAG, "sendMilestoneSms: Stub - not implemented yet");
-        return false;
+        Log.d(TAG, "sendMilestoneSms: Checking conditions for user_id=" + userId + ", milestone=" + milestone);
+
+        // Check if we can send SMS
+        if (!canSendSms(userId)) {
+            Log.d(TAG, "sendMilestoneSms: Cannot send SMS (canSendSms returned false)");
+            return false;
+        }
+
+        // Check if milestone alerts are enabled
+        String milestoneAlertsEnabled = userPreferenceDAO.getPreference(userId, KEY_MILESTONE_ALERTS, "true");
+        if (!"true".equals(milestoneAlertsEnabled)) {
+            Log.d(TAG, "sendMilestoneSms: Milestone alerts disabled in preferences");
+            return false;
+        }
+
+        // Get user phone number
+        User user = userDAO.getUserById(userId);
+        if (user == null || user.getPhoneNumber() == null) {
+            Log.w(TAG, "sendMilestoneSms: User or phone number not found");
+            return false;
+        }
+
+        // Get message template and format
+        // Use sms_milestone_5 for all milestones (generic message)
+        String messageTemplate = context.getString(R.string.sms_milestone_5);
+        String message = String.format(messageTemplate, milestone, unit);
+
+        // Send SMS
+        return sendSms(user.getPhoneNumber(), message, "Milestone " + milestone + " " + unit);
     }
 
     /**
      * Sends daily reminder SMS.
-     * Stub implementation - will be implemented in Commit 13.
      *
      * @param userId User ID
-     * @return false (stub)
+     * @return true if SMS sent successfully, false otherwise
      */
     public boolean sendDailyReminderSms(long userId) {
-        Log.d(TAG, "sendDailyReminderSms: Stub - not implemented yet");
-        return false;
+        Log.d(TAG, "sendDailyReminderSms: Checking conditions for user_id=" + userId);
+
+        // Check if we can send SMS
+        if (!canSendSms(userId)) {
+            Log.d(TAG, "sendDailyReminderSms: Cannot send SMS (canSendSms returned false)");
+            return false;
+        }
+
+        // Check if daily reminders are enabled
+        String reminderEnabled = userPreferenceDAO.getPreference(userId, KEY_REMINDER_ENABLED, "false");
+        if (!"true".equals(reminderEnabled)) {
+            Log.d(TAG, "sendDailyReminderSms: Daily reminders disabled in preferences");
+            return false;
+        }
+
+        // Get user phone number
+        User user = userDAO.getUserById(userId);
+        if (user == null || user.getPhoneNumber() == null) {
+            Log.w(TAG, "sendDailyReminderSms: User or phone number not found");
+            return false;
+        }
+
+        // Get message template
+        String message = context.getString(R.string.sms_daily_reminder);
+
+        // Send SMS
+        return sendSms(user.getPhoneNumber(), message, "Daily reminder");
+    }
+
+    /**
+     * Private helper method to send SMS using Android SmsManager.
+     *
+     * @param phoneNumber E.164 formatted phone number
+     * @param message SMS message text
+     * @param messageType Type of message for logging (e.g., "Goal achieved", "Milestone 5 lbs")
+     * @return true if SMS sent successfully, false on error
+     */
+    private boolean sendSms(@NonNull String phoneNumber, @NonNull String message, @NonNull String messageType) {
+        try {
+            Log.d(TAG, "sendSms: Attempting to send " + messageType + " SMS to " + phoneNumber);
+
+            android.telephony.SmsManager smsManager = android.telephony.SmsManager.getDefault();
+            smsManager.sendTextMessage(
+                    phoneNumber,    // destination phone number
+                    null,           // service center address (null = use default)
+                    message,        // message text
+                    null,           // sentIntent (null = no notification)
+                    null            // deliveryIntent (null = no delivery confirmation)
+            );
+
+            Log.i(TAG, "sendSms: Successfully sent " + messageType + " SMS");
+            return true;
+
+        } catch (SecurityException e) {
+            // Thrown if SEND_SMS permission not granted
+            Log.e(TAG, "sendSms: SecurityException - SEND_SMS permission not granted", e);
+            return false;
+
+        } catch (IllegalArgumentException e) {
+            // Thrown if phone number or message is invalid
+            Log.e(TAG, "sendSms: IllegalArgumentException - Invalid phone or message", e);
+            return false;
+
+        } catch (Exception e) {
+            // Catch any other unexpected exceptions
+            Log.e(TAG, "sendSms: Unexpected exception while sending " + messageType + " SMS", e);
+            return false;
+        }
     }
 }
