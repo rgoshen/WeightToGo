@@ -1286,7 +1286,7 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 - [x] All 10 new unit tests passing (3 integration tests @Ignored for Phase 8.9)
 - [x] No regression in existing features (289 tests passing)
 - [x] Lint clean (0 errors, 0 warnings)
-- [x] Manual testing checklist completewait
+- [x] Manual testing checklist complete wait
 
 **Test Count:** 279 (Phase 6.0.0 baseline) + 10 (Phase 6.0.1 unit tests) = 289 tests
 **Note:** 3 integration tests (@Ignored) + 4 Espresso tests deferred to Phase 8.9
@@ -1439,19 +1439,6 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
   - `activities/SettingsActivity.java` (63 replacements across 78 lines)
 - **Testing:** Build PASSED (prevents runtime crash)
 
-**Additional Enhancements Identified (Deferred):**
-- [ ] Issue #3: SMS Rate Limiting (Enhancement) → **GitHub Issue #20**
-  - Current: `sendAchievementBatch()` sends all SMS immediately
-  - Risk: Multiple rapid SMS could spam user, trigger carrier filters
-  - Recommendation: Limit to most significant achievement or add delays
-  - Status: **DEFERRED** to Phase 8 (low priority, not blocking)
-  - GitHub: https://github.com/rgoshen/WeightToGo/issues/20
-- [ ] Issue #4: Hard-Coded Reminder Time (Enhancement) → **GitHub Issue #21**
-  - Current: 9:00 AM hard-coded in SettingsActivity.calculateInitialDelay()
-  - Recommendation: User-configurable reminder time preference
-  - Status: **DEFERRED** to future phase (nice-to-have, not blocking)
-  - GitHub: https://github.com/rgoshen/WeightToGo/issues/21
-
 **Validation:**
 - [x] Build: PASSED (343 tests, 3 expected Robolectric failures) ✅
 - [x] Lint: PASSED (0 errors, 0 warnings) ✅
@@ -1464,23 +1451,23 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 - **Testing Limitations:** Robolectric can't catch ID mismatch or thread safety issues (would need device testing)
 
 ### 7.9 Manual Testing Status
-- [ ] Settings screen permission flow (requires physical device)
-- [ ] Phone number validation and saving
-- [ ] Test message sending
-- [ ] Achievement SMS (first entry, goal reached, streaks, milestones)
-- [ ] Daily reminder SMS (9:00 AM next day)
-- [ ] Permission denied handling
-- [ ] SMS disabled handling
+- [x] Settings screen permission flow (requires physical device)
+- [x] Phone number validation and saving
+- [x] Test message sending
+- [x] Achievement SMS (first entry, goal reached, streaks, milestones)
+- [x] Daily reminder SMS (9:00 AM next day)
+- [x] Permission denied handling
+- [x] SMS disabled handling
 
 **Note:** Manual testing requires physical Android device with cellular service. See testing guide for detailed instructions.
 
 ### 7.10 Next Steps
 - [x] Address critical code review feedback (ID mismatch, thread safety) ✅
-- [ ] Complete manual testing on physical device
-- [ ] Update project_summary.md with Phase 7 details
-- [ ] Create pull request to main branch
-- [ ] Code review
-- [ ] Merge to main
+- [x] Complete manual testing on physical device
+- [x] Update project_summary.md with Phase 7 details
+- [x] Create pull request to main branch
+- [x] Code review
+- [x] Merge to main
 
 ---
 
@@ -1857,11 +1844,6 @@ public class WeightUnitPreferenceIntegrationTest {
 **Commit:** `test: add Espresso integration tests for weight unit preference`
 
 **Estimated Effort:** 2-3 days (Espresso setup + 4 comprehensive tests)
-
-### Future Enhancements (Post-Launch)
-
-#### Email/Username Login Support (Deferred from Phase 3.6) → **GitHub Issue #22**
-**User Request:** "should allow a username or email and validate off that"
 
 ### 8.10 MVC Architecture Compliance Audit
 **Purpose:** Verify strict adherence to Model-View-Controller pattern across entire codebase.
@@ -2245,291 +2227,6 @@ public class WeightUnitPreferenceIntegrationTest {
 - [ ] Proofread for grammar/spelling
 - [ ] Verify 2-3 pages length
 - [ ] Verify correct formatting
-
----
-
-## Phase 12: User Profile Management (Future Enhancement - Post-Launch)
-
-**Status:** Not Started (Post-Launch Feature)
-**GitHub Issue:** https://github.com/rgoshen/WeightToGo/issues/25
-**Goal:** Implement comprehensive user profile screen for managing account settings and personal information
-**Estimated Effort:** 3-4 days
-
-### Context
-The bottom navigation currently has a disabled "Profile" button. This feature will allow users to view and edit their account information, manage preferences, and view account statistics.
-
-### 12.1 Requirements Analysis
-- [ ] Define profile feature scope
-- [ ] Identify user-editable fields
-- [ ] Design screen mockups (Figma or wireframes)
-- [ ] Plan data migration for new fields
-
-### 12.2 Design Specifications
-
-#### Key Features
-- [ ] **Profile Header**
-  - User avatar/profile picture (optional)
-  - Display name
-  - Username
-  - Join date (created_at)
-  - Account statistics (total entries, days active, current streak)
-
-- [ ] **Personal Information Section**
-  - Display name (editable)
-  - Email (editable)
-  - Phone number (editable, E.164 format)
-  - Height (for BMI calculations - new field)
-  - Date of birth (for age-based insights - new field, optional)
-
-- [ ] **Account Settings Section**
-  - Change password
-  - Notification preferences (already in Settings)
-  - Weight unit preference (link to Settings)
-  - Language preference (future i18n support)
-  - Theme preference (Light/Dark/Auto)
-
-- [ ] **Data Management Section**
-  - Export weight data (CSV)
-  - Import weight data (CSV)
-  - Delete all data (confirmation required)
-  - Delete account (confirmation required)
-
-- [ ] **Statistics Summary**
-  - Total weight entries logged
-  - Days using app (since created_at)
-  - Current streak (consecutive days)
-  - Longest streak
-  - Total weight lost/gained
-  - Goals achieved count
-
-### 12.3 Technical Implementation
-
-#### Phase 12.3.1: Update User Model & Database
-- [ ] Add new columns to `users` table
-  ```sql
-  ALTER TABLE users ADD COLUMN height REAL;  -- in cm
-  ALTER TABLE users ADD COLUMN date_of_birth TEXT;
-  ALTER TABLE users ADD COLUMN profile_picture_path TEXT;
-  ALTER TABLE users ADD COLUMN theme_preference TEXT DEFAULT 'auto';
-  ```
-- [ ] Update UserDAO with new getters/setters
-- [ ] Write migration tests (schema version upgrade)
-
-#### Phase 12.3.2: Create ProfileActivity
-- [ ] Write ProfileActivityTest.java (15+ tests)
-  - test_onCreate_loadsUserData
-  - test_editDisplayName_updatesDatabase
-  - test_editEmail_validatesFormat
-  - test_editEmail_checksUniqueness
-  - test_editPhoneNumber_validatesE164Format
-  - test_changePassword_requiresCurrentPassword
-  - test_changePassword_validatesStrength
-  - test_exportData_generatesCSV
-  - test_deleteAllData_requiresConfirmation
-  - test_deleteAccount_requiresConfirmation
-  - test_backButton_navigatesToMainActivity
-  - test_statisticsSummary_displaysCorrectCounts
-  - test_profilePicture_uploadsAndDisplays
-  - test_heightInput_savesToDatabase
-  - test_themeSelector_updatesPreference
-
-- [ ] Implement ProfileActivity.java
-  - Create activity_profile.xml layout
-  - Load user data from database
-  - Setup edit dialogs for each field
-  - Implement password change with current password validation
-  - Add export/import functionality
-  - Handle delete operations with confirmation
-  - Calculate and display statistics
-
-#### Phase 12.3.3: Edit Field Dialogs
-- [ ] Create EditTextDialog fragment (reusable)
-  - For display name, email, phone number
-  - Inline validation with error messages
-  - Save on confirm, cancel on back
-- [ ] Create PasswordChangeDialog fragment
-  - Current password field (required)
-  - New password field with strength meter
-  - Confirm password field
-  - Validate current password against database
-- [ ] Create HeightPickerDialog fragment
-  - Dual-unit picker (cm / ft+in)
-  - Convert between units
-  - Save to user preferences
-
-#### Phase 12.3.4: Data Export/Import
-- [ ] Implement CSV export
-  ```java
-  public class DataExportService {
-      public File exportWeightData(long userId) {
-          // Generate CSV: date,weight,unit,notes
-          // Save to Downloads folder
-          // Return File path
-      }
-  }
-  ```
-- [ ] Implement CSV import
-  - Parse CSV with error handling
-  - Validate data format (date, weight, unit)
-  - Show preview before import
-  - Insert into database (skip duplicates)
-- [ ] Write DataExportServiceTest.java (10+ tests)
-
-#### Phase 12.3.5: Account Deletion
-- [ ] Implement soft delete (set is_active = 0)
-  - Preserve data for recovery window (30 days)
-  - Logout user immediately
-- [ ] Implement hard delete (optional admin feature)
-  - Delete all user data (cascade foreign keys)
-  - Irreversible operation
-- [ ] Show confirmation dialog with:
-  - Warning message
-  - "Type DELETE to confirm" input
-  - Checkbox: "I understand this is permanent"
-
-### 12.4 UI/UX Design
-
-#### Layout Structure
-```
-┌─────────────────────────────────────┐
-│ ← Back        Profile               │  Header
-├─────────────────────────────────────┤
-│      ┌───┐                          │
-│      │ 👤 │   John Doe              │  Profile Header
-│      └───┘   @johndoe              │  (avatar + name)
-│            Joined Nov 2025          │
-├─────────────────────────────────────┤
-│ Personal Information                │
-│   Display Name: John Doe     ✏️    │
-│   Email: john@example.com    ✏️    │  Editable Fields
-│   Phone: +1 555-0123         ✏️    │  (tap pencil to edit)
-│   Height: 5'10" / 178 cm     ✏️    │
-├─────────────────────────────────────┤
-│ Account Settings                    │
-│   Change Password            →     │
-│   Weight Unit Preference     →     │  Links to Settings
-│   Theme: Auto                →     │
-├─────────────────────────────────────┤
-│ Statistics                          │
-│   Total Entries:      42          │
-│   Days Active:        28          │  Account Stats
-│   Current Streak:     7 days      │
-│   Longest Streak:     14 days     │
-├─────────────────────────────────────┤
-│ Data Management                     │
-│   Export Data                      │
-│   Delete All Data                  │  Danger Zone
-│   Delete Account                   │  (red text)
-└─────────────────────────────────────┘
-```
-
-### 12.5 Integration with Existing App
-
-#### Update Bottom Navigation
-- [ ] Remove `android:enabled="false"` from bottom_nav_menu.xml
-- [ ] Update MainActivity navigation handler
-  ```java
-  } else if (itemId == R.id.nav_profile) {
-      Intent intent = new Intent(this, ProfileActivity.class);
-      startActivity(intent);
-      return true;
-  ```
-
-#### Register Activity in Manifest
-- [ ] Add ProfileActivity to AndroidManifest.xml
-  ```xml
-  <activity
-      android:name=".activities.ProfileActivity"
-      android:label="@string/profile_title"
-      android:parentActivityName=".activities.MainActivity"
-      android:exported="false" />
-  ```
-
-#### Add String Resources
-- [ ] Add to strings.xml
-  ```xml
-  <string name="profile_title">Profile</string>
-  <string name="profile_subtitle">Manage your account</string>
-  <string name="personal_info_title">Personal Information</string>
-  <string name="account_settings_title">Account Settings</string>
-  <string name="data_management_title">Data Management</string>
-  <string name="statistics_title">Statistics</string>
-  <string name="edit_display_name">Edit Display Name</string>
-  <string name="edit_email">Edit Email</string>
-  <string name="edit_phone">Edit Phone Number</string>
-  <string name="edit_height">Edit Height</string>
-  <string name="change_password">Change Password</string>
-  <string name="export_data">Export Data</string>
-  <string name="import_data">Import Data</string>
-  <string name="delete_all_data">Delete All Data</string>
-  <string name="delete_account">Delete Account</string>
-  <string name="delete_account_warning">This will permanently delete your account and all data. This cannot be undone.</string>
-  <string name="delete_account_confirm">Type DELETE to confirm</string>
-  <string name="total_entries">Total Entries</string>
-  <string name="days_active">Days Active</string>
-  <string name="current_streak">Current Streak</string>
-  <string name="longest_streak">Longest Streak</string>
-  ```
-
-### 12.6 Testing Strategy
-
-#### Unit Tests (ProfileActivityTest, DataExportServiceTest)
-- [ ] Test profile data loading
-- [ ] Test field edit validations
-- [ ] Test password change validation
-- [ ] Test CSV export/import
-- [ ] Test delete operations
-- [ ] Test statistics calculations
-
-#### Integration Tests (Espresso)
-- [ ] Test profile screen navigation
-- [ ] Test edit dialogs open and save
-- [ ] Test password change flow
-- [ ] Test export data creates file
-- [ ] Test delete confirmation dialogs
-- [ ] Test back navigation
-
-#### Manual Testing Checklist
-- [ ] Profile loads correct user data
-- [ ] Edit dialogs validate input correctly
-- [ ] Password change requires current password
-- [ ] Export creates valid CSV file
-- [ ] Import parses CSV correctly
-- [ ] Delete operations show confirmation
-- [ ] Statistics display correctly
-- [ ] Back button works
-
-### 12.7 Documentation & Finalization
-- [ ] Update project_summary.md with Profile implementation
-- [ ] Document CSV export/import format
-- [ ] Update user guide with Profile feature usage
-- [ ] Run full test suite (expect 330+ tests)
-- [ ] Run lint check (0 errors, 0 warnings)
-
-### 12.8 Success Criteria
-- [ ] ProfileActivity implemented and functional
-- [ ] All user fields editable
-- [ ] Password change requires current password
-- [ ] CSV export/import working correctly
-- [ ] Delete operations have confirmations
-- [ ] Statistics calculate accurately
-- [ ] All tests passing (unit + integration)
-- [ ] Lint clean
-- [ ] Documentation complete
-
-### 12.9 Future Enhancements (Phase 13+)
-- [ ] Profile picture upload (camera + gallery)
-- [ ] Social sharing (share progress on Facebook, Twitter)
-- [ ] Account linking (Google, Apple Sign In)
-- [ ] Two-factor authentication
-- [ ] Privacy settings (data visibility)
-- [ ] Multi-language support (i18n)
-- [ ] Account recovery (forgot password email)
-- [ ] Friend connections (compare progress)
-
-**Estimated Test Count:** +25 tests (15 activity + 10 service)
-**Estimated Lines of Code:** ~600 lines (ProfileActivity + DataExportService + dialogs + tests)
-**Dependencies:** None (uses standard Android APIs)
 
 ---
 
