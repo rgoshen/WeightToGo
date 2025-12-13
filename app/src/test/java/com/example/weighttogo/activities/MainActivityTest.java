@@ -26,6 +26,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -43,43 +45,39 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 /**
  * Integration tests for MainActivity.
  * Tests dashboard functionality, authentication, data loading, and user interactions.
+ *
+ * **Phase 8A Refactoring**: Converted to use Mockito mocks instead of real database.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
 public class MainActivityTest {
 
+    @Mock private UserDAO mockUserDAO;
+    @Mock private WeightEntryDAO mockWeightEntryDAO;
+    @Mock private GoalWeightDAO mockGoalWeightDAO;
+    @Mock private SessionManager mockSessionManager;
+    @Mock private WeighToGoDBHelper mockDbHelper;
+
     private MainActivity activity;
-    private WeighToGoDBHelper dbHelper;
-    private SessionManager sessionManager;
-    private UserDAO userDAO;
-    private WeightEntryDAO weightEntryDAO;
-    private GoalWeightDAO goalWeightDAO;
     private long testUserId;
     private User testUser;
 
     @Before
-    public void setUp() throws DatabaseException {
-        // Get database instance
-        Context context = RuntimeEnvironment.getApplication();
-        dbHelper = WeighToGoDBHelper.getInstance(context);
-        sessionManager = SessionManager.getInstance(context);
+    public void setUp() {
+        // Initialize Mockito mocks
+        MockitoAnnotations.openMocks(this);
 
-        // Clear session
-        sessionManager.logout();
-
-        // Initialize DAOs
-        userDAO = new UserDAO(dbHelper);
-        weightEntryDAO = new WeightEntryDAO(dbHelper);
-        goalWeightDAO = new GoalWeightDAO(dbHelper);
-
-        // Create test user (use unique username to avoid conflicts)
+        // Create test user data
+        testUserId = 1L;
         testUser = new User();
-        testUser.setUsername("mainactivity_testuser_" + System.currentTimeMillis());
+        testUser.setUserId(testUserId);
+        testUser.setUsername("testuser");
         testUser.setPasswordHash("hashed_password");
         testUser.setSalt("test_salt");
         testUser.setPasswordAlgorithm("SHA256");
@@ -87,8 +85,10 @@ public class MainActivityTest {
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
         testUser.setActive(true);
-        testUserId = userDAO.insertUser(testUser);
-        testUser.setUserId(testUserId);
+
+        // Set default mock behaviors
+        when(mockSessionManager.isLoggedIn()).thenReturn(false);
+        when(mockSessionManager.getCurrentUserId()).thenReturn(0L);
     }
 
     @After
@@ -96,26 +96,31 @@ public class MainActivityTest {
         if (activity != null) {
             activity.finish();
         }
-        sessionManager.logout();
-        if (dbHelper != null) {
-            dbHelper.close();
-        }
-        RuntimeEnvironment.getApplication().deleteDatabase("weigh_to_go.db");
     }
 
     /**
      * Test 1: onCreate when not logged in redirects to LoginActivity
      * NOTE: Also affected by Robolectric/Material3 theme issue (GH #12)
      * Will be migrated to Espresso with tests 2-18 in Phase 8.4
+     *
+     * **Phase 8A Refactoring**: Now uses Mockito mocks via setter injection.
      */
     @Ignore("Robolectric/Material3 theme incompatibility - migrate to Espresso (GH #12)")
     @Test
     public void test_onCreate_whenNotLoggedIn_redirectsToLogin() {
-        // ARRANGE
-        sessionManager.logout();
+        // ARRANGE - Stub mock to return false for isLoggedIn()
+        when(mockSessionManager.isLoggedIn()).thenReturn(false);
 
-        // ACT
-        activity = Robolectric.buildActivity(MainActivity.class).create().get();
+        // ACT - Build activity, inject mocks, then create
+        activity = Robolectric.buildActivity(MainActivity.class).get();
+        activity.setUserDAO(mockUserDAO);
+        activity.setWeightEntryDAO(mockWeightEntryDAO);
+        activity.setGoalWeightDAO(mockGoalWeightDAO);
+        activity.setSessionManager(mockSessionManager);
+        activity.setDbHelper(mockDbHelper);
+
+        // Now call onCreate
+        Robolectric.buildActivity(MainActivity.class).create().get();
 
         // ASSERT
         Intent expectedIntent = new Intent(activity, LoginActivity.class);

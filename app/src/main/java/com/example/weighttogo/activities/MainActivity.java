@@ -154,6 +154,49 @@ public class MainActivity extends AppCompatActivity
         weightEntries = new ArrayList<>();
     }
 
+    // =============================================================================================
+    // TESTING SETTERS (Package-Private)
+    // =============================================================================================
+
+    /**
+     * Set UserDAO instance (for testing only).
+     */
+    void setUserDAO(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    /**
+     * Set WeightEntryDAO instance (for testing only).
+     */
+    void setWeightEntryDAO(WeightEntryDAO weightEntryDAO) {
+        this.weightEntryDAO = weightEntryDAO;
+    }
+
+    /**
+     * Set GoalWeightDAO instance (for testing only).
+     */
+    void setGoalWeightDAO(GoalWeightDAO goalWeightDAO) {
+        this.goalWeightDAO = goalWeightDAO;
+    }
+
+    /**
+     * Set SessionManager instance (for testing only).
+     */
+    void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+    }
+
+    /**
+     * Set DBHelper instance (for testing only).
+     */
+    void setDbHelper(WeighToGoDBHelper dbHelper) {
+        this.dbHelper = dbHelper;
+    }
+
+    // =============================================================================================
+    // VIEW INITIALIZATION
+    // =============================================================================================
+
     /**
      * Initialize all view references.
      */
