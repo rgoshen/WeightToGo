@@ -108,7 +108,7 @@ public final class ValidationUtils {
      */
     public static boolean isValidUsername(@Nullable String username) {
         // Null or empty check
-        if (username == null || username.trim().isEmpty()) {
+        if (isNullOrEmpty(username)) {
             Log.w(TAG, "isValidUsername: username is null or empty");
             return false;
         }
@@ -145,7 +145,7 @@ public final class ValidationUtils {
      */
     public static boolean isValidPassword(@Nullable String password) {
         // Null or empty check
-        if (password == null || password.trim().isEmpty()) {
+        if (isNullOrEmpty(password)) {
             Log.w(TAG, "isValidPassword: password is null or empty");
             return false;
         }
