@@ -39,7 +39,7 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
 
     // Database configuration
     private static final String DATABASE_NAME = "weigh_to_go.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;  // Phase 8.6: bcrypt migration
 
     // Singleton instance
     private static WeighToGoDBHelper instance;
@@ -58,6 +58,7 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
             "username TEXT NOT NULL UNIQUE, " +
             "password_hash TEXT NOT NULL, " +
             "salt TEXT NOT NULL, " +
+            "password_algorithm TEXT NOT NULL DEFAULT 'SHA256', " +  // Phase 8.6: bcrypt migration
             "created_at TEXT NOT NULL, " +
             "last_login TEXT, " +
             "email TEXT, " +
@@ -290,51 +291,63 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
     /**
      * Called when database needs to be upgraded (version increase).
      *
-     * DEVELOPMENT-ONLY STRATEGY (v1.0):
-     * - Drops and recreates all tables (ALL USER DATA IS LOST!)
-     * - Acceptable ONLY during Phase 1 development (no real users yet)
-     * - MUST be replaced before Phase 2 (user authentication creates real data)
-     *
-     * PRODUCTION MIGRATION STRATEGY (Required before Phase 2):
-     * - Implement incremental migrations following ADR-0002 pattern
-     * - Use switch statement: case 1: upgradeToV2(); case 2: upgradeToV3(); etc.
-     * - Use ALTER TABLE to add/modify columns (preserve existing data)
-     * - Use temporary tables for complex schema changes
-     * - Test each migration with realistic sample data
-     * - See docs/adr/0002-database-versioning-strategy.md for examples
-     *
-     * When to Implement Proper Migrations:
-     * - BEFORE Phase 2 user authentication (users will have real data to preserve)
-     * - BEFORE any schema changes after v1.0 (users exist in production)
-     * - As part of Phase 1.4 schema corrections (see TODO.md section 1.4)
+     * PRODUCTION MIGRATION STRATEGY (Phase 8.6):
+     * - Implements incremental migrations to preserve user data
+     * - Uses switch statement with fall-through for sequential upgrades
+     * - Each version upgrade is a separate method for maintainability
      *
      * @param db the database
      * @param oldVersion the old database version
      * @param newVersion the new database version
-     * @see docs/adr/0002-database-versioning-strategy.md
      */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
-        Log.w(TAG, "WARNING: Data will be lost during upgrade. This is a development-only strategy.");
+        Log.i(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
 
         try {
-            // Drop existing tables (in reverse dependency order)
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACHIEVEMENTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER_PREFERENCES);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_GOAL_WEIGHTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_DAILY_WEIGHTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+            // Incremental migration pattern - each case falls through to next
+            switch (oldVersion) {
+                case 1:
+                    upgradeToV2(db);  // Add password_algorithm column
+                    // Fall through to next version when available
+                case 2:
+                    // Future: upgradeToV3(db);
+                    // Fall through
+                default:
+                    break;
+            }
 
-            Log.w(TAG, "Dropped all tables for database upgrade");
-
-            // Recreate tables with new schema
-            onCreate(db);
-
-            Log.w(TAG, "Database upgrade completed");
+            Log.i(TAG, "Database upgrade completed successfully");
 
         } catch (Exception e) {
-            Log.e(TAG, "Error upgrading database: " + e.getMessage(), e);
+            Log.e(TAG, "Error upgrading database from version " + oldVersion + " to " + newVersion, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Upgrade database from version 1 to version 2.
+     * Adds password_algorithm column to users table for bcrypt migration.
+     *
+     * Migration Strategy:
+     * - Adds password_algorithm column with DEFAULT 'SHA256'
+     * - All existing users automatically get 'SHA256' algorithm
+     * - Lazy migration: passwords rehashed to bcrypt on next login
+     *
+     * @param db the database
+     */
+    private void upgradeToV2(SQLiteDatabase db) {
+        Log.i(TAG, "Upgrading to version 2: Adding password_algorithm column");
+
+        try {
+            // Add password_algorithm column with default value for existing users
+            db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN password_algorithm TEXT NOT NULL DEFAULT 'SHA256'");
+
+            Log.i(TAG, "Successfully added password_algorithm column to users table");
+            Log.i(TAG, "All existing users set to SHA256 algorithm (will migrate to bcrypt on next login)");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error upgrading to version 2", e);
             throw e;
         }
     }

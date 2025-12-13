@@ -29,16 +29,24 @@ public class User {
     @Nullable private String displayName;
 
     /**
-     * SHA-256 hashed password for authentication.
+     * Hashed password for authentication.
+     * Algorithm used is specified in passwordAlgorithm field.
      * NEVER store, log, or transmit plain text passwords.
      */
     @NonNull private String passwordHash;
 
     /**
-     * Cryptographic salt used for password hashing.
+     * Cryptographic salt used for password hashing (for SHA256 only).
+     * bcrypt handles salts internally.
      * NEVER store, log, or expose this value.
      */
     @NonNull private String salt;
+
+    /**
+     * Password hashing algorithm used: 'SHA256', 'BCRYPT', or 'ARGON2'.
+     * Phase 8.6: Enables lazy migration from SHA256 to bcrypt on login.
+     */
+    @NonNull private String passwordAlgorithm;
 
     /** Timestamp when user account was created */
     @NonNull private LocalDateTime createdAt;
@@ -118,6 +126,15 @@ public class User {
 
     public void setSalt(@NonNull String salt) {
         this.salt = salt;
+    }
+
+    @NonNull
+    public String getPasswordAlgorithm() {
+        return passwordAlgorithm;
+    }
+
+    public void setPasswordAlgorithm(@NonNull String passwordAlgorithm) {
+        this.passwordAlgorithm = passwordAlgorithm;
     }
 
     @NonNull

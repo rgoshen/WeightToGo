@@ -48,6 +48,7 @@ public class GoalWeightDAOTest {
         testUser.setUsername("testuser");
         testUser.setPasswordHash("hash123");
         testUser.setSalt("salt123");
+        testUser.setPasswordAlgorithm("SHA256");
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
         testUser.setActive(true);
@@ -187,6 +188,7 @@ public class GoalWeightDAOTest {
         user2.setUsername("user2");
         user2.setPasswordHash("hash");
         user2.setSalt("salt");
+        user2.setPasswordAlgorithm("SHA256");
         user2.setCreatedAt(LocalDateTime.now());
         user2.setUpdatedAt(LocalDateTime.now());
         user2.setActive(true);

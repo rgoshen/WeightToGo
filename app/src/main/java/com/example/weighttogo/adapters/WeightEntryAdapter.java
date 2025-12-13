@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * RecyclerView adapter for displaying weight entry items.
@@ -50,10 +51,17 @@ public class WeightEntryAdapter extends RecyclerView.Adapter<WeightEntryAdapter.
     /**
      * Constructor for WeightEntryAdapter.
      *
-     * @param entries list of weight entries to display
-     * @param listener listener for item click events
+     * @param entries list of weight entries to display (must not be null)
+     * @param listener listener for item click events (must not be null)
+     * @throws NullPointerException if entries or listener is null
      */
-    public WeightEntryAdapter(List<WeightEntry> entries, OnItemClickListener listener) {
+    public WeightEntryAdapter(@NonNull List<WeightEntry> entries, @NonNull OnItemClickListener listener) {
+        if (entries == null) {
+            throw new NullPointerException("entries must not be null");
+        }
+        if (listener == null) {
+            throw new NullPointerException("listener must not be null");
+        }
         this.entries = entries;
         this.listener = listener;
     }
@@ -83,17 +91,8 @@ public class WeightEntryAdapter extends RecyclerView.Adapter<WeightEntryAdapter.
         bindTrendBadge(holder, position);
 
         // Set up click listeners
-        holder.editButton.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onEditClick(entry);
-            }
-        });
-
-        holder.deleteButton.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onDeleteClick(entry);
-            }
-        });
+        holder.editButton.setOnClickListener(v -> listener.onEditClick(entry));
+        holder.deleteButton.setOnClickListener(v -> listener.onDeleteClick(entry));
     }
 
     @Override
@@ -113,7 +112,7 @@ public class WeightEntryAdapter extends RecyclerView.Adapter<WeightEntryAdapter.
 
         if (parts.length == 2) {
             holder.dayNumber.setText(parts[0]); // "26"
-            holder.monthName.setText(parts[1].toUpperCase()); // "NOV"
+            holder.monthName.setText(parts[1].toUpperCase(Locale.US)); // "NOV"
         }
     }
 
