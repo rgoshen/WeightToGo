@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 import android.content.Context;
 
 import com.example.weighttogo.models.User;
+import com.example.weighttogo.models.UserPreference;
+
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -128,5 +131,33 @@ public class UserPreferenceDAOTest {
 
         // ASSERT
         assertEquals("Should return stored value", "dark", result);
+    }
+
+    /**
+     * Test 4: SET twice updates value (UPSERT pattern).
+     *
+     * Tests FR6.0.1 - UserPreferenceDAO UPSERT functionality.
+     * Verifies that calling setPreference() twice with the same key
+     * updates the value instead of creating a duplicate row.
+     * This is critical to ensure INSERT OR REPLACE works correctly.
+     */
+    @Test
+    public void test_setPreference_twice_updatesValue() {
+        // ARRANGE
+        userPreferenceDAO.setPreference(testUserId, "theme", "dark");
+
+        // ACT - Update same key
+        userPreferenceDAO.setPreference(testUserId, "theme", "light");
+        String result = userPreferenceDAO.getPreference(testUserId, "theme", "system");
+
+        // ASSERT
+        assertEquals("Should return updated value", "light", result);
+
+        // Verify only one row exists (no duplicate keys)
+        List<UserPreference> allPrefs = userPreferenceDAO.getAllPreferences(testUserId);
+        long themeCount = allPrefs.stream()
+                .filter(p -> p.getPrefKey().equals("theme"))
+                .count();
+        assertEquals("Should only have one 'theme' preference", 1L, themeCount);
     }
 }
