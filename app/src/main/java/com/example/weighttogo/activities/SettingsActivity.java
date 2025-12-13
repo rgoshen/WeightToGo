@@ -105,7 +105,7 @@ public class SettingsActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this,
-                    "Failed to update weight unit",
+                    R.string.weight_unit_update_failed,
                     Toast.LENGTH_SHORT).show();
         }
     }

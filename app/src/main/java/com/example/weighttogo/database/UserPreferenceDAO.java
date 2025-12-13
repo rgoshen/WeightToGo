@@ -57,21 +57,28 @@ public class UserPreferenceDAO {
     public String getPreference(long userId, @NonNull String key, @NonNull String defaultValue) {
         Log.d(TAG, "getPreference: user_id=" + userId + ", key=" + key);
 
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        try (Cursor cursor = db.query(
-                WeighToGoDBHelper.TABLE_USER_PREFERENCES,
-                new String[]{"pref_value"},
-                "user_id = ? AND pref_key = ?",
-                new String[]{String.valueOf(userId), key},
-                null, null, null, "1"
-        )) {
-            if (cursor != null && cursor.moveToFirst()) {
-                String value = cursor.getString(0);
-                Log.i(TAG, "getPreference: Found value for key=" + key);
-                return value;
+        SQLiteDatabase db = null;
+        try {
+            db = dbHelper.getReadableDatabase();
+            try (Cursor cursor = db.query(
+                    WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                    new String[]{"pref_value"},
+                    "user_id = ? AND pref_key = ?",
+                    new String[]{String.valueOf(userId), key},
+                    null, null, null, "1"
+            )) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    String value = cursor.getString(0);
+                    Log.i(TAG, "getPreference: Found value for key=" + key);
+                    return value;
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "getPreference: Exception", e);
+        } finally {
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
         }
 
         Log.d(TAG, "getPreference: Key not found, returning default");
@@ -80,7 +87,7 @@ public class UserPreferenceDAO {
 
     /**
      * Sets a preference value for a user (UPSERT).
-     * Uses INSERT OR REPLACE to handle both insert and update.
+     * Preserves created_at timestamp on updates by using separate INSERT/UPDATE paths.
      *
      * @param userId the user ID
      * @param key the preference key
@@ -90,30 +97,73 @@ public class UserPreferenceDAO {
     public boolean setPreference(long userId, @NonNull String key, @NonNull String value) {
         Log.d(TAG, "setPreference: user_id=" + userId + ", key=" + key);
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("user_id", userId);
-        values.put("pref_key", key);
-        values.put("pref_value", value);
-
-        String now = DateTimeConverter.toTimestamp(LocalDateTime.now());
-        values.put("created_at", now);
-        values.put("updated_at", now);
-
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
         try {
-            long result = db.insertWithOnConflict(
+            db = dbHelper.getWritableDatabase();
+            String now = DateTimeConverter.toTimestamp(LocalDateTime.now());
+
+            // Check if preference already exists (using same db connection)
+            cursor = db.query(
                     WeighToGoDBHelper.TABLE_USER_PREFERENCES,
-                    null,
-                    values,
-                    SQLiteDatabase.CONFLICT_REPLACE
+                    new String[]{"pref_value"},
+                    "user_id = ? AND pref_key = ?",
+                    new String[]{String.valueOf(userId), key},
+                    null, null, null, "1"
             );
 
-            if (result > 0) {
-                Log.i(TAG, "setPreference: Successfully set key=" + key);
-                return true;
+            boolean exists = cursor != null && cursor.moveToFirst();
+            if (cursor != null) {
+                cursor.close();
+                cursor = null;
+            }
+
+            if (exists) {
+                // UPDATE path - preserve created_at
+                ContentValues updateValues = new ContentValues();
+                updateValues.put("pref_value", value);
+                updateValues.put("updated_at", now);
+
+                int rowsAffected = db.update(
+                        WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                        updateValues,
+                        "user_id = ? AND pref_key = ?",
+                        new String[]{String.valueOf(userId), key}
+                );
+
+                if (rowsAffected > 0) {
+                    Log.i(TAG, "setPreference: Updated existing key=" + key);
+                    return true;
+                }
+            } else {
+                // INSERT path - new preference
+                ContentValues insertValues = new ContentValues();
+                insertValues.put("user_id", userId);
+                insertValues.put("pref_key", key);
+                insertValues.put("pref_value", value);
+                insertValues.put("created_at", now);
+                insertValues.put("updated_at", now);
+
+                long result = db.insert(
+                        WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                        null,
+                        insertValues
+                );
+
+                if (result > 0) {
+                    Log.i(TAG, "setPreference: Inserted new key=" + key);
+                    return true;
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "setPreference: Exception", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
         }
 
         return false;
@@ -131,20 +181,27 @@ public class UserPreferenceDAO {
         Log.d(TAG, "getAllPreferences: user_id=" + userId);
 
         List<UserPreference> preferences = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        SQLiteDatabase db = null;
 
-        try (Cursor cursor = db.query(
-                WeighToGoDBHelper.TABLE_USER_PREFERENCES,
-                null,
-                "user_id = ?",
-                new String[]{String.valueOf(userId)},
-                null, null, null
-        )) {
-            while (cursor != null && cursor.moveToNext()) {
-                preferences.add(mapCursorToUserPreference(cursor));
+        try {
+            db = dbHelper.getReadableDatabase();
+            try (Cursor cursor = db.query(
+                    WeighToGoDBHelper.TABLE_USER_PREFERENCES,
+                    null,
+                    "user_id = ?",
+                    new String[]{String.valueOf(userId)},
+                    null, null, null
+            )) {
+                while (cursor != null && cursor.moveToNext()) {
+                    preferences.add(mapCursorToUserPreference(cursor));
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "getAllPreferences: Exception", e);
+        } finally {
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
         }
 
         return preferences;
