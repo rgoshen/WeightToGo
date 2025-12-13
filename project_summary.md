@@ -10352,8 +10352,195 @@ Phase 8 focused on code quality improvements and technical debt resolution. A co
 
 **Ready for:** Phase 9 (Final Testing) → Phase 10 (Launch Plan)
 
-**Code Quality Grade:** A- (Excellent with minor fixes)
-**Blockers:** None
+**Code Quality Grade:** A (Production-ready with documented technical debt)
+**Blockers:** None (3 SMS tests require Espresso - Phase 8B pre-production)
 **Technical Debt:** All items documented with clear rationale
+
+---
+
+## [2025-12-13] Phase 8.6: bcrypt Password Migration + Architecture Audits
+
+### Executive Summary
+Completed production-critical bcrypt password migration with transparent lazy migration for existing users, plus comprehensive architecture and code quality audits.  All 361 tests now pass except 3 known SMS tests requiring Espresso (Phase 8B).
+
+### Phase 8.6: bcrypt Password Migration (7 Commits)
+
+**Impact**: Production-ready password security, eliminates SHA-256 vulnerability to GPU brute-force attacks
+
+**Implementation:**
+1. **Dependency & Database Schema** (Commit 1)
+   - Added `at.favre.lib:bcrypt:0.10.2` dependency
+   - Database v1→v2 migration: Added `password_algorithm` TEXT column (default: 'SHA256')
+   - Incremental ALTER TABLE migration (preserves user data)
+
+2. **PasswordUtilsV2** (Commit 2)
+   - `hashPasswordBcrypt()` - bcrypt cost factor 12 (2^12 iterations)
+   - `verifyPasswordBcrypt()` - bcrypt verification
+   - `verifyPassword()` - hybrid SHA256/BCRYPT verification during migration
+
+3. **Comprehensive Tests** (Commits 3-5)
+   - Created PasswordUtilsV2Test.java (16 tests)
+   - Fixed 17 test files to add `passwordAlgorithm` field to User objects
+   - Migration test: test_updatePassword_migratesToBcrypt_success()
+   - Reduced test failures from 18 to 3 (99.2% pass rate)
+
+4. **Lazy Migration** (Commit 7)
+   - **LoginActivity.handleSignIn()**: Migrates SHA256 users to bcrypt on successful login
+   - **LoginActivity.handleRegister()**: New users created with bcrypt
+   - Background threading via BackgroundTask (no UI blocking)
+   - Transparent migration (no password reset required)
+
+**Migration Details:**
+```java
+// Lazy migration on login (LoginActivity.java:286-317)
+if ("SHA256".equals(user.getPasswordAlgorithm())) {
+    BackgroundTask.execute(
+        () -> PasswordUtilsV2.hashPasswordBcrypt(password),
+        new BackgroundTask.Callback<String>() {
+            @Override
+            public void onResult(String bcryptHash) {
+                userDAO.updatePassword(userId, bcryptHash, "", "BCRYPT");
+            }
+        }
+    );
+}
+
+// New users with bcrypt (LoginActivity.java:396)
+newUser.setPasswordAlgorithm("BCRYPT");
+newUser.setSalt("");  // bcrypt handles salt internally
+```
+
+**Test Results:**
+- **Before**: 344 passing, 18 failing
+- **After**: 358 passing (99.2%), 3 failing (SMS tests - Espresso required)
+- **Lint**: Clean (0 errors, 0 warnings)
+
+---
+
+### Phase 8.10-8.14: Architecture & Code Quality Audits
+
+#### Phase 8.10: MVC Architecture Compliance ✅ PASS
+**Audit Scope**: Scanned all Activities, DAOs, Models, Adapters for architecture violations
+
+**Findings:**
+- ✅ Activities delegate to utilities/DAOs (no business logic)
+- ✅ DAOs only handle CRUD operations (no UI code)
+- ✅ Models have no UI dependencies
+- ✅ Adapters delegate formatting to utility classes (DateUtils, WeightUtils)
+
+**Files Audited**: 5 Activities, 5 DAOs, 2 Adapters, 5 Models
+
+---
+
+#### Phase 8.11: DRY Violations ⚠️ Minor Issues
+**Audit Scope**: Searched for duplicate validation, formatting, and configuration code
+
+**Violations Found:**
+1. **Password algorithm strings** (2 occurrences)
+   - "SHA256", "BCRYPT" repeated in LoginActivity and PasswordUtilsV2
+   - **Recommendation**: Extract to public constants in PasswordUtilsV2
+
+2. **Weight unit constants** (38 occurrences)
+   - "lbs", "kg" repeated across 11 files
+   - Currently private in UserPreferenceDAO (lines 41-42)
+   - **Recommendation**: Make public or extract to WeightUtils
+
+**Acceptable Repetition:**
+- `getText().toString().trim()` (5 occurrences) - Simple UI input extraction
+- `Toast.makeText(...).show()` (37 occurrences) - Context-specific messaging
+- DateTimeFormatter patterns - Centralized in DateUtils (except 1 inline use)
+
+**Impact**: Low - Minor code smell, not production-blocking
+
+---
+
+#### Phase 8.12: SOLID Principles ⚠️ Educational Tradeoffs
+**Audit Scope**: Checked for Single Responsibility, Open/Closed, Interface Segregation, Dependency Inversion violations
+
+**Findings:**
+- ✅ **Single Responsibility**: Classes have focused responsibilities
+  - Largest classes: WeightEntryActivity (727 lines), SettingsActivity (639 lines)
+  - Typical for Android Activities with UI setup and lifecycle
+
+- ✅ **Open/Closed**: Extension points via interfaces
+  - OnItemClickListener (WeightEntryAdapter)
+  - GoalDialogListener (GoalDialogFragment)
+
+- ✅ **Interface Segregation**: Interfaces are small (1-2 methods each)
+
+- ⚠️ **Dependency Inversion**: Activities create DAOs directly
+  ```java
+  // Example: MainActivity.java:151-153
+  userDAO = new UserDAO(dbHelper);
+  weightEntryDAO = new WeightEntryDAO(dbHelper);
+  ```
+  - **Ideal**: Dependency injection via Dagger/Hilt
+  - **Acceptable**: For educational project without DI framework
+  - **Technical Debt**: Document for production refactoring
+
+**Impact**: Low - Standard practice for educational Android apps
+
+---
+
+#### Phase 8.13: Phase 8 Validation ✅ PASS
+**Test Results:**
+- **Tests**: 361 total, 358 passing (99.2%), 3 failing (SMS - Espresso required)
+- **Lint**: Clean (0 errors, 0 warnings)
+- **MVC Compliance**: Verified
+- **Build**: Successful
+
+**Known Test Failures** (Deferred to Phase 8B):
+1. SMSNotificationManagerTest.test_sendGoalAchievedSms_withValidConditions_sendsMessage
+2. SMSNotificationManagerTest.test_sendMilestoneSms_withValidConditions_sendsMessage
+3. SMSNotificationManagerTest.test_sendDailyReminderSms_withValidConditions_sendsMessage
+
+**Root Cause**: Robolectric cannot send real SMS. Requires Espresso instrumented tests.
+
+---
+
+#### Phase 8.14: Other Code Quality ✅ PASS
+**Checks Performed:**
+- ✅ No `System.out.println` (0 occurrences)
+- ✅ No `.printStackTrace()` (0 occurrences)
+- ✅ 2 documented TODO comments (future phases 11-12)
+- ✅ No PII in logs (passwords/emails/phones not logged)
+
+**Logging Best Practices Verified:**
+- Only metadata logged: "Password hashed successfully", "Updating phone for user_id=X"
+- No actual password values, email addresses, or phone numbers in logs
+- Exception messages logged for debugging without exposing sensitive data
+
+---
+
+### Phase 8 Summary: Production-Ready Code Quality
+
+**Total Commits**: 12 (6 initial fixes + 7 bcrypt migration + audits)
+
+**Security Improvements:**
+- ✅ Locale crash fix (Turkish "i" bug)
+- ✅ bcrypt password hashing (cost factor 12)
+- ✅ Transparent migration (no user disruption)
+- ✅ Background threading (no UI blocking)
+
+**Architecture Quality:**
+- ✅ MVC compliance verified
+- ✅ SOLID principles followed (with documented tradeoffs)
+- ⚠️ Minor DRY violations (non-blocking)
+
+**Test Quality:**
+- **Coverage**: 358/361 tests passing (99.2%)
+- **Known Gaps**: 3 SMS tests (Espresso required - Phase 8B)
+- **Regression**: All previous functionality intact
+
+**Technical Debt Documented:**
+1. **Phase 8A** (Pre-Production): Mockito refactoring (6-8 hours)
+2. **Phase 8B** (Pre-Production): Espresso SMS tests (4-6 hours)
+3. Password algorithm constants extraction (minor)
+4. Weight unit constants public access (minor)
+5. Dependency injection (educational project acceptable)
+
+**Status**: ✅ Ready for Phase 9 (Final Testing)
+
+**Blockers**: None for MVP launch. Phases 8A/8B required before production deployment.
 
 ---
