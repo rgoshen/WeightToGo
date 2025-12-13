@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * Setup FAB click listener.
+     * Setup FAB and button click listeners.
      */
     private void setupFAB() {
         addEntryFab.setOnClickListener(v -> {
@@ -211,6 +211,11 @@ public class MainActivity extends AppCompatActivity
         });
 
         btnEditGoalFromCard.setOnClickListener(v -> handleEditGoal());
+
+        settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
     }
 
     /**
