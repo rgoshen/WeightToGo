@@ -182,4 +182,24 @@ public class UserPreferenceDAO {
         Log.d(TAG, "getWeightUnit: user_id=" + userId);
         return getPreference(userId, KEY_WEIGHT_UNIT, UNIT_LBS);
     }
+
+    /**
+     * Sets the weight unit preference with validation.
+     * Accepts only "lbs" or "kg" (case-sensitive).
+     *
+     * @param userId the user ID
+     * @param unit the weight unit ("lbs" or "kg")
+     * @return true if successful, false if unit is invalid
+     */
+    public boolean setWeightUnit(long userId, @NonNull String unit) {
+        Log.d(TAG, "setWeightUnit: user_id=" + userId + ", unit=" + unit);
+
+        // Validate input (case-sensitive)
+        if (!UNIT_LBS.equals(unit) && !UNIT_KG.equals(unit)) {
+            Log.w(TAG, "setWeightUnit: Invalid unit '" + unit + "' (must be 'lbs' or 'kg')");
+            return false;
+        }
+
+        return setPreference(userId, KEY_WEIGHT_UNIT, unit);
+    }
 }
