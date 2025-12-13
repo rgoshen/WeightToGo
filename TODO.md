@@ -1400,7 +1400,68 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 - TDD Compliance: ✅ Strict Red-Green-Refactor cycle
 - Documentation: ✅ Comprehensive Javadoc
 
-### 7.8 Manual Testing Status
+### 7.8 Critical Fixes (Code Review Feedback)
+**Date:** 2025-12-13
+**PR:** #19
+**Commit:** `f6a303f` - fix: resolve critical ID mismatch and thread safety issues
+
+**Issue #1: Thread Safety in DailyReminderWorker (CRITICAL)**
+- **Problem:** DailyReminderWorker.java:69 read SessionManager on background thread
+  - SessionManager uses SharedPreferences which is NOT thread-safe
+  - Race condition: UI thread writing while background thread reading
+  - Could cause data corruption or crashes
+- **Solution:**
+  - Modified SettingsActivity.scheduleDailyReminder() to pass userId via WorkManager Data.Builder
+  - Modified DailyReminderWorker.doWork() to read userId from input data
+  - Eliminated SessionManager access on background thread
+- **Files Changed:**
+  - `activities/SettingsActivity.java` (lines 538-544, 562)
+  - `workers/DailyReminderWorker.java` (lines 68-73)
+- **Testing:** Build PASSED, Lint PASSED
+
+**Issue #2: ID Mismatch Between Java and XML (CRITICAL - RUNTIME CRASH)**
+- **Problem:** Java variable names didn't match XML layout IDs
+  - Caused `findViewById()` to return null
+  - NullPointerException when accessing UI elements
+  - Would crash app when clicking ANY SMS toggle
+- **Mismatches Fixed:**
+  - `masterToggle` → `switchEnableSms`
+  - `goalAlertsToggle` → `switchGoalAlerts`
+  - `milestoneAlertsToggle` → `switchMilestoneAlerts`
+  - `reminderToggle` → `switchDailyReminders`
+  - `testMessageButton` → `sendTestMessageButton`
+- **Solution:**
+  - Global find-replace for all 5 variable names
+  - Updated field declarations, findViewById calls, listeners
+  - Uncommented SMS listener setup in setupClickListeners()
+  - Uncommented SMS initialization in onCreate()
+- **Files Changed:**
+  - `activities/SettingsActivity.java` (63 replacements across 78 lines)
+- **Testing:** Build PASSED (prevents runtime crash)
+
+**Additional Enhancements Identified (Deferred):**
+- [ ] Issue #3: SMS Rate Limiting (Enhancement)
+  - Current: `sendAchievementBatch()` sends all SMS immediately
+  - Risk: Multiple rapid SMS could spam user, trigger carrier filters
+  - Recommendation: Limit to most significant achievement or add delays
+  - Status: **DEFERRED** to Phase 8 (low priority, not blocking)
+- [ ] Issue #4: Hard-Coded Reminder Time (Enhancement)
+  - Current: 9:00 AM hard-coded in SettingsActivity.calculateInitialDelay()
+  - Recommendation: User-configurable reminder time preference
+  - Status: **DEFERRED** to future phase (nice-to-have, not blocking)
+
+**Validation:**
+- [x] Build: PASSED (343 tests, 3 expected Robolectric failures) ✅
+- [x] Lint: PASSED (0 errors, 0 warnings) ✅
+- [x] Pushed to PR #19: `f6a303f` ✅
+
+**Lessons Learned:**
+- **ID Consistency:** Always verify Java variable names match XML IDs before uncommenting UI code
+- **Thread Safety:** Never access SharedPreferences from WorkManager background threads
+- **Code Review Value:** User's detailed code review caught 2 critical bugs before merge
+- **Testing Limitations:** Robolectric can't catch ID mismatch or thread safety issues (would need device testing)
+
+### 7.9 Manual Testing Status
 - [ ] Settings screen permission flow (requires physical device)
 - [ ] Phone number validation and saving
 - [ ] Test message sending
@@ -1411,7 +1472,8 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 
 **Note:** Manual testing requires physical Android device with cellular service. See testing guide for detailed instructions.
 
-### 7.9 Next Steps
+### 7.10 Next Steps
+- [x] Address critical code review feedback (ID mismatch, thread safety) ✅
 - [ ] Complete manual testing on physical device
 - [ ] Update project_summary.md with Phase 7 details
 - [ ] Create pull request to main branch
