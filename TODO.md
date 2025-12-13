@@ -1881,20 +1881,6 @@ public class MainActivityEspressoTest {
 
 ---
 
-### 8.15 Deferred Items (Post-MVP)
-
-**SessionManager Refactoring** (Phase 12):
-- Create SessionUser class (lightweight session data)
-- Remove dummy fields (passwordHash, salt, timestamps)
-- Update all callers to use SessionUser
-
-**DiffUtil for RecyclerView** (Phase 11):
-- Replace notifyDataSetChanged() with DiffUtil
-- Optimize large dataset performance
-- Low priority for MVP (<100 entries)
-
----
-
 ## Phase 9: Final Testing
 **Branch:** `feature/FR7.0-final-testing`
 
