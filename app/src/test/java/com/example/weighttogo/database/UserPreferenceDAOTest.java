@@ -110,4 +110,23 @@ public class UserPreferenceDAOTest {
         // ASSERT
         assertTrue("Should return true on successful insert", result);
     }
+
+    /**
+     * Test 3: SET then GET returns correct value.
+     *
+     * Tests FR6.0.1 - UserPreferenceDAO round-trip functionality.
+     * Verifies that a value set with setPreference() can be retrieved
+     * correctly with getPreference().
+     */
+    @Test
+    public void test_setPreference_thenGet_returnsCorrectValue() {
+        // ARRANGE
+        userPreferenceDAO.setPreference(testUserId, "theme", "dark");
+
+        // ACT
+        String result = userPreferenceDAO.getPreference(testUserId, "theme", "light");
+
+        // ASSERT
+        assertEquals("Should return stored value", "dark", result);
+    }
 }
