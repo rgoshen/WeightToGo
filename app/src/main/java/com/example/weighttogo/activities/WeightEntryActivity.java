@@ -185,7 +185,7 @@ public class WeightEntryActivity extends AppCompatActivity {
             }
 
             if (weightValue > 0) {
-                weightInput = new StringBuilder(String.format("%.1f", weightValue));
+                weightInput = new StringBuilder(WeightUtils.formatWeight(weightValue));
             }
         }
 
@@ -563,7 +563,7 @@ public class WeightEntryActivity extends AppCompatActivity {
         currentEntry = weightEntryDAO.getWeightEntryById(editWeightId);
 
         if (currentEntry != null) {
-            weightInput = new StringBuilder(String.format("%.1f", currentEntry.getWeightValue()));
+            weightInput = new StringBuilder(WeightUtils.formatWeight(currentEntry.getWeightValue()));
             currentUnit = currentEntry.getWeightUnit();
             currentDate = currentEntry.getWeightDate();
 
@@ -581,7 +581,7 @@ public class WeightEntryActivity extends AppCompatActivity {
         WeightEntry lastEntry = weightEntryDAO.getLatestWeightEntry(userId);
 
         if (lastEntry != null) {
-            String value = String.format("%.1f %s",
+            String value = WeightUtils.formatWeightWithUnit(
                     lastEntry.getWeightValue(), lastEntry.getWeightUnit());
             lastEntryValue.setText(value);
 
