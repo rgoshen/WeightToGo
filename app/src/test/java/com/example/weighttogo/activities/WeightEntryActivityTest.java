@@ -7,6 +7,7 @@ import android.widget.TextView;
 import com.example.weighttogo.R;
 import com.example.weighttogo.database.DatabaseException;
 import com.example.weighttogo.database.UserDAO;
+import com.example.weighttogo.database.UserPreferenceDAO;
 import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.database.WeightEntryDAO;
 import com.example.weighttogo.models.User;
@@ -62,6 +63,7 @@ public class WeightEntryActivityTest {
     private WeighToGoDBHelper dbHelper;
     private WeightEntryDAO weightEntryDAO;
     private UserDAO userDAO;
+    private UserPreferenceDAO userPreferenceDAO;
     private SessionManager sessionManager;
     private long testUserId;
     private User testUser;
@@ -74,6 +76,7 @@ public class WeightEntryActivityTest {
         dbHelper = WeighToGoDBHelper.getInstance(context);
         weightEntryDAO = new WeightEntryDAO(dbHelper);
         userDAO = new UserDAO(dbHelper);
+        userPreferenceDAO = new UserPreferenceDAO(dbHelper);
         sessionManager = SessionManager.getInstance(context);
 
         // Create test user
@@ -419,5 +422,108 @@ public class WeightEntryActivityTest {
         WeightEntry updatedEntry = weightEntryDAO.getWeightEntryById(weightId);
         assertNotNull("Entry should still exist", updatedEntry);
         assertEquals("Weight should be updated to 155.0", 155.0, updatedEntry.getWeightValue(), 0.01);
+    }
+
+    // =============================================================================================
+    // CATEGORY E: GLOBAL PREFERENCE INTEGRATION (3 tests) - Phase 6.0.2
+    // =============================================================================================
+
+    /**
+     * Helper method to access private currentUnit field via reflection.
+     * Required for testing internal state before feature implementation.
+     *
+     * @param activity the WeightEntryActivity instance
+     * @return the current unit value ("lbs" or "kg")
+     */
+    private String getCurrentUnit(WeightEntryActivity activity) {
+        try {
+            java.lang.reflect.Field field = WeightEntryActivity.class.getDeclaredField("currentUnit");
+            field.setAccessible(true);
+            return (String) field.get(activity);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to access currentUnit field", e);
+        }
+    }
+
+    /**
+     * Test 10: onCreate loads global weight unit preference.
+     *
+     * Tests FR6.0.2 - WeightEntryActivity preference integration.
+     * Verifies that when a user has a weight unit preference set to "kg",
+     * the activity loads and uses that preference on creation.
+     *
+     * RED PHASE: This test MUST FAIL before implementing preference loading.
+     */
+    @Test
+    public void test_onCreate_loadsGlobalWeightUnit() {
+        // ARRANGE - Set user preference to "kg"
+        boolean prefSet = userPreferenceDAO.setWeightUnit(testUserId, "kg");
+        assertEquals("Preference should be set successfully", true, prefSet);
+
+        // ACT - Launch WeightEntryActivity in add mode
+        Intent intent = new Intent(context, WeightEntryActivity.class);
+        intent.putExtra(WeightEntryActivity.EXTRA_USER_ID, testUserId);
+        intent.putExtra(WeightEntryActivity.EXTRA_IS_EDIT_MODE, false);
+
+        activityController = Robolectric.buildActivity(WeightEntryActivity.class, intent);
+        activity = activityController.create().start().resume().get();
+
+        // ASSERT - currentUnit field should equal "kg" from preference
+        String currentUnit = getCurrentUnit(activity);
+        assertEquals("Activity should load 'kg' preference", "kg", currentUnit);
+    }
+
+    /**
+     * Test 11: onCreate with user preferring kg initializes kg unit.
+     *
+     * Tests FR6.0.2 - WeightEntryActivity UI initialization from preference.
+     * Verifies that the weight unit TextView displays the user's preferred unit.
+     *
+     * RED PHASE: This test MUST FAIL before implementing preference loading.
+     */
+    @Test
+    public void test_onCreate_withUserPreferringKg_initializesKgUnit() {
+        // ARRANGE - Set preference to "kg"
+        userPreferenceDAO.setWeightUnit(testUserId, "kg");
+
+        // ACT - Launch activity
+        Intent intent = new Intent(context, WeightEntryActivity.class);
+        intent.putExtra(WeightEntryActivity.EXTRA_USER_ID, testUserId);
+        intent.putExtra(WeightEntryActivity.EXTRA_IS_EDIT_MODE, false);
+
+        activityController = Robolectric.buildActivity(WeightEntryActivity.class, intent);
+        activity = activityController.create().start().resume().get();
+
+        // ASSERT - weightUnit TextView should show "kg"
+        TextView weightUnit = activity.findViewById(R.id.weightUnit);
+        assertNotNull("weightUnit TextView should exist", weightUnit);
+        assertEquals("weightUnit TextView should show 'kg'", "kg", weightUnit.getText().toString());
+    }
+
+    /**
+     * Test 12: onCreate with no preference defaults to lbs.
+     *
+     * Tests FR6.0.2 - WeightEntryActivity default preference handling.
+     * Verifies that when no weight_unit preference exists (new user scenario),
+     * the activity defaults to "lbs" as specified by UserPreferenceDAO.
+     *
+     * RED PHASE: This test MUST FAIL before implementing preference loading.
+     */
+    @Test
+    public void test_onCreate_withNoPreference_defaultsToLbs() {
+        // ARRANGE - No preference set (new user scenario)
+        // UserPreferenceDAO.getWeightUnit() returns "lbs" by default
+
+        // ACT - Launch activity
+        Intent intent = new Intent(context, WeightEntryActivity.class);
+        intent.putExtra(WeightEntryActivity.EXTRA_USER_ID, testUserId);
+        intent.putExtra(WeightEntryActivity.EXTRA_IS_EDIT_MODE, false);
+
+        activityController = Robolectric.buildActivity(WeightEntryActivity.class, intent);
+        activity = activityController.create().start().resume().get();
+
+        // ASSERT - currentUnit should equal "lbs" (default from UserPreferenceDAO)
+        String currentUnit = getCurrentUnit(activity);
+        assertEquals("Activity should default to 'lbs'", "lbs", currentUnit);
     }
 }
