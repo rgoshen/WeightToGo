@@ -1,5 +1,113 @@
 # Project Summary - Weigh to Go!
 
+## [2025-12-12] Phase 6.0.0 Complete: Code Quality Refactoring (DRY/SOLID)
+
+### Work Completed
+**Strict TDD Refactoring (Completed 2025-12-12)**
+- ✅ Eliminated 3 HIGH PRIORITY DRY violations identified in code audit
+- ✅ Created 28 commits following Red-Green-Refactor cycle
+- ✅ Added 9 new unit tests (270 → 279 total tests)
+- ✅ All tests passing, lint clean (0 errors, 0 warnings)
+- ✅ Refactored 37 duplicate code instances across 11 files
+
+### Violations Fixed
+
+**1. Weight Conversion Duplication (GoalDialogFragment)**
+- **Before:** 18 lines of identical if-else ladder repeated twice (edit/create mode)
+- **After:** 1 line using `WeightUtils.convertBetweenUnits(value, fromUnit, toUnit)`
+- **Impact:** 16 lines eliminated, single source of truth for unit conversion logic
+- **Tests:** 5 comprehensive tests covering same unit, lbs→kg, kg→lbs, invalid units, negative values
+
+**2. Weight Formatting Duplication (7 files, 21 callsites)**
+- **Before:** `String.format("%.1f", weight)` scattered throughout codebase
+- **After:** Centralized `WeightUtils.formatWeight(double)` and `formatWeightWithUnit(double, String)`
+- **Files refactored:**
+  - GoalHistoryAdapter (1 callsite)
+  - AchievementManager (2 callsites)
+  - GoalDialogFragment (4 callsites)
+  - GoalsActivity (3 callsites)
+  - MainActivity (3 callsites)
+  - WeightEntryAdapter (3 callsites)
+  - WeightEntryActivity (6 callsites in 3 commits for safety)
+- **Impact:** Consistent formatting, easier to maintain (change format in one place)
+- **Tests:** 2 tests for formatWeight() and formatWeightWithUnit()
+
+**3. Null Checking Duplication (4 files, 12 callsites)**
+- **Before:** `if (value == null || value.trim().isEmpty())` repeated 12 times
+- **After:** Centralized `ValidationUtils.isNullOrEmpty(String)`
+- **Files refactored:**
+  - ValidationUtils (2 callsites)
+  - PasswordUtils (5 callsites)
+  - DateTimeConverter (4 callsites)
+  - MainActivity (1 callsite)
+- **Impact:** Consistent null handling, single source of truth for empty string detection
+- **Tests:** 1 comprehensive test covering null, empty, whitespace, valid strings
+
+### Implementation Strategy
+
+**Phase 1: Unit Conversion (7 commits)**
+1. Test: `convertBetweenUnits_withSameUnit` → FAIL (compilation)
+2. Implement: Minimal if-else for same unit → PASS
+3. Test: `convertBetweenUnits_withLbsToKg` → FAIL
+4. Implement: Add lbs→kg conversion → PASS
+5. Test: kg→lbs, invalid units, negative values → FAIL
+6. Implement: Complete validation → PASS
+7. Refactor: GoalDialogFragment edit mode (9 lines → 1 line)
+8. Refactor: GoalDialogFragment create mode (9 lines → 1 line)
+
+**Phase 2: Weight Formatting (14 commits)**
+1. Test: `formatWeight_withValidValue` → FAIL (compilation)
+2. Implement: `formatWeight()` → PASS
+3. Test: `formatWeightWithUnit_withValidValues` → FAIL
+4. Implement: `formatWeightWithUnit()` → PASS
+5-11. Refactor: One file at a time, tests after each (7 commits)
+
+**Phase 3: Null Checking (7 commits)**
+1. Test: `isNullOrEmpty_withVariousInputs` → FAIL (compilation)
+2. Implement: `isNullOrEmpty()` → PASS
+3-6. Refactor: ValidationUtils, PasswordUtils, DateTimeConverter, MainActivity (4 commits)
+
+**Phase 4: Validation (current)**
+- ✅ Full test suite: BUILD SUCCESSFUL (all 279 tests passing)
+- ✅ Lint check: BUILD SUCCESSFUL (0 errors, 0 warnings)
+
+### Risk Mitigation
+
+**Highest Risk: WeightEntryActivity (9 callsites)**
+- Split into 3 commits: display (3), quick adjust (2), validation (1)
+- Ran tests after EACH commit to catch regressions early
+- All tests passed without issues
+
+**Medium Risk: Weight Formatting (21 callsites)**
+- Refactored ONE FILE AT A TIME
+- Verified tests after each file
+- Order: Adapters → Utilities → Fragments → Activities (simple to complex)
+
+**Low Risk: Null Checking (12 callsites)**
+- Exact replacement - no behavior change
+- Existing tests already covered behavior
+- Utility classes first (self-contained)
+
+### Lessons Learned
+
+**What Went Well:**
+- Strict TDD prevented all regressions (every commit had passing tests)
+- One-file-at-a-time refactoring made debugging trivial
+- Comprehensive test coverage gave confidence to refactor aggressively
+
+**What Could Be Improved:**
+- Initial plan estimated 9 callsites in WeightEntryActivity, actual was 6
+- Some commits were smaller than necessary (could have combined test + implementation)
+
+### Next Steps
+- Phase 6.0.1: Create UserPreferenceDAO with TDD (ready for global unit preference)
+- Phase 6.0.2: Refactor WeightEntryActivity to remove unit toggle UI
+- Phase 6.0.3: Refactor GoalDialogFragment to use global preference
+
+**Note:** Phase 6.0.0 was PREPARATION work - cleaning up codebase before major architectural change in Phase 6.1+.
+
+---
+
 ## [2025-12-12] Phase 6.0 Planning: Global Weight Unit Preference Refactoring
 
 ### Work Completed
