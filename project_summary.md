@@ -1,5 +1,173 @@
 # Project Summary - Weigh to Go!
 
+## [2025-12-12] PR #16 Code Review Fixes: Database Connection Management & Transaction Safety
+
+### Executive Summary
+Addressed all code review feedback from PR #16, resolving critical database connection management issues, adding transaction safety for atomic UPSERT operations, and improving code quality with constants and consistent null annotations.
+
+### Issues Addressed
+
+#### 1. Database Connection Management (CRITICAL) ✅
+**Issue:** UserPreferenceDAO was closing singleton-managed database connections after every operation, violating the established DAO pattern.
+
+**Root Cause:**
+- Previous code review incorrectly suggested adding `db.close()` to prevent resource leaks
+- This contradicted the singleton pattern used by all other DAOs (UserDAO, WeightEntryDAO, GoalWeightDAO)
+- WeighToGoDBHelper.getInstance() returns a singleton that manages connection lifecycle
+
+**Fix:**
+```java
+// BEFORE (INCORRECT - closes managed connection)
+SQLiteDatabase db = null;
+try {
+    db = dbHelper.getReadableDatabase();
+    // ... query logic
+} finally {
+    if (db != null && db.isOpen()) {
+        db.close();  // ❌ Don't close singleton-managed connections
+    }
+}
+
+// AFTER (CORRECT - follows UserDAO pattern)
+SQLiteDatabase db = dbHelper.getReadableDatabase();
+try (Cursor cursor = db.query(...)) {
+    // ... query logic
+}
+// No db.close() - singleton manages lifecycle
+```
+
+**Files Changed:**
+- `UserPreferenceDAO.java` - Removed all `db.close()` calls from:
+  - `getPreference()`
+  - `setPreference()`
+  - `getAllPreferences()`
+
+**Documentation Added:**
+```java
+/**
+ * <p><strong>Database Lifecycle:</strong> This DAO uses a singleton WeighToGoDBHelper instance.
+ * The helper manages the database connection lifecycle, so individual methods do NOT close
+ * the SQLiteDatabase instance obtained via getReadableDatabase() or getWritableDatabase().
+ * The singleton pattern ensures efficient connection pooling and prevents resource leaks.</p>
+ */
+```
+
+#### 2. Transaction Safety for Atomic UPSERT (CRITICAL) ✅
+**Issue:** `setPreference()` check-then-update pattern was not atomic, creating potential race condition.
+
+**Problem:**
+```java
+// BEFORE (NOT ATOMIC)
+String existingValue = getPreference(userId, key, null);  // Query 1
+if (existingValue != null) {
+    db.update(...);  // Query 2
+} else {
+    db.insert(...);  // Query 2 alternative
+}
+// Race condition: Value could change between Query 1 and Query 2
+```
+
+**Fix:** Wrapped entire operation in transaction:
+```java
+// AFTER (ATOMIC with transaction)
+db.beginTransaction();
+try {
+    // Check existence
+    cursor = db.query(...);
+    boolean exists = cursor.moveToFirst();
+
+    if (exists) {
+        db.update(...);  // Preserves created_at
+        db.setTransactionSuccessful();
+    } else {
+        db.insert(...);
+        db.setTransactionSuccessful();
+    }
+} finally {
+    db.endTransaction();
+}
+```
+
+**Benefits:**
+- **Atomicity**: Check + INSERT/UPDATE happens as single atomic operation
+- **Consistency**: `created_at` timestamp preserved on updates
+- **Race Condition Prevention**: No other operation can modify row between check and update
+
+**Why Not Use `CONFLICT_REPLACE`?**
+- `CONFLICT_REPLACE` = DELETE + INSERT (loses `created_at` timestamp)
+- Requirement: Preserve original `created_at` for audit trail
+- Current approach: Separate INSERT/UPDATE paths with transaction safety
+
+#### 3. Magic Numbers Eliminated ✅
+**Issue:** Hardcoded "1" in SQL queries was unclear.
+
+**Fix:**
+```java
+// BEFORE
+null, null, null, "1"  // ❌ What does "1" mean?
+
+// AFTER
+private static final String LIMIT_ONE = "1";
+// ...
+null, null, null, LIMIT_ONE  // ✅ Self-documenting
+```
+
+#### 4. Hardcoded Error String Fixed (Previously) ✅
+**Issue:** Toast message hardcoded instead of using string resources.
+
+**Fix:**
+```xml
+<!-- strings.xml -->
+<string name="weight_unit_update_failed">Failed to update weight unit</string>
+```
+
+```java
+// SettingsActivity.java
+Toast.makeText(this, R.string.weight_unit_update_failed, Toast.LENGTH_SHORT).show();
+```
+
+#### 5. Null Safety Annotations (Already Complete) ✅
+All public methods already had `@NonNull` annotations on parameters and return values:
+- `getPreference(@NonNull String key, @NonNull String defaultValue)`
+- `setPreference(@NonNull String key, @NonNull String value)`
+- `@NonNull String getWeightUnit()`
+- `setWeightUnit(@NonNull String unit)`
+
+### Testing Results
+- **All 289 tests passing** ✅
+- **Zero regressions** ✅
+- **Lint clean** ✅
+
+### Technical Debt Created (GitHub Issues)
+
+**Issue #17:** Consider caching weight unit preference in SessionManager
+- **Priority:** LOW (optimization, not bug)
+- **Trade-off:** Performance vs code complexity
+- **Recommendation:** Only pursue if profiling shows database I/O is bottleneck
+
+**Issue #18:** Improve WeightUtils.convertBetweenUnits() error handling
+- **Priority:** LOW (code quality)
+- **Trade-off:** Fail fast vs defensive programming
+- **Recommendation:** Document current behavior in Javadoc
+
+### Files Modified
+1. `app/src/main/java/com/example/weighttogo/database/UserPreferenceDAO.java` - Database lifecycle, transactions, constants
+2. `app/src/main/java/com/example/weighttogo/activities/SettingsActivity.java` - String resource
+3. `app/src/main/res/values/strings.xml` - Added weight_unit_update_failed
+
+### Commits
+- `5228a3b` - fix: address code review feedback (database resource management, timestamps, strings)
+- `[pending]` - refactor: follow singleton pattern and add transaction safety (final PR fix)
+
+### Key Learnings
+1. **Always follow established patterns** - Check existing DAOs before implementing new patterns
+2. **Verify code review feedback** - Two reviewers gave contradictory advice; codebase research resolved it
+3. **Transaction safety matters** - Check-then-modify operations need transactional atomicity
+4. **Preserve audit timestamps** - `created_at` provides valuable debugging/forensic data
+5. **Singleton pattern implications** - Don't close connections you don't own
+
+---
+
 ## [2025-12-12] UX Enhancement: Disabled Navigation Buttons (Trends & Profile)
 
 ### Executive Summary
