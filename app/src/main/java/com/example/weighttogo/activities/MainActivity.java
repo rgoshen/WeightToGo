@@ -130,7 +130,9 @@ public class MainActivity extends AppCompatActivity
      * @return true if authenticated, false otherwise
      */
     private boolean checkAuthentication() {
-        sessionManager = SessionManager.getInstance(this);
+        if (sessionManager == null) {
+            sessionManager = SessionManager.getInstance(this);
+        }
 
         if (!sessionManager.isLoggedIn()) {
             Intent intent = new Intent(this, LoginActivity.class);
@@ -145,13 +147,24 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * Initialize database and DAOs.
+     * Only initializes if not already set (allows test injection).
      */
     private void initDataLayer() {
-        dbHelper = WeighToGoDBHelper.getInstance(this);
-        userDAO = new UserDAO(dbHelper);
-        weightEntryDAO = new WeightEntryDAO(dbHelper);
-        goalWeightDAO = new GoalWeightDAO(dbHelper);
-        weightEntries = new ArrayList<>();
+        if (dbHelper == null) {
+            dbHelper = WeighToGoDBHelper.getInstance(this);
+        }
+        if (userDAO == null) {
+            userDAO = new UserDAO(dbHelper);
+        }
+        if (weightEntryDAO == null) {
+            weightEntryDAO = new WeightEntryDAO(dbHelper);
+        }
+        if (goalWeightDAO == null) {
+            goalWeightDAO = new GoalWeightDAO(dbHelper);
+        }
+        if (weightEntries == null) {
+            weightEntries = new ArrayList<>();
+        }
     }
 
     // =============================================================================================

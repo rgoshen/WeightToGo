@@ -114,14 +114,23 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     /**
-     * Initialize database helper and DAOs
+     * Initialize database helper and DAOs.
+     * Only initializes if not already set (allows test injection).
      */
     private void initDataLayer() {
-        dbHelper = WeighToGoDBHelper.getInstance(this);
-        userPreferenceDAO = new UserPreferenceDAO(dbHelper);
-        userDAO = new UserDAO(dbHelper);
-        smsManager = SMSNotificationManager.getInstance(this, userDAO, userPreferenceDAO,
-                new AchievementDAO(dbHelper));
+        if (dbHelper == null) {
+            dbHelper = WeighToGoDBHelper.getInstance(this);
+        }
+        if (userPreferenceDAO == null) {
+            userPreferenceDAO = new UserPreferenceDAO(dbHelper);
+        }
+        if (userDAO == null) {
+            userDAO = new UserDAO(dbHelper);
+        }
+        if (smsManager == null) {
+            smsManager = SMSNotificationManager.getInstance(this, userDAO, userPreferenceDAO,
+                    new AchievementDAO(dbHelper));
+        }
     }
 
     // =============================================================================================

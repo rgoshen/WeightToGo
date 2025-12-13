@@ -104,15 +104,31 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         // Initialize data access and session management
-        WeighToGoDBHelper dbHelper = WeighToGoDBHelper.getInstance(this);
-        userDAO = new UserDAO(dbHelper);
-        sessionManager = SessionManager.getInstance(this);
+        initDataLayer();
 
         // Initialize UI components
         initViews();
 
         // Setup click listeners
         setupClickListeners();
+    }
+
+    // =============================================================================================
+    // DATA LAYER INITIALIZATION
+    // =============================================================================================
+
+    /**
+     * Initialize data access layer components.
+     * Only initializes if not already set (allows test injection).
+     */
+    private void initDataLayer() {
+        if (userDAO == null) {
+            WeighToGoDBHelper dbHelper = WeighToGoDBHelper.getInstance(this);
+            userDAO = new UserDAO(dbHelper);
+        }
+        if (sessionManager == null) {
+            sessionManager = SessionManager.getInstance(this);
+        }
     }
 
     // =============================================================================================

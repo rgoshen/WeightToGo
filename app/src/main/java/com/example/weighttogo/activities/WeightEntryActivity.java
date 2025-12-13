@@ -206,20 +206,32 @@ public class WeightEntryActivity extends AppCompatActivity {
 
     /**
      * Initialize database helper and DAOs.
+     * Only initializes if not already set (allows test injection).
      */
     private void initDataLayer() {
-        dbHelper = WeighToGoDBHelper.getInstance(this);
-        weightEntryDAO = new WeightEntryDAO(dbHelper);
-        userPreferenceDAO = new UserPreferenceDAO(dbHelper);
+        if (dbHelper == null) {
+            dbHelper = WeighToGoDBHelper.getInstance(this);
+        }
+        if (weightEntryDAO == null) {
+            weightEntryDAO = new WeightEntryDAO(dbHelper);
+        }
+        if (userPreferenceDAO == null) {
+            userPreferenceDAO = new UserPreferenceDAO(dbHelper);
+        }
 
         // Initialize achievement system (Phase 7.5)
-        AchievementDAO achievementDAO = new AchievementDAO(dbHelper);
-        GoalWeightDAO goalWeightDAO = new GoalWeightDAO(dbHelper);
-        achievementManager = new AchievementManager(achievementDAO, goalWeightDAO, weightEntryDAO);
+        if (achievementManager == null) {
+            AchievementDAO achievementDAO = new AchievementDAO(dbHelper);
+            GoalWeightDAO goalWeightDAO = new GoalWeightDAO(dbHelper);
+            achievementManager = new AchievementManager(achievementDAO, goalWeightDAO, weightEntryDAO);
+        }
 
         // Initialize SMS notification manager (Phase 7.5)
-        UserDAO userDAO = new UserDAO(dbHelper);
-        smsManager = SMSNotificationManager.getInstance(this, userDAO, userPreferenceDAO, achievementDAO);
+        if (smsManager == null) {
+            UserDAO userDAO = new UserDAO(dbHelper);
+            AchievementDAO achievementDAO = new AchievementDAO(dbHelper);
+            smsManager = SMSNotificationManager.getInstance(this, userDAO, userPreferenceDAO, achievementDAO);
+        }
 
         Log.d(TAG, "initDataLayer: Data layer initialized with achievement and SMS managers");
     }

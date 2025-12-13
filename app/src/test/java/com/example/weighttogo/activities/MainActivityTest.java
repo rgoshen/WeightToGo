@@ -32,6 +32,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowAlertDialog;
@@ -45,6 +46,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -111,24 +113,30 @@ public class MainActivityTest {
         // ARRANGE - Stub mock to return false for isLoggedIn()
         when(mockSessionManager.isLoggedIn()).thenReturn(false);
 
-        // ACT - Build activity, inject mocks, then create
-        activity = Robolectric.buildActivity(MainActivity.class).get();
+        // ACT - Build activity, inject mocks BEFORE create
+        ActivityController<MainActivity> controller = Robolectric.buildActivity(MainActivity.class);
+        activity = controller.get();
+
+        // Inject mocks BEFORE calling create()
         activity.setUserDAO(mockUserDAO);
         activity.setWeightEntryDAO(mockWeightEntryDAO);
         activity.setGoalWeightDAO(mockGoalWeightDAO);
         activity.setSessionManager(mockSessionManager);
         activity.setDbHelper(mockDbHelper);
 
-        // Now call onCreate
-        Robolectric.buildActivity(MainActivity.class).create().get();
+        // NOW call create() on the same instance
+        controller.create();
 
-        // ASSERT
+        // ASSERT - Use the same activity instance
         Intent expectedIntent = new Intent(activity, LoginActivity.class);
         Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
         assertNotNull("Should start LoginActivity", actualIntent);
         assertEquals("Should redirect to LoginActivity",
                 expectedIntent.getComponent(), actualIntent.getComponent());
         assertTrue("MainActivity should finish", activity.isFinishing());
+
+        // Verify mock was called
+        verify(mockSessionManager).isLoggedIn();
     }
 
     // ============================================================
