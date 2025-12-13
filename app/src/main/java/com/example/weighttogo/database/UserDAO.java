@@ -67,6 +67,7 @@ public class UserDAO {
         values.put("username", user.getUsername());
         values.put("password_hash", user.getPasswordHash());  // Already hashed by caller
         values.put("salt", user.getSalt());
+        values.put("password_algorithm", user.getPasswordAlgorithm());  // Phase 8.6: bcrypt migration
         values.put("created_at", user.getCreatedAt().format(ISO_FORMATTER));
         values.put("updated_at", LocalDateTime.now().format(ISO_FORMATTER));
         values.put("is_active", user.isActive() ? 1 : 0);
@@ -155,6 +156,7 @@ public class UserDAO {
         user.setUsername(cursor.getString(cursor.getColumnIndexOrThrow("username")));
         user.setPasswordHash(cursor.getString(cursor.getColumnIndexOrThrow("password_hash")));
         user.setSalt(cursor.getString(cursor.getColumnIndexOrThrow("salt")));
+        user.setPasswordAlgorithm(cursor.getString(cursor.getColumnIndexOrThrow("password_algorithm")));  // Phase 8.6
 
         String createdAtStr = cursor.getString(cursor.getColumnIndexOrThrow("created_at"));
         user.setCreatedAt(LocalDateTime.parse(createdAtStr, ISO_FORMATTER));
@@ -348,6 +350,51 @@ public class UserDAO {
 
         } catch (Exception e) {
             Log.e(TAG, "updatePhoneNumber: Exception updating phone", e);
+            return false;
+        }
+    }
+
+    /**
+     * Updates user password and algorithm (for bcrypt migration).
+     * Used during lazy migration from SHA256 to bcrypt on user login.
+     *
+     * Phase 8.6: bcrypt migration support.
+     *
+     * @param userId User ID to update
+     * @param passwordHash New password hash (bcrypt)
+     * @param salt New salt (empty string for bcrypt)
+     * @param algorithm Password algorithm ('BCRYPT')
+     * @return true if successful, false if user not found
+     */
+    public boolean updatePassword(long userId, @NonNull String passwordHash, @NonNull String salt, @NonNull String algorithm) {
+        Log.d(TAG, "updatePassword: Updating password algorithm for user_id=" + userId + " to " + algorithm);
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("password_hash", passwordHash);
+        values.put("salt", salt);
+        values.put("password_algorithm", algorithm);
+        values.put("updated_at", LocalDateTime.now().format(ISO_FORMATTER));
+
+        try {
+            int rowsAffected = db.update(
+                WeighToGoDBHelper.TABLE_USERS,
+                values,
+                "user_id = ?",
+                new String[]{String.valueOf(userId)}
+            );
+
+            if (rowsAffected > 0) {
+                Log.i(TAG, "updatePassword: Successfully migrated user_id=" + userId + " to " + algorithm);
+                return true;
+            } else {
+                Log.w(TAG, "updatePassword: No rows updated for user_id=" + userId);
+                return false;
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "updatePassword: Exception updating password", e);
             return false;
         }
     }
