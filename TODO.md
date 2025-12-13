@@ -1106,19 +1106,19 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 #### 6.0.0: Code Quality Review & Refactoring (DRY/SOLID) 📝
 **Goal:** Identify and fix code duplication and SOLID violations before major refactoring
 
-- [ ] 0.1 Extract unit conversion logic to WeightUtils (TDD)
-  - [ ] Write tests for convertBetweenUnits(weight, fromUnit, toUnit)
-    - [ ] test_convertBetweenUnits_lbsToKg_returnsCorrectValue
-    - [ ] test_convertBetweenUnits_kgToLbs_returnsCorrectValue
-    - [ ] test_convertBetweenUnits_sameUnit_returnsOriginalValue
-    - [ ] test_convertBetweenUnits_nullUnits_throwsException
-    - [ ] test_convertBetweenUnits_invalidUnits_throwsException
-  - [ ] Implement WeightUtils.convertBetweenUnits() method
-  - [ ] Refactor GoalDialogFragment lines 408-417 to use new method
-  - [ ] Refactor GoalDialogFragment lines 452-460 to use new method
-  - [ ] Remove duplicate conversion logic
-  - [ ] Verify all tests still pass
-  - [ ] Commit: `refactor: extract unit conversion logic to WeightUtils.convertBetweenUnits()`
+- [x] 0.1 Extract unit conversion logic to WeightUtils (TDD) ✅ COMPLETED
+  - [x] Write tests for convertBetweenUnits(weight, fromUnit, toUnit)
+    - [x] test_convertBetweenUnits_lbsToKg_returnsCorrectValue
+    - [x] test_convertBetweenUnits_kgToLbs_returnsCorrectValue
+    - [x] test_convertBetweenUnits_sameUnit_returnsOriginalValue
+    - [x] test_convertBetweenUnits_invalidUnits_returnsZero
+    - [x] test_convertBetweenUnits_negativeValue_returnsZero
+  - [x] Implement WeightUtils.convertBetweenUnits() method
+  - [x] Refactor GoalDialogFragment lines 408-417 to use new method
+  - [x] Refactor GoalDialogFragment lines 452-460 to use new method
+  - [x] Remove duplicate conversion logic
+  - [x] Verify all tests still pass
+  - [x] Committed: 6 commits (3 tests + 2 implementations + 1 refactor)
 
 - [ ] 0.2 DRY Violations Audit
   - [ ] Search for duplicate code patterns across activities
@@ -1556,11 +1556,76 @@ Currently, users select lbs/kg for each weight entry and goal. This is complex a
 
 **Recommendation:** Track as GitHub Issue for future release
 
-### 8.10 Phase 8 Validation
+### 8.10 MVC Architecture Compliance Audit
+**Purpose:** Verify strict adherence to Model-View-Controller pattern across entire codebase.
+
+**When to Run:** Execute this audit fresh in Phase 8 (after Phases 6-7 are complete) to catch any new violations introduced during recent development.
+
+**Audit Checklist:**
+- [ ] **Scan all Activities** (`activities/` package)
+  - [ ] Verify Activities only coordinate between Model and View (Controller role)
+  - [ ] No business logic or calculations in Activities (extract to `services/` layer)
+  - [ ] No direct database operations (must use DAOs)
+  - [ ] Flag any Activities with complex calculation logic
+- [ ] **Scan all Fragments** (`fragments/` package)
+  - [ ] Verify Fragments only handle UI events and display
+  - [ ] No business logic in Fragments (delegate to Activities or services)
+  - [ ] No database operations in Fragments (delegate to Activities)
+  - [ ] Flag any Fragments performing validation or data transformation
+- [ ] **Scan all Adapters** (`adapters/` package)
+  - [ ] Verify Adapters only bind data to views (presentation logic only)
+  - [ ] No business logic or complex calculations in Adapters
+  - [ ] Consider pre-calculating complex data before passing to Adapters
+  - [ ] Flag any Adapters with business logic that could be extracted
+- [ ] **Verify Model Layer Purity** (`models/` and `database/` packages)
+  - [ ] Models are POJOs with no business logic (getters/setters only)
+  - [ ] DAOs only handle CRUD operations (no business logic)
+  - [ ] No UI code in Model layer
+- [ ] **Identify Missing Business Logic Layer**
+  - [ ] Check if `services/` package exists
+  - [ ] If not, identify business logic scattered across Controllers
+  - [ ] Plan extraction of business logic to dedicated service classes
+  - [ ] Examples: `WeightProgressService`, `GoalValidationService`, `StatsCalculationService`
+
+**Refactoring Actions (if violations found):**
+- [ ] Create `services/` package if business logic is identified
+- [ ] Extract business logic from Activities/Fragments into service classes
+- [ ] Update Activities to call service methods instead of performing calculations
+- [ ] Write unit tests for extracted service classes
+- [ ] Update documentation to reflect new architecture layer
+
+**Documentation:**
+- [ ] Document MVC audit findings in `project_summary.md`
+- [ ] Create ADR if major refactoring is required (e.g., adding `services/` layer)
+- [ ] Update architecture documentation with service layer if added
+
+**Success Criteria:**
+- All business logic is in `services/` or `utils/` (not Controllers or Views)
+- Activities/Fragments are thin coordinators (no calculations)
+- Adapters only bind data (no business logic)
+- Models are pure data classes
+
+### 8.11 DRY Violations Audit
+- [ ] Search for duplicate code patterns across activities
+- [ ] Search for duplicate validation logic
+- [ ] Search for duplicate formatting logic
+- [ ] Identify candidates for utility method extraction
+- [ ] Document findings in code review notes
+
+### 8.12 SOLID Principles Audit
+- [ ] Single Responsibility: Review classes with multiple responsibilities
+- [ ] Open/Closed: Identify hard-coded values that should be configurable
+- [ ] Liskov Substitution: Check inheritance hierarchies (if any)
+- [ ] Interface Segregation: Review large interfaces (if any)
+- [ ] Dependency Inversion: Check for tight coupling to concrete classes
+- [ ] Document findings and prioritize fixes
+
+### 8.13 Phase 8 Validation
 - [ ] All code follows naming conventions
 - [ ] All classes documented
 - [ ] No lint errors
 - [ ] No dead code
+- [ ] MVC architecture compliance verified
 - [ ] Merge to main branch
 
 ---
