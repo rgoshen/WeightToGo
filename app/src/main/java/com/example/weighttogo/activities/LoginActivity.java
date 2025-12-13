@@ -16,6 +16,7 @@ import com.example.weighttogo.database.DuplicateUsernameException;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.WeighToGoDBHelper;
 import com.example.weighttogo.models.User;
+import com.example.weighttogo.utils.BackgroundTask;
 import com.example.weighttogo.utils.PasswordUtils;
 import com.example.weighttogo.utils.SessionManager;
 import com.example.weighttogo.utils.ValidationUtils;
@@ -303,6 +304,9 @@ public class LoginActivity extends AppCompatActivity {
      * Handle user registration flow.
      * Creates new user account with hashed password and auto-login.
      * Called internally from handleButtonClick() when in registration mode.
+     *
+     * <p><strong>Performance:</strong> Password hashing is performed on a background thread
+     * to avoid blocking the UI (Phase 8.5).</p>
      */
     private void handleRegister() {
         String username = usernameEditText.getText().toString().trim();
@@ -318,63 +322,96 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Generate salt and hash password
+        // Disable button to prevent double-submit
+        signInButton.setEnabled(false);
+        signInButton.setText("Creating account...");
+
+        // Generate salt (fast operation, can stay on UI thread)
         String salt = PasswordUtils.generateSalt();
-        String passwordHash = PasswordUtils.hashPassword(password, salt);
 
-        if (passwordHash == null) {
-            Log.e(TAG, "handleRegister: Failed to hash password");
-            Toast.makeText(this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Hash password on background thread (CPU-intensive)
+        BackgroundTask.execute(
+            // Background work
+            () -> {
+                Log.d(TAG, "handleRegister: Hashing password on background thread");
+                return PasswordUtils.hashPassword(password, salt);
+            },
+            // UI thread callback
+            new BackgroundTask.Callback<String>() {
+                @Override
+                public void onResult(String passwordHash) {
+                    // Re-enable button
+                    signInButton.setEnabled(true);
+                    signInButton.setText(R.string.tab_register);
 
-        // Create User object
-        User newUser = new User();
-        newUser.setUsername(username);
-        newUser.setPasswordHash(passwordHash);
-        newUser.setSalt(salt);
-        newUser.setDisplayName(username);  // Default display name to username
-        newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setUpdatedAt(LocalDateTime.now());
-        newUser.setActive(true);
+                    if (passwordHash == null) {
+                        Log.e(TAG, "handleRegister: Failed to hash password");
+                        Toast.makeText(LoginActivity.this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-        try {
-            // Insert user into database
-            long userId = userDAO.insertUser(newUser);
+                    Log.d(TAG, "handleRegister: Password hashed successfully, inserting user");
 
-            if (userId > 0) {
-                Log.i(TAG, "handleRegister: Successfully registered user_id: " + userId);
-                newUser.setUserId(userId);
+                    // Create User object
+                    User newUser = new User();
+                    newUser.setUsername(username);
+                    newUser.setPasswordHash(passwordHash);
+                    newUser.setSalt(salt);
+                    newUser.setDisplayName(username);  // Default display name to username
+                    newUser.setCreatedAt(LocalDateTime.now());
+                    newUser.setUpdatedAt(LocalDateTime.now());
+                    newUser.setActive(true);
 
-                // Auto-login: Update last_login timestamp
-                userDAO.updateLastLogin(userId, LocalDateTime.now());
+                    try {
+                        // Insert user into database
+                        long userId = userDAO.insertUser(newUser);
 
-                // Create session
-                sessionManager.createSession(newUser);
-                Log.d(TAG, "handleRegister: Session created for new user_id: " + userId);
+                        if (userId > 0) {
+                            Log.i(TAG, "handleRegister: Successfully registered user_id: " + userId);
+                            newUser.setUserId(userId);
 
-                // Navigate to MainActivity
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-                finish();  // Prevent back button from returning to login
+                            // Auto-login: Update last_login timestamp
+                            userDAO.updateLastLogin(userId, LocalDateTime.now());
 
-                Toast.makeText(this, "Welcome, " + username + "! Your account has been created.", Toast.LENGTH_SHORT).show();
-                Log.i(TAG, "handleRegister: Registration complete, navigated to MainActivity");
+                            // Create session
+                            sessionManager.createSession(newUser);
+                            Log.d(TAG, "handleRegister: Session created for new user_id: " + userId);
 
-            } else {
-                Log.e(TAG, "handleRegister: Insert returned invalid user_id");
-                Toast.makeText(this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+                            // Navigate to MainActivity
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
+                            finish();  // Prevent back button from returning to login
+
+                            Toast.makeText(LoginActivity.this, "Welcome, " + username + "! Your account has been created.", Toast.LENGTH_SHORT).show();
+                            Log.i(TAG, "handleRegister: Registration complete, navigated to MainActivity");
+
+                        } else {
+                            Log.e(TAG, "handleRegister: Insert returned invalid user_id");
+                            Toast.makeText(LoginActivity.this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
+
+                    } catch (DuplicateUsernameException e) {
+                        Log.w(TAG, "handleRegister: Duplicate username caught: " + username, e);
+                        usernameInputLayout.setError("Username already taken");
+                        Toast.makeText(LoginActivity.this, "Username already taken. Please choose another.", Toast.LENGTH_SHORT).show();
+
+                    } catch (DatabaseException e) {
+                        Log.e(TAG, "handleRegister: Database error during registration", e);
+                        Toast.makeText(LoginActivity.this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onError(Exception error) {
+                    // Re-enable button
+                    signInButton.setEnabled(true);
+                    signInButton.setText(R.string.tab_register);
+
+                    Log.e(TAG, "handleRegister: Error during password hashing", error);
+                    Toast.makeText(LoginActivity.this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+                }
             }
-
-        } catch (DuplicateUsernameException e) {
-            Log.w(TAG, "handleRegister: Duplicate username caught: " + username, e);
-            usernameInputLayout.setError("Username already taken");
-            Toast.makeText(this, "Username already taken. Please choose another.", Toast.LENGTH_SHORT).show();
-
-        } catch (DatabaseException e) {
-            Log.e(TAG, "handleRegister: Database error during registration", e);
-            Toast.makeText(this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
-        }
+        );
     }
 
     // =============================================================================================
