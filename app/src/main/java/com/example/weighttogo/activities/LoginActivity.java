@@ -290,16 +290,20 @@ public class LoginActivity extends AppCompatActivity {
         if (ALGORITHM_SHA256.equals(user.getPasswordAlgorithm())) {
             Log.i(TAG, "handleSignIn: Migrating user_id=" + user.getUserId() + " from SHA256 to bcrypt");
 
+            // Capture current hash to prevent race condition
+            final String oldPasswordHash = user.getPasswordHash();
+
             // Hash password with bcrypt on background thread
             BackgroundTask.execute(
                 () -> PasswordUtilsV2.hashPasswordBcrypt(password),
                 new BackgroundTask.Callback<String>() {
                     @Override
                     public void onResult(String bcryptHash) {
-                        if (bcryptHash != null) {
-                            // Update database with bcrypt hash
-                            boolean updated = userDAO.updatePassword(
+                        if (bcryptHash != null && !bcryptHash.isEmpty()) {
+                            // Update database only if password hasn't changed (prevents race condition)
+                            boolean updated = userDAO.updatePasswordIfUnchanged(
                                 user.getUserId(),
+                                oldPasswordHash,  // Verify hash hasn't changed
                                 bcryptHash,
                                 "",  // bcrypt handles salt internally
                                 ALGORITHM_BCRYPT
@@ -307,7 +311,11 @@ public class LoginActivity extends AppCompatActivity {
 
                             if (updated) {
                                 Log.i(TAG, "handleSignIn: Successfully migrated user_id=" + user.getUserId() + " to bcrypt");
+                            } else {
+                                Log.w(TAG, "handleSignIn: Migration skipped - password changed for user_id=" + user.getUserId());
                             }
+                        } else {
+                            Log.w(TAG, "handleSignIn: bcrypt hash is null or empty, migration skipped");
                         }
                     }
 

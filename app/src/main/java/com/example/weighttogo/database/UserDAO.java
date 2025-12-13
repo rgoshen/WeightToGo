@@ -400,6 +400,56 @@ public class UserDAO {
     }
 
     /**
+     * Updates password only if the current hash matches the expected old hash.
+     * This prevents race conditions during lazy migration where user changes password
+     * while background migration is in progress.
+     *
+     * @param userId User ID
+     * @param oldPasswordHash Expected current password hash (for verification)
+     * @param newPasswordHash New password hash
+     * @param newSalt New salt (empty string for bcrypt)
+     * @param newAlgorithm New password algorithm ('BCRYPT')
+     * @return true if password was updated, false if hash mismatch or user not found
+     */
+    public boolean updatePasswordIfUnchanged(long userId,
+                                             @NonNull String oldPasswordHash,
+                                             @NonNull String newPasswordHash,
+                                             @NonNull String newSalt,
+                                             @NonNull String newAlgorithm) {
+        Log.d(TAG, "updatePasswordIfUnchanged: Checking hash for user_id=" + userId + " before migration");
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("password_hash", newPasswordHash);
+        values.put("salt", newSalt);
+        values.put("password_algorithm", newAlgorithm);
+        values.put("updated_at", LocalDateTime.now().format(ISO_FORMATTER));
+
+        try {
+            // Update only if current password_hash matches the old one
+            int rowsAffected = db.update(
+                WeighToGoDBHelper.TABLE_USERS,
+                values,
+                "user_id = ? AND password_hash = ?",
+                new String[]{String.valueOf(userId), oldPasswordHash}
+            );
+
+            if (rowsAffected > 0) {
+                Log.i(TAG, "updatePasswordIfUnchanged: Successfully migrated user_id=" + userId + " to " + newAlgorithm);
+                return true;
+            } else {
+                Log.w(TAG, "updatePasswordIfUnchanged: Password hash changed, migration skipped for user_id=" + userId);
+                return false;
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "updatePasswordIfUnchanged: Exception updating password", e);
+            return false;
+        }
+    }
+
+    /**
      * Deletes a user from the database.
      * CASCADE DELETE will automatically remove associated weight_entries and goal_weights.
      *
