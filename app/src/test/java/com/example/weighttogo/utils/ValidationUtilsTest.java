@@ -418,4 +418,98 @@ public class ValidationUtilsTest {
         // ASSERT
         assertTrue("Invalid number should return null", result == null);
     }
+
+    // =============================================================================================
+    // PHONE VALIDATION ERROR MESSAGES (6 tests) - Phase 7.1 Commit 3
+    // =============================================================================================
+
+    /**
+     * Tests that getPhoneValidationError() returns null for valid phone number.
+     */
+    @Test
+    public void test_getPhoneValidationError_withValidPhone_returnsNull() {
+        // ARRANGE
+        String validPhone = "2025551234";
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(validPhone);
+
+        // ASSERT
+        assertTrue("Valid phone should return null", error == null);
+    }
+
+    /**
+     * Tests that getPhoneValidationError() returns required message for null input.
+     */
+    @Test
+    public void test_getPhoneValidationError_withNull_returnsRequiredMessage() {
+        // ARRANGE
+        String nullPhone = null;
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(nullPhone);
+
+        // ASSERT
+        assertTrue("Null phone should return error_phone_required", "error_phone_required".equals(error));
+    }
+
+    /**
+     * Tests that getPhoneValidationError() returns required message for empty string.
+     */
+    @Test
+    public void test_getPhoneValidationError_withEmpty_returnsRequiredMessage() {
+        // ARRANGE
+        String emptyPhone = "";
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(emptyPhone);
+
+        // ASSERT
+        assertTrue("Empty phone should return error_phone_required", "error_phone_required".equals(error));
+    }
+
+    /**
+     * Tests that getPhoneValidationError() returns short message for phone that's too short.
+     */
+    @Test
+    public void test_getPhoneValidationError_withTooShort_returnsShortMessage() {
+        // ARRANGE
+        String shortPhone = "123456789";  // Only 9 digits
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(shortPhone);
+
+        // ASSERT
+        assertTrue("Short phone should return error_phone_too_short", "error_phone_too_short".equals(error));
+    }
+
+    /**
+     * Tests that getPhoneValidationError() returns long message for phone that's too long.
+     */
+    @Test
+    public void test_getPhoneValidationError_withTooLong_returnsLongMessage() {
+        // ARRANGE
+        String longPhone = "12345678901234567";  // 17 digits (too many)
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(longPhone);
+
+        // ASSERT
+        assertTrue("Long phone should return error_phone_too_long", "error_phone_too_long".equals(error));
+    }
+
+    /**
+     * Tests that getPhoneValidationError() returns invalid chars message for phone with letters.
+     */
+    @Test
+    public void test_getPhoneValidationError_withInvalidChars_returnsInvalidCharsMessage() {
+        // ARRANGE
+        String invalidPhone = "202-555-ABCD";  // Contains letters and dashes
+
+        // ACT
+        String error = ValidationUtils.getPhoneValidationError(invalidPhone);
+
+        // ASSERT
+        assertTrue("Phone with invalid chars should return error_phone_invalid_chars", "error_phone_invalid_chars".equals(error));
+    }
 }

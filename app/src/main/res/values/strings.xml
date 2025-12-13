@@ -175,6 +175,13 @@
     <string name="error_invalid_username">Username is invalid (3-20 chars, alphanumeric + underscore)</string>
     <string name="error_invalid_password">Password is invalid (6+ chars, at least 1 digit)</string>
 
+    <!-- Phone Validation Errors (Phase 7.1) -->
+    <string name="error_phone_required">Phone number is required</string>
+    <string name="error_phone_invalid">Invalid phone number format. Use 10 digits (e.g., 2025551234)</string>
+    <string name="error_phone_too_short">Phone number must be at least 10 digits</string>
+    <string name="error_phone_too_long">Phone number cannot exceed 15 digits</string>
+    <string name="error_phone_invalid_chars">Phone number can only contain digits and + symbol</string>
+
     <!-- Success Messages -->
     <string name="success_account_created">Account created successfully!</string>
     <string name="success_weight_saved">Weight entry saved!</string>
