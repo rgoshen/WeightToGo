@@ -124,4 +124,24 @@ public class WeightUtilsTest {
         assertFalse("318 kg exceeds max (317.5)", resultTooHighKg);
         assertFalse("Negative weight is invalid", resultNegative);
     }
+
+    /**
+     * Test 7: Convert between units with same unit (no conversion needed)
+     */
+    @Test
+    public void test_convertBetweenUnits_withSameUnit_returnsOriginalValue() {
+        // ARRANGE
+        double weightLbs = 150.0;
+        double weightKg = 68.0;
+
+        // ACT
+        double resultLbs = WeightUtils.convertBetweenUnits(weightLbs, "lbs", "lbs");
+        double resultKg = WeightUtils.convertBetweenUnits(weightKg, "kg", "kg");
+
+        // ASSERT
+        assertEquals("150 lbs to lbs should return 150.0",
+                weightLbs, resultLbs, DELTA);
+        assertEquals("68 kg to kg should return 68.0",
+                weightKg, resultKg, DELTA);
+    }
 }
