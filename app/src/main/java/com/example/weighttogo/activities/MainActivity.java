@@ -26,6 +26,7 @@ import com.example.weighttogo.models.User;
 import com.example.weighttogo.models.WeightEntry;
 import com.example.weighttogo.utils.DateUtils;
 import com.example.weighttogo.utils.SessionManager;
+import com.example.weighttogo.utils.ValidationUtils;
 import com.example.weighttogo.utils.WeightUtils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
@@ -385,7 +386,7 @@ public class MainActivity extends AppCompatActivity
         User user = userDAO.getUserById(currentUserId);
         if (user != null) {
             String displayName = user.getDisplayName();
-            if (displayName == null || displayName.trim().isEmpty()) {
+            if (ValidationUtils.isNullOrEmpty(displayName)) {
                 displayName = user.getUsername();  // Fallback to username
             }
             userName.setText(displayName);
