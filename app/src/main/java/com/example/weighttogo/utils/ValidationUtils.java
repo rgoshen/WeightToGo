@@ -353,6 +353,12 @@ public final class ValidationUtils {
     // =============================================================================================
 
     /**
+     * Masking constants for secure phone number logging.
+     */
+    private static final String MASK_PREFIX = "***";
+    private static final String MASK_NONE = MASK_PREFIX + "NONE";
+
+    /**
      * Masks phone number for secure logging.
      * Shows only last 4 digits for security compliance (PII protection).
      *
@@ -377,8 +383,7 @@ public final class ValidationUtils {
     public static String maskPhoneNumber(@Nullable String phoneNumber) {
         // Null or empty check
         if (isNullOrEmpty(phoneNumber)) {
-            Log.d(TAG, "maskPhoneNumber: phone is null or empty");
-            return "***NONE";
+            return MASK_NONE;
         }
 
         // Remove all non-digit characters for masking
@@ -386,16 +391,12 @@ public final class ValidationUtils {
 
         // Short number (less than 4 digits): mask all
         if (digitsOnly.length() < 4) {
-            Log.d(TAG, "maskPhoneNumber: phone has less than 4 digits, masking all");
-            return "***";
+            return MASK_PREFIX;
         }
 
         // Standard masking: show last 4 digits
         String last4 = digitsOnly.substring(digitsOnly.length() - 4);
-        String masked = "***" + last4;
-
-        Log.d(TAG, "maskPhoneNumber: masked phone number (showing last 4 digits)");
-        return masked;
+        return MASK_PREFIX + last4;
     }
 
     // =============================================================================================
@@ -444,10 +445,8 @@ public final class ValidationUtils {
                 || product.contains("sdk")
                 || product.contains("vbox");  // VirtualBox (Genymotion)
 
-        Log.d(TAG, "isRunningOnEmulator: " + isEmulator +
-                " (FINGERPRINT=" + fingerprint +
-                ", MODEL=" + model +
-                ", PRODUCT=" + product + ")");
+        // Log result only (not device details for security)
+        Log.d(TAG, "isRunningOnEmulator: " + isEmulator);
 
         return isEmulator;
     }
