@@ -2482,6 +2482,77 @@ public class SettingsActivityTest {
 
 **GH #50 Status:** ✅ RESOLVED (2025-12-13) - Extracted testable logic, added comprehensive time boundary tests
 
+### 9.6 Manual Device and Scenario Testing Documentation ✅ (Completed 2025-12-14 - Phase 9.6)
+
+**Objective:** Create comprehensive manual testing documentation and setup helpers for executing manual device and scenario tests across different configurations.
+
+**Documents Created:**
+
+1. **Manual_Testing_Checklist.md** (docs/testing/)
+   - Comprehensive checklist covering 5 testing categories:
+     * Section 9.6.1: Device Testing (API levels, orientations, screen sizes, performance)
+     * Section 9.6.2: Authentication Scenario Testing (registration, login, session persistence, logout)
+     * Section 9.6.3: Weight Entry Scenario Testing (add, edit, delete, unit conversion, large datasets)
+     * Section 9.6.4: SMS Permissions Scenario Testing (grant, deny, "don't ask again", app functions without permission)
+     * Section 9.6.5: Edge Case Testing (special characters, screen rotation, app kill/restart, back navigation, fast clicking, network state, date boundaries, boundary values)
+   - 100+ individual test steps with expected results
+   - Test environment configuration tracking
+   - Test results summary template
+   - Documentation for findings and next steps
+
+2. **Test_Scenario_Setup_Guide.md** (docs/testing/)
+   - ADB commands for device setup and management
+   - Database inspection queries and helpers
+   - App state management (reset, session, permissions)
+   - Quick test scenario walkthroughs
+   - Debugging helpers (LogCat, performance monitoring, UI inspection)
+   - Troubleshooting common issues
+   - Quick reference command summary
+
+3. **generate_test_weight_entries.py** (scripts/)
+   - Python script for generating bulk weight entry test data
+   - Supports configurable parameters:
+     * User ID (default: 1)
+     * Entry count (default: 100)
+     * Start weight (default: 170.0 lbs)
+     * Weight variance (default: ±2.0)
+     * Unit type: lbs, kg, or mixed (default: mixed)
+   - Generates SQL INSERT statements with proper transaction wrapping
+   - Includes usage instructions and examples
+   - Executable script with command-line arguments
+
+**Test Coverage:**
+- Device testing: 4 test categories, 15+ test steps
+- Authentication: 6 scenarios, 30+ test steps
+- Weight entry: 7 scenarios, 35+ test steps
+- SMS permissions: 5 scenarios, 25+ test steps
+- Edge cases: 8 scenarios, 40+ test steps
+- **Total: 145+ manual test steps documented**
+
+**Setup Helpers Provided:**
+- 50+ ADB commands for device management
+- 15+ SQL queries for database inspection
+- 10+ app state management commands
+- 4 quick test scenario walkthroughs
+- 20+ debugging commands (LogCat, performance, network)
+- 10+ troubleshooting solutions
+- Python script with 5 usage examples
+
+**Purpose:**
+- Enables systematic manual testing across different device configurations
+- Provides reproducible test scenarios for validation
+- Documents expected behaviors for all critical user flows
+- Supports regression testing for future releases
+- Complements automated test suite with manual validation
+
+**Next Steps:**
+- Execute manual tests using checklist (user responsibility)
+- Document findings in project_summary.md
+- Create GitHub issues for any bugs found
+- Proceed to subsection 9.7 (automated test coverage validation)
+
+**Status:** ✅ DOCUMENTATION COMPLETE (2025-12-14) - Manual testing documentation and setup helpers created
+
 ### 9.7 Final Test Suite
 - [ ] Run `./gradlew clean test`
 - [ ] Run `./gradlew connectedAndroidTest` (if device available)
