@@ -663,6 +663,104 @@ public class SettingsActivityEspressoTest {
     }
 
     // ============================================================
+    // PHONE NUMBER PERSISTENCE TESTS (3 tests) - Bug Fix: Phone Persistence
+    // ============================================================
+
+    /**
+     * Test 25 (NEW): Phone number persists when navigating away without pressing Done.
+     * Tests that onPause() lifecycle method saves phone number automatically.
+     * Verifies fix for Issue: Phone number not persisting when user navigates away.
+     */
+    @Test
+    public void test_phoneNumber_persistsOnNavigateAway_withoutPressingDone() {
+        // ARRANGE - Mock successful save
+        when(mockUserDAO.updatePhoneNumber(eq(testUserId), eq("+12025551234"))).thenReturn(true);
+
+        // ACT - Type phone number but DON'T press Done (just close keyboard)
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("2025551234"), closeSoftKeyboard());
+
+        // Trigger onPause by recreating activity (simulates back press)
+        scenario.recreate();
+
+        // ASSERT - Phone should be saved via onPause()
+        verify(mockUserDAO).updatePhoneNumber(eq(testUserId), eq("+12025551234"));
+    }
+
+    /**
+     * Test 26 (NEW): Invalid phone number not saved on navigate away.
+     * Tests that onPause() validates phone before saving.
+     * Verifies that invalid input doesn't corrupt database.
+     */
+    @Test
+    public void test_invalidPhoneNumber_notSavedOnNavigateAway() {
+        // ACT - Type invalid phone number
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("invalid"), closeSoftKeyboard());
+
+        // Trigger onPause by recreating activity
+        scenario.recreate();
+
+        // ASSERT - updatePhoneNumber should NOT be called
+        verify(mockUserDAO, never()).updatePhoneNumber(anyLong(), anyString());
+    }
+
+    /**
+     * Test 27 (NEW): Empty phone number not saved on navigate away.
+     * Tests that onPause() skips save for empty input.
+     */
+    @Test
+    public void test_emptyPhoneNumber_notSavedOnNavigateAway() {
+        // ACT - Clear phone number field
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText(""), closeSoftKeyboard());
+
+        // Trigger onPause by recreating activity
+        scenario.recreate();
+
+        // ASSERT - updatePhoneNumber should NOT be called
+        verify(mockUserDAO, never()).updatePhoneNumber(anyLong(), anyString());
+    }
+
+    // ============================================================
+    // EMULATOR SMS LOGGING TEST (1 test) - Bug Fix: Emulator SMS Testing
+    // ============================================================
+
+    /**
+     * Test 28 (NEW): Test message button logs to Logcat on emulator.
+     * Tests that test message detection works and logs masked phone number.
+     *
+     * NOTE: This test verifies button click doesn't crash. Manual verification
+     * of Logcat output required to confirm message and masking.
+     *
+     * Expected Logcat output:
+     * I/SettingsActivity: ======================================
+     * I/SettingsActivity: TEST SMS (EMULATOR MODE)
+     * I/SettingsActivity: To: ***1234
+     * I/SettingsActivity: Message: This is a test message from Weigh to Go! Your SMS notifications are working! ✅
+     * I/SettingsActivity: ======================================
+     */
+    @Test
+    public void test_sendTestMessage_onEmulator_logsToLogcat() {
+        // ARRANGE - Mock user with phone number
+        User userWithPhone = new User();
+        userWithPhone.setUserId(testUserId);
+        userWithPhone.setUsername("testuser");
+        userWithPhone.setPhoneNumber("+12025551234");
+
+        when(mockUserDAO.getUserById(testUserId)).thenReturn(userWithPhone);
+        when(mockSmsManager.canSendSms(testUserId)).thenReturn(true);
+
+        // ACT - Click test message button
+        onView(withId(R.id.sendTestMessageButton)).perform(click());
+
+        // ASSERT - Verify no crash (Logcat output verified manually)
+        // Expected: Masked phone number (***1234) logged
+        // Manual verification: Check Logcat for test message
+        onView(withId(R.id.sendTestMessageButton)).check(matches(isDisplayed()));
+    }
+
+    // ============================================================
     // HELPER METHODS
     // ============================================================
 

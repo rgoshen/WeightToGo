@@ -38,6 +38,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -85,6 +87,9 @@ public class SettingsActivity extends AppCompatActivity {
     private UserDAO userDAO;
     private SMSNotificationManager smsManager;
 
+    // Background Thread Executor (for database operations in onPause)
+    private ExecutorService executorService;
+
     // State
     private String currentUnit;
 
@@ -92,6 +97,9 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        // Initialize background thread executor
+        executorService = Executors.newSingleThreadExecutor();
 
         // Initialize data layer and SMS manager
         initDataLayer();
@@ -112,6 +120,93 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Setup click listeners last
         setupClickListeners();
+    }
+
+    /**
+     * Lifecycle callback when activity is paused (user navigates away).
+     * Automatically saves phone number if valid to prevent data loss.
+     *
+     * **Fix for Issue:** Phone number only saved when pressing keyboard "Done" button.
+     * Users expect phone number to persist when navigating away via back button,
+     * home button, or opening another app.
+     *
+     * **Implementation:**
+     * - Validates phone number using existing ValidationUtils
+     * - Formats to E.164 using existing formatPhoneE164()
+     * - Saves via existing UserDAO.updatePhoneNumber()
+     * - Silent save (no toast notification to avoid interrupting navigation)
+     *
+     * @see ValidationUtils#getPhoneValidationError(String)
+     * @see ValidationUtils#formatPhoneE164(String)
+     * @see UserDAO#updatePhoneNumber(long, String)
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        // Auto-save phone number if present
+        if (phoneNumberInput != null) {
+            String phoneInput = phoneNumberInput.getText().toString().trim();
+
+            // Only save if non-empty
+            if (!phoneInput.isEmpty()) {
+                // Validate phone number
+                String error = ValidationUtils.getPhoneValidationError(phoneInput);
+                if (error == null) {
+                    // Valid phone - format and save on background thread
+                    String e164Phone = ValidationUtils.formatPhoneE164(phoneInput);
+                    if (e164Phone != null) {
+                        long userId = SessionManager.getInstance(this).getCurrentUserId();
+
+                        // Execute database write on background thread to avoid ANR
+                        executorService.execute(() -> {
+                            boolean success = userDAO.updatePhoneNumber(userId, e164Phone);
+
+                            if (success) {
+                                Log.i(TAG, "onPause: Auto-saved phone number for user " + userId);
+                            } else {
+                                Log.w(TAG, "onPause: Failed to auto-save phone number");
+
+                                // Notify user on UI thread if save fails
+                                runOnUiThread(() -> {
+                                    Toast.makeText(SettingsActivity.this,
+                                            "Failed to save phone number",
+                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    // Invalid phone - log but don't block navigation
+                    Log.d(TAG, "onPause: Skipping save for invalid phone number (error: " + error + ")");
+                }
+            }
+        }
+    }
+
+    /**
+     * Cleanup executor service when activity is destroyed.
+     * Prevents thread leaks by shutting down background executor.
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // Shutdown executor service to prevent thread leaks
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+            try {
+                // Wait up to 1 second for pending tasks to complete
+                if (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                    Log.w(TAG, "onDestroy: Executor service did not terminate in time");
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+                Log.e(TAG, "onDestroy: Interrupted while shutting down executor", e);
+            }
+        }
     }
 
     /**
@@ -662,6 +757,20 @@ public class SettingsActivity extends AppCompatActivity {
 
     /**
      * Handle send test message button click.
+     *
+     * **Emulator Support (NEW):**
+     * Detects if running on emulator and logs message to Logcat instead of
+     * sending real SMS (emulator SMS sending doesn't work reliably).
+     *
+     * **Security:**
+     * Phone numbers are masked in logs (show only last 4 digits) to prevent
+     * PII exposure in production logs.
+     *
+     * **Flow:**
+     * 1. Check if SMS can be sent (permissions + phone number configured)
+     * 2. Detect emulator vs real device
+     * 3. Emulator: Log test message to Logcat with masked phone
+     * 4. Real device: Send actual SMS via SmsManager
      */
     private void handleSendTestMessage() {
         long userId = SessionManager.getInstance(this).getCurrentUserId();
@@ -681,14 +790,38 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
 
-        // Send test message using SmsManager directly
+        String testMessage = getString(R.string.sms_test_message);
+
+        // EMULATOR DETECTION: Log to Logcat instead of sending SMS
+        if (ValidationUtils.isRunningOnEmulator()) {
+            // Mask phone number for secure logging
+            String maskedPhone = ValidationUtils.maskPhoneNumber(user.getPhoneNumber());
+
+            // Log test message with clear visual separation
+            Log.i(TAG, "======================================");
+            Log.i(TAG, "TEST SMS (EMULATOR MODE)");
+            Log.i(TAG, "To: " + maskedPhone);
+            Log.i(TAG, "Message: " + testMessage);
+            Log.i(TAG, "======================================");
+
+            Toast.makeText(this,
+                    "Test message logged to Logcat (emulator mode)",
+                    Toast.LENGTH_LONG).show();
+
+            Log.i(TAG, "handleSendTestMessage: Logged test SMS to Logcat (emulator mode)");
+            return;
+        }
+
+        // REAL DEVICE: Send actual SMS
         try {
-            String testMessage = getString(R.string.sms_test_message);
             android.telephony.SmsManager smsManagerSystem = android.telephony.SmsManager.getDefault();
             smsManagerSystem.sendTextMessage(user.getPhoneNumber(), null, testMessage, null, null);
 
             Toast.makeText(this, "Test message sent!", Toast.LENGTH_SHORT).show();
-            Log.i(TAG, "handleSendTestMessage: Test SMS sent to " + user.getPhoneNumber());
+
+            // Log with masked phone number for security
+            String maskedPhone = ValidationUtils.maskPhoneNumber(user.getPhoneNumber());
+            Log.i(TAG, "handleSendTestMessage: Test SMS sent to " + maskedPhone);
 
         } catch (SecurityException e) {
             Toast.makeText(this, "SMS permission denied", Toast.LENGTH_SHORT).show();

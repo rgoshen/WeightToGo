@@ -1,7 +1,9 @@
 package com.example.weighttogo.utils;
 
+import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.regex.Pattern;
@@ -344,5 +346,108 @@ public final class ValidationUtils {
         // Valid phone number
         Log.d(TAG, "getPhoneValidationError: phone is valid");
         return null;
+    }
+
+    // =============================================================================================
+    // PHONE NUMBER MASKING (Bug Fix: Phone Persistence & Emulator SMS Testing)
+    // =============================================================================================
+
+    /**
+     * Masking constants for secure phone number logging.
+     */
+    private static final String MASK_PREFIX = "***";
+    private static final String MASK_NONE = MASK_PREFIX + "NONE";
+
+    /**
+     * Masks phone number for secure logging.
+     * Shows only last 4 digits for security compliance (PII protection).
+     *
+     * **Masking Rules:**
+     * - Valid phone: Show last 4 digits (e.g., "+12025551234" → "***1234")
+     * - Null/empty: Return "***NONE"
+     * - Short (<4 chars): Return "***"
+     *
+     * **Usage Example:**
+     * <pre>
+     * String masked = ValidationUtils.maskPhoneNumber("+12025551234");
+     * Log.i(TAG, "Sending SMS to: " + masked);  // Logs: "Sending SMS to: ***1234"
+     * </pre>
+     *
+     * **Security Note:** Always use this method when logging phone numbers
+     * to prevent PII exposure in logs (GDPR/compliance requirement).
+     *
+     * @param phoneNumber the phone number to mask
+     * @return masked phone number (last 4 digits visible), or "***NONE" if null/empty
+     */
+    @NonNull
+    public static String maskPhoneNumber(@Nullable String phoneNumber) {
+        // Null or empty check
+        if (isNullOrEmpty(phoneNumber)) {
+            return MASK_NONE;
+        }
+
+        // Remove all non-digit characters for masking
+        String digitsOnly = phoneNumber.replaceAll("\\D", "");
+
+        // Short number (less than 4 digits): mask all
+        if (digitsOnly.length() < 4) {
+            return MASK_PREFIX;
+        }
+
+        // Standard masking: show last 4 digits
+        String last4 = digitsOnly.substring(digitsOnly.length() - 4);
+        return MASK_PREFIX + last4;
+    }
+
+    // =============================================================================================
+    // EMULATOR DETECTION (Bug Fix: Emulator SMS Testing)
+    // =============================================================================================
+
+    /**
+     * Detects if app is running on Android emulator vs real device.
+     *
+     * **Detection Strategy:**
+     * Checks Build.FINGERPRINT for emulator signatures like "generic", "unknown",
+     * and Build.MODEL for common emulator model names.
+     *
+     * **Common Emulator Signatures:**
+     * - Android Studio Emulator: FINGERPRINT contains "generic"
+     * - Genymotion: PRODUCT contains "vbox" (VirtualBox)
+     * - Generic AVD: MODEL contains "google_sdk" or "Emulator"
+     *
+     * **Usage Example:**
+     * <pre>
+     * if (ValidationUtils.isRunningOnEmulator()) {
+     *     // Log to Logcat instead of sending real SMS
+     *     Log.i(TAG, "Test SMS (emulator): " + message);
+     * } else {
+     *     // Send real SMS on device
+     *     SmsManager.getDefault().sendTextMessage(...);
+     * }
+     * </pre>
+     *
+     * **Limitations:** Not 100% reliable (some custom emulators may be missed),
+     * but sufficient for development/testing purposes.
+     *
+     * @return true if running on emulator, false if real device
+     */
+    public static boolean isRunningOnEmulator() {
+        // Null-safe checks for Build properties (can be null in test environments)
+        String fingerprint = Build.FINGERPRINT != null ? Build.FINGERPRINT : "";
+        String model = Build.MODEL != null ? Build.MODEL : "";
+        String product = Build.PRODUCT != null ? Build.PRODUCT : "";
+
+        boolean isEmulator = fingerprint.contains("generic")
+                || fingerprint.startsWith("unknown")
+                || model.contains("google_sdk")
+                || model.contains("Emulator")
+                || model.contains("Android SDK built for x86")
+                || product.contains("sdk")
+                || product.contains("vbox");  // VirtualBox (Genymotion)
+
+        // Log result only (not device details for security)
+        Log.d(TAG, "isRunningOnEmulator: " + isEmulator);
+
+        return isEmulator;
     }
 }
