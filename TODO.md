@@ -1974,7 +1974,9 @@ public class SettingsActivityTest {
   - User model fields (1 fix): Added salt and passwordAlgorithm for bcrypt
   - Test isolation (1 fix): Removed non-existent SessionManager.resetInstance()
   - Verification: `./gradlew compileDebugAndroidTestSources` → BUILD SUCCESSFUL
-- [ ] TODO: Delete commented code from `MainActivityTest.java` (deferred to section 9.4 cleanup)
+- [x] Deleted: `app/src/test/java/com/example/weighttogo/activities/MainActivityTest.java` (Phase 9.1.3 - 2025-12-13)
+  - File contained 1 @Ignored test (authentication redirect) + helper methods
+  - All 17 Material3-related tests successfully migrated to MainActivityEspressoTest.java
 
 **Tests Migrated (17 tests):**
 - [x] test_onCreate_whenLoggedIn_initializesViews
