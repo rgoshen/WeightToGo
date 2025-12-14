@@ -39,6 +39,7 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
 
     // Database configuration
     private static final String DATABASE_NAME = "weigh_to_go.db";
+    public static final String DATABASE_TEST_NAME = "weigh_to_go_test.db";
     private static final int DATABASE_VERSION = 2;  // Phase 8.6: bcrypt migration
 
     // Singleton instance
@@ -139,6 +140,17 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
         Log.d(TAG, "WeighToGoDBHelper constructor called");
     }
 
+     /**
+     * Private constructor to enforce Singleton pattern.
+     *
+     * @param context application context
+     * @param dbName the name of the database
+     */
+    private WeighToGoDBHelper(Context context, String dbName) {
+        super(context, dbName, null, DATABASE_VERSION);
+        Log.d(TAG, "WeighToGoDBHelper constructor called with dbName: " + dbName);
+    }
+
     /**
      * Get singleton instance of database helper (thread-safe).
      *
@@ -171,6 +183,21 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
         }
         return instance;
     }
+    
+    /**
+     * Get singleton instance of a test database helper (thread-safe).
+     *
+     * @param context any Context (Activity or Application) - will use Application context internally
+     * @return singleton WeighToGoDBHelper instance
+     */
+    public static synchronized WeighToGoDBHelper getTestInstance(Context context, String dbName) {
+        if (instance == null) {
+            instance = new WeighToGoDBHelper(context.getApplicationContext(), dbName);
+            Log.i(TAG, "Created new WeighToGoDBHelper instance for database: " + dbName);
+        }
+        return instance;
+    }
+
 
     /**
      * Reset singleton instance for testing purposes.
@@ -208,7 +235,7 @@ public class WeighToGoDBHelper extends SQLiteOpenHelper {
      */
     @Override
     public void onCreate(SQLiteDatabase db) {
-        Log.i(TAG, "Creating database " + DATABASE_NAME + " version " + DATABASE_VERSION);
+        Log.i(TAG, "Creating database " + db.getPath() + " version " + DATABASE_VERSION);
 
         try {
             // Create users table

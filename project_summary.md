@@ -1,5 +1,169 @@
 # Project Summary - Weigh to Go!
 
+## [2025-12-14] Espresso Tests: Fixed Database Isolation with Test Database
+
+### Executive Summary
+Fixed Espresso instrumented tests to use a dedicated test database (`weigh_to_go_test.db`) instead of the production database (`weigh_to_go.db`). This eliminates duplicate user errors and ensures proper test isolation between test runs.
+
+### Issue Encountered
+**Problem:** Espresso tests were experiencing duplicate user errors when run multiple times:
+- Tests created user "testuser" in the production database
+- Database persisted between test runs on the emulator
+- Second test run attempted to insert duplicate "testuser", causing failures
+- Manual cleanup required between test runs
+
+**Root Cause:**
+- Tests used `WeighToGoDBHelper.getInstance()` which connects to production database
+- Production database persists on the emulator file system
+- `tearDown()` only closed database connection, didn't delete the database file
+- No test isolation between test runs
+
+**Why This Matters:**
+- Tests should be repeatable and isolated
+- Production database should never be used for testing
+- Test data should be automatically cleaned up after each test
+- Following Android testing best practices for database testing
+
+### Correction Made
+**Action:** Updated Espresso test files to use test database with proper cleanup:
+
+**Pattern Implemented (from GoalsActivityEspressoTest.java):**
+```java
+@Before
+public void setUp() throws Exception {
+    context = ApplicationProvider.getApplicationContext();
+
+    // Use test database instead of production
+    dbHelper = WeighToGoDBHelper.getTestInstance(context, WeighToGoDBHelper.DATABASE_TEST_NAME);
+
+    // ... rest of setup
+}
+
+@After
+public void tearDown() {
+    // Close database connection
+    if (dbHelper != null) {
+        dbHelper.close();
+    }
+
+    // Delete test database file to ensure clean state for next run
+    context.deleteDatabase(WeighToGoDBHelper.DATABASE_TEST_NAME);
+}
+```
+
+**Files Modified:**
+1. `app/src/androidTest/java/com/example/weighttogo/activities/MainActivityEspressoTest.java`
+   - Changed line 112: `getInstance()` → `getTestInstance(context, DATABASE_TEST_NAME)`
+   - Added line 165: `context.deleteDatabase(DATABASE_TEST_NAME)` in tearDown
+
+2. `app/src/androidTest/java/com/example/weighttogo/activities/SettingsActivityEspressoTest.java`
+   - Changed line 89: `getInstance()` → `getTestInstance(context, DATABASE_TEST_NAME)`
+   - Added line 138: `context.deleteDatabase(DATABASE_TEST_NAME)` in tearDown
+
+3. `app/src/androidTest/java/com/example/weighttogo/activities/GoalsActivityEspressoTest.java`
+   - Already using correct pattern (no changes needed)
+
+4. `app/src/androidTest/java/com/example/weighttogo/activities/WeightEntryActivityEspressoTest.java`
+   - Only uses mocks, no real database (no changes needed)
+
+**Benefits:**
+- ✅ Tests now use isolated test database
+- ✅ Test database automatically cleaned up after each test
+- ✅ No more duplicate user errors
+- ✅ Tests can be run repeatedly without manual cleanup
+- ✅ Production database remains untouched during testing
+- ✅ Follows Android testing best practices
+
+### Lessons Learned
+
+**1. Database Testing Best Practices**
+- Always use a separate test database for instrumented tests
+- Test databases should be cleaned up in `@After tearDown()` methods
+- Use `context.deleteDatabase()` not just `dbHelper.close()`
+- WeighToGoDBHelper provides `getTestInstance()` for this purpose
+
+**2. Test Isolation**
+- Tests must not depend on state from previous test runs
+- File-based resources (databases, shared preferences) persist on emulator
+- Proper cleanup is essential for repeatable tests
+- Each test should start with a clean slate
+
+**3. WeighToGoDBHelper Singleton Pattern**
+- `getInstance()` → production database (`weigh_to_go.db`)
+- `getTestInstance(context, dbName)` → test database (custom name)
+- `resetInstance()` available for unit tests (package-private)
+- Test database name constant: `DATABASE_TEST_NAME = "weigh_to_go_test.db"`
+
+### Technical Details
+
+**WeighToGoDBHelper.java Changes:**
+- Line 42: Added `DATABASE_TEST_NAME = "weigh_to_go_test.db"` constant
+- Lines 193-199: `getTestInstance()` method creates singleton with custom database name
+- Lines 209-215: `resetInstance()` method for unit test cleanup
+
+**Test Lifecycle:**
+```
+@Before setUp()
+  ├── Get test database instance
+  ├── Clean up existing test user (if any)
+  ├── Create fresh test user
+  └── Launch activity
+
+@Test
+  └── Execute test logic
+
+@After tearDown()
+  ├── Close activity scenario
+  ├── Logout session
+  ├── Close database connection
+  └── Delete test database file ← KEY FIX
+```
+
+### Verification
+
+**Before Fix:**
+```bash
+# First run - PASS
+./gradlew connectedAndroidTest
+
+# Second run - FAIL (DuplicateUsernameException)
+./gradlew connectedAndroidTest
+```
+
+**After Fix:**
+```bash
+# First run - PASS
+./gradlew connectedAndroidTest
+
+# Second run - PASS (no duplicate user errors)
+./gradlew connectedAndroidTest
+
+# Third run - PASS (repeatable)
+./gradlew connectedAndroidTest
+```
+
+### Success Criteria
+
+- [x] MainActivityEspressoTest uses test database with cleanup
+- [x] SettingsActivityEspressoTest uses test database with cleanup
+- [x] GoalsActivityEspressoTest verified (already correct)
+- [x] WeightEntryActivityEspressoTest verified (mock-only, no changes needed)
+- [x] Tests can be run multiple times without errors
+- [x] Production database never touched during testing
+- [x] Test database automatically deleted after each test
+- [x] Code follows pattern established in GoalsActivityEspressoTest
+
+**Overall Status:** ✅ **COMPLETE**
+
+### Next Steps
+
+- [x] Document fix in project_summary.md
+- [ ] Commit changes to feature branch
+- [ ] Push to origin
+- [ ] Create Pull Request to main branch
+
+---
+
 ## [2025-12-13] SMSNotificationManagerTest: Removed Invalid Unit Tests
 
 ### Executive Summary

@@ -80,7 +80,7 @@ public class GoalsActivityEspressoTest {
         context = ApplicationProvider.getApplicationContext();
 
         // Initialize test database
-        dbHelper = WeighToGoDBHelper.getInstance(context);
+        dbHelper = WeighToGoDBHelper.getTestInstance(context, WeighToGoDBHelper.DATABASE_TEST_NAME);
 
         // Get SessionManager instance
         sessionManager = SessionManager.getInstance(context);
@@ -131,6 +131,7 @@ public class GoalsActivityEspressoTest {
         if (dbHelper != null) {
             dbHelper.close();
         }
+        context.deleteDatabase(WeighToGoDBHelper.DATABASE_TEST_NAME);
     }
 
     // ============================================================
