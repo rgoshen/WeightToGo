@@ -2008,11 +2008,13 @@ public class SettingsActivityTest {
 - Instrumented tests (Espresso): 17 MainActivityEspressoTest + 12 WeightEntryActivityEspressoTest = 29 tests
 - Next step: Execute tests and verify all pass
 
-### 9.5 Comprehensive Authentication Testing (DEFERRED from Phase 2.4)
-**Rationale:** Phase 2.4 implemented minimal integration tests (2 tests) for critical happy paths. This section implements comprehensive scenario testing for authentication flows.
+### 9.5 Comprehensive Authentication Testing ✅ (Partially Completed 2025-12-13 - Phase 9.3.1)
+**Rationale:** Phase 2.4 implemented minimal integration tests (7 tests) for critical happy paths. This section implements comprehensive scenario testing for authentication error cases and session management.
 
-**Integration Tests (LoginActivityIntegrationTest.java):**
-- [ ] test_registration_withDuplicateUsername_showsError
+**Status:** 6 of 15 integration tests completed in Phase 9.3.1
+
+**Completed Integration Tests (LoginActivityIntegrationTest.java):**
+- [x] test_registration_withDuplicateUsername_showsError (2025-12-13)
   - Verify duplicate username detection
   - Assert error message displayed
   - Assert user not created in database
