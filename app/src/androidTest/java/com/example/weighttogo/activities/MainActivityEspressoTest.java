@@ -108,8 +108,8 @@ public class MainActivityEspressoTest {
         // Get application context
         context = ApplicationProvider.getApplicationContext();
 
-        // Initialize test database (in-memory)
-        dbHelper = WeighToGoDBHelper.getInstance(context);
+        // Initialize test database
+        dbHelper = WeighToGoDBHelper.getTestInstance(context, WeighToGoDBHelper.DATABASE_TEST_NAME);
 
         // Initialize DAOs
         userDAO = new UserDAO(dbHelper);
@@ -162,6 +162,7 @@ public class MainActivityEspressoTest {
         if (dbHelper != null) {
             dbHelper.close();
         }
+        context.deleteDatabase(WeighToGoDBHelper.DATABASE_TEST_NAME);
 
         // NOTE: SessionManager singleton cannot be reset for test isolation
         // Tests must manually logout() to clear session state
