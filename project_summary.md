@@ -12394,3 +12394,117 @@ if (existingUser != null) {
   - Improves testability with proper constructor injection
   - Eliminates mock injection timing issues
   - Aligns with Android best practices
+
+---
+
+## [2025-12-14] Bug Fix: Phone Number Masking Utility
+
+### What Was Added
+
+Added `ValidationUtils.maskPhoneNumber()` utility method to support secure logging of phone numbers throughout the application.
+
+**Method Signature:**
+```java
+@NonNull
+public static String maskPhoneNumber(@Nullable String phoneNumber)
+```
+
+**Functionality:**
+- Masks all but last 4 digits of phone number for secure logging
+- Example: `"+12025551234"` → `"***1234"`
+- Returns `"***NONE"` for null/empty input
+- Returns `"***"` for numbers with less than 4 digits
+
+**Test Coverage:**
+- 6 new unit tests added to `ValidationUtilsTest.java`
+- Tests cover: valid E.164, 10-digit US, null, empty, short, and international numbers
+- All tests passing: `./gradlew test` ✅
+
+### Why It Was Needed
+
+**Primary Purpose:** Secure logging and PII protection
+- Prevents full phone number exposure in application logs
+- GDPR/compliance requirement for handling Personally Identifiable Information (PII)
+- Industry best practice for logging sensitive data
+
+**Use Cases:**
+1. **Emulator SMS Testing** - Log test SMS messages to Logcat with masked phone (Phase 4)
+2. **Production Logging** - Mask phone numbers in `SMSNotificationManager` logs (Phase 5)
+3. **Debugging** - Show last 4 digits for user identification while protecting privacy
+
+### How It Works
+
+**Implementation Strategy:**
+1. **Null/Empty Check** - Returns placeholder `"***NONE"` to prevent NullPointerException
+2. **Digit Extraction** - Strips all non-digit characters using `replaceAll("\\D", "")`
+3. **Length Validation** - Handles short numbers (<4 digits) by masking entirely
+4. **Last 4 Extraction** - Uses `substring(length - 4)` for standard masking
+
+**Example Usage:**
+```java
+// In SMSNotificationManager.java
+String maskedPhone = ValidationUtils.maskPhoneNumber(user.getPhoneNumber());
+Log.i(TAG, "Sending SMS to: " + maskedPhone);  // Logs: "Sending SMS to: ***1234"
+```
+
+### Technical Decisions
+
+**Why Mask All But Last 4?**
+- Last 4 digits sufficient for user identification during debugging
+- Balance between security (PII protection) and utility (identifying specific users)
+- Common industry standard (credit cards, SSN, phone numbers)
+
+**Why Static Utility Method?**
+- No state needed (pure function)
+- Reusable across entire codebase
+- Consistent with existing `ValidationUtils` design pattern
+
+**Defensive Programming:**
+- Null-safe (no `NullPointerException` risk)
+- Handles edge cases (empty string, short numbers)
+- Clear logging for debugging (`Log.d()` statements)
+
+### Testing Impact
+
+**Test Additions:**
+- `test_maskPhoneNumber_withValidE164_masksAllButLast4()`
+- `test_maskPhoneNumber_with10Digit_masksAllButLast4()`
+- `test_maskPhoneNumber_withNull_returnsNone()`
+- `test_maskPhoneNumber_withEmpty_returnsNone()`
+- `test_maskPhoneNumber_withShortNumber_masksAll()`
+- `test_maskPhoneNumber_withInternational_masksAllButLast4()`
+
+**Test Results:**
+- All 6 tests pass ✅
+- 100% code coverage for `maskPhoneNumber()` method
+- Validates all edge cases (null, empty, short, international)
+
+### Files Modified
+
+**Production Code:**
+- `/app/src/main/java/com/example/weighttogo/utils/ValidationUtils.java` (+51 LOC)
+  - Added `maskPhoneNumber()` method
+  - Added `@NonNull` import
+  - Added comprehensive JavaDoc documentation
+
+**Test Code:**
+- `/app/src/test/java/com/example/weighttogo/utils/ValidationUtilsTest.java` (+99 LOC)
+  - Added 6 unit tests for phone masking
+  - Added `assertEquals` import
+
+### Next Steps
+
+**Phase 2: Emulator Detection Utility**
+- Add `isRunningOnEmulator()` method to `ValidationUtils`
+- Enable conditional SMS sending vs. Logcat logging
+
+**Phase 3: Phone Persistence Fix**
+- Add `onPause()` to `SettingsActivity` for auto-saving phone numbers
+
+**Phase 4: Emulator SMS Testing**
+- Update `handleSendTestMessage()` to use emulator detection
+- Log test messages with masked phone numbers
+
+**Phase 5: Security Audit**
+- Update all SMS logging in `SMSNotificationManager` to use masked phones
+
