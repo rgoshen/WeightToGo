@@ -486,8 +486,10 @@ public class MainActivityTest {
     }
 
     /**
-     * Creates a test weight entry for a specific date
-     * NOTE: Uses mock DAO. When tests are un-ignored in Phase 8B, update to stub behavior.
+     * Creates a test weight entry for a specific date with proper mock stubbing.
+     *
+     * NOTE: Mock stubs configured for Phase 8B Espresso migration.
+     * May need adjustment when tests are un-ignored.
      */
     private long createTestWeightEntryOnDate(double weight, LocalDate date) {
         WeightEntry entry = new WeightEntry();
@@ -498,12 +500,23 @@ public class MainActivityTest {
         entry.setCreatedAt(LocalDateTime.now());
         entry.setUpdatedAt(LocalDateTime.now());
         entry.setDeleted(false);
+
+        // Generate unique ID and configure mock stubs
+        long entryId = idGenerator.getAndIncrement();
+        entry.setWeightId(entryId);
+
+        when(mockWeightEntryDAO.insertWeightEntry(entry)).thenReturn(entryId);
+        when(mockWeightEntryDAO.getWeightEntryById(entryId)).thenReturn(entry);
+        when(mockWeightEntryDAO.getLatestWeightEntry(testUserId)).thenReturn(entry);
+
         return mockWeightEntryDAO.insertWeightEntry(entry);
     }
 
     /**
-     * Creates a test goal for the test user
-     * NOTE: Uses mock DAO. When tests are un-ignored in Phase 8B, update to stub behavior.
+     * Creates a test goal for the test user with proper mock stubbing.
+     *
+     * NOTE: Mock stubs configured for Phase 8B Espresso migration.
+     * May need adjustment when tests are un-ignored.
      */
     private void createTestGoal(double startWeight, double goalWeight) {
         GoalWeight goal = new GoalWeight();
@@ -514,6 +527,15 @@ public class MainActivityTest {
         goal.setActive(true);
         goal.setCreatedAt(LocalDateTime.now());
         goal.setUpdatedAt(LocalDateTime.now());
+
+        // Generate unique ID and configure mock stubs
+        long goalId = idGenerator.getAndIncrement();
+        goal.setGoalId(goalId);
+
+        when(mockGoalWeightDAO.insertGoal(goal)).thenReturn(goalId);
+        when(mockGoalWeightDAO.getActiveGoal(testUserId)).thenReturn(goal);
+        when(mockGoalWeightDAO.getGoalById(goalId)).thenReturn(goal);
+
         mockGoalWeightDAO.insertGoal(goal);
     }
 }

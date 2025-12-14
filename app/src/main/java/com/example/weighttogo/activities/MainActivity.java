@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity
 
     // State
     private long currentUserId;
-    private List<WeightEntry> weightEntries;
+    private List<WeightEntry> weightEntries = new ArrayList<>();
     private GoalWeight activeGoal;
 
     @Override
@@ -162,9 +162,6 @@ public class MainActivity extends AppCompatActivity
         }
         if (goalWeightDAO == null) {
             goalWeightDAO = new GoalWeightDAO(dbHelper);
-        }
-        if (weightEntries == null) {
-            weightEntries = new ArrayList<>();
         }
     }
 

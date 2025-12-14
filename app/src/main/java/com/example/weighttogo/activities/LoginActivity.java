@@ -80,6 +80,7 @@ public class LoginActivity extends AppCompatActivity {
     // DATA ACCESS AND SESSION
     // =============================================================================================
 
+    private WeighToGoDBHelper dbHelper;
     private UserDAO userDAO;
     private SessionManager sessionManager;
 
@@ -123,8 +124,10 @@ public class LoginActivity extends AppCompatActivity {
      * Only initializes if not already set (allows test injection).
      */
     private void initDataLayer() {
+        if (dbHelper == null) {
+            dbHelper = WeighToGoDBHelper.getInstance(this);
+        }
         if (userDAO == null) {
-            WeighToGoDBHelper dbHelper = WeighToGoDBHelper.getInstance(this);
             userDAO = new UserDAO(dbHelper);
         }
         if (sessionManager == null) {
