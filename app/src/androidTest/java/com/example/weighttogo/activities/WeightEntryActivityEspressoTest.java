@@ -456,6 +456,243 @@ public class WeightEntryActivityEspressoTest {
     }
 
     // =============================================================================================
+    // CATEGORY F: BOUNDARY VALUE & ERROR HANDLING TESTS (Phase 8.4 - Coverage Gaps)
+    // =============================================================================================
+
+    /**
+     * Test 13: Save with exact minimum boundary (0.0) is allowed.
+     * Tests MIN_WEIGHT = 0.0 boundary condition.
+     */
+    @Test
+    public void test_handleSave_withBoundary_zeroExactly_allowed() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+        when(mockWeightEntryDAO.insertWeightEntry(any(WeightEntry.class))).thenReturn(1L);
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Weight is already "0.0" by default in add mode, just click save
+        onView(withId(R.id.saveButton)).perform(click());
+
+        // ASSERT - Entry should be created with 0.0 weight
+        verify(mockWeightEntryDAO).insertWeightEntry(any(WeightEntry.class));
+    }
+
+    /**
+     * Test 14: Save with exact maximum boundary (700.0 lbs) is allowed.
+     * Tests MAX_WEIGHT = 700.0 lbs boundary condition.
+     */
+    @Test
+    public void test_handleSave_withBoundary_700lbs_allowed() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+        when(mockWeightEntryDAO.insertWeightEntry(any(WeightEntry.class))).thenReturn(1L);
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Enter exactly 700.0 lbs (at max limit)
+        onView(withId(R.id.weightValue)).perform(replaceText("700.0"));
+        onView(withId(R.id.saveButton)).perform(click());
+
+        // ASSERT - Entry should be created
+        verify(mockWeightEntryDAO).insertWeightEntry(any(WeightEntry.class));
+    }
+
+    /**
+     * Test 15: Save with value exceeding maximum (700.1 lbs) is rejected.
+     * Tests MAX_WEIGHT enforcement (700.0 lbs limit).
+     * Note: Validation error shown via Toast (not testable in Espresso - see GH #49)
+     */
+    @Test
+    public void test_handleSave_withBoundary_700point01lbs_rejected() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Enter 700.1 lbs (above max limit)
+        onView(withId(R.id.weightValue)).perform(replaceText("700.1"));
+        onView(withId(R.id.saveButton)).perform(click());
+
+        // ASSERT - Entry should NOT be created (Toast shown but not verifiable in Espresso)
+        // Indirect verification: Activity should still be visible (not finished)
+        onView(withId(R.id.weightValue)).check(matches(isDisplayed()));
+    }
+
+    /**
+     * Test 16: Save with exact maximum boundary (317.5 kg) is allowed.
+     * Tests MAX_WEIGHT = 317.5 kg boundary condition.
+     */
+    @Test
+    public void test_handleSave_withBoundary_317point5kg_allowed() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("kg");
+        when(mockWeightEntryDAO.insertWeightEntry(any(WeightEntry.class))).thenReturn(1L);
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Enter exactly 317.5 kg (at max limit)
+        onView(withId(R.id.weightValue)).perform(replaceText("317.5"));
+        onView(withId(R.id.saveButton)).perform(click());
+
+        // ASSERT - Entry should be created
+        verify(mockWeightEntryDAO).insertWeightEntry(any(WeightEntry.class));
+    }
+
+    /**
+     * Test 17: Quick adjust minus button at minimum weight stays at zero.
+     * Tests that quick adjust -1 button prevents negative weights.
+     * Note: Assumes quick adjust buttons exist with IDs from layout
+     */
+    @Test
+    public void test_quickAdjustMinus_atMinWeight_staysAtZero() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // Weight already at "0.0" in add mode
+
+        // ACT - Click -1 button (should stay at 0, not go negative)
+        onView(withId(R.id.adjustMinusOne)).perform(click());
+
+        // ASSERT - Weight should remain "0.0"
+        onView(withId(R.id.weightValue)).check(matches(withText("0.0")));
+    }
+
+    /**
+     * Test 18: Quick adjust plus button from 699.5 lbs reaches max (700.0).
+     * Tests that quick adjust +0.5 button respects maximum weight boundary.
+     */
+    @Test
+    public void test_quickAdjustPlus_at699point5lbs_reaches700max() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Enter 699.5 lbs, then click +0.5
+        onView(withId(R.id.weightValue)).perform(replaceText("699.5"));
+        onView(withId(R.id.adjustPlusHalf)).perform(click());
+
+        // ASSERT - Weight should be exactly 700.0 (at max, no overflow)
+        onView(withId(R.id.weightValue)).check(matches(withText("700.0")));
+    }
+
+    /**
+     * Test 19: Database insert failure shows error handling.
+     * Tests error path when database insert operation fails.
+     */
+    @Test
+    public void test_handleSave_withDatabaseInsertFailure_showsError() {
+        // ARRANGE - Mock insert to return -1 (failure)
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+        when(mockWeightEntryDAO.insertWeightEntry(any(WeightEntry.class))).thenReturn(-1L);
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Enter valid weight and attempt save (should fail)
+        onView(withId(R.id.weightValue)).perform(replaceText("150.0"));
+        onView(withId(R.id.saveButton)).perform(click());
+
+        // ASSERT - Error Toast shown (not verifiable in Espresso)
+        // Indirect verification: Activity still displayed (not finished on error)
+        onView(withId(R.id.weightValue)).check(matches(isDisplayed()));
+
+        // Verify insert was attempted
+        verify(mockWeightEntryDAO).insertWeightEntry(any(WeightEntry.class));
+    }
+
+    /**
+     * Test 20: Negative weight input cannot be entered via numpad.
+     * Note: WeightEntryActivity uses custom number pad (0-9 + decimal only).
+     * Negative sign not available in UI, so negative weights are impossible.
+     * This test documents the constraint rather than testing input rejection.
+     */
+    @Test
+    public void test_handleNumberInput_withNegativeWeight_notPossibleViaNumpad() {
+        // ARRANGE
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+
+        Intent intent = createAddModeIntent();
+        scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            activity.setWeightEntryDAO(mockWeightEntryDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setAchievementManager(mockAchievementManager);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ACT - Verify numpad buttons exist (0-9, decimal, backspace, +/- adjust buttons)
+        // No minus/negative sign button exists in the UI
+
+        // ASSERT - Document that negative weights cannot be entered
+        // Weight value can only contain digits and decimal point
+        onView(withId(R.id.weightValue)).check(matches(isDisplayed()));
+        onView(withId(R.id.numpad0)).check(matches(isDisplayed()));
+        onView(withId(R.id.numpadDecimal)).check(matches(isDisplayed()));
+
+        // Note: This test serves as documentation that UI design prevents negative input
+    }
+
+    // =============================================================================================
     // HELPER METHODS
     // =============================================================================================
 

@@ -85,6 +85,13 @@ public class GoalsActivityEspressoTest {
         // Get SessionManager instance
         sessionManager = SessionManager.getInstance(context);
 
+        // Clean up any existing test user from previous runs
+        UserDAO cleanupDAO = new UserDAO(dbHelper);
+        User existingUser = cleanupDAO.getUserByUsername("testuser");
+        if (existingUser != null) {
+            cleanupDAO.deleteUser(existingUser.getUserId());
+        }
+
         // Create test user
         testUser = createTestUser("testuser", "Test User");
         testUserId = testUser.getUserId();

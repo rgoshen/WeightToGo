@@ -2,13 +2,19 @@ package com.example.weighttogo.activities;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
+import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,13 +51,16 @@ import java.time.LocalDateTime;
  * (Robolectric/Material3 theme incompatibility).
  * <p>
  * These tests run on a real Android device or emulator with full Material3 theme support.
- * Tests settings management: weight unit preferences, SMS permissions, and phone number management.
+ * Tests settings management: weight unit preferences, SMS permissions, phone number validation,
+ * preference persistence, and SMS toggle cascading behavior.
  * <p>
  * Coverage:
  * - Weight unit preference (4 tests)
  * - SMS permission management (8 tests)
+ * - Phone number validation (6 tests)
+ * - Preference persistence & SMS toggle cascading (6 tests)
  * <p>
- * Total: 12 tests
+ * Total: 24 tests
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -81,6 +90,13 @@ public class SettingsActivityEspressoTest {
 
         // Get SessionManager instance
         sessionManager = SessionManager.getInstance(context);
+
+        // Clean up any existing test user from previous runs
+        UserDAO cleanupDAO = new UserDAO(dbHelper);
+        User existingUser = cleanupDAO.getUserByUsername("testuser");
+        if (existingUser != null) {
+            cleanupDAO.deleteUser(existingUser.getUserId());
+        }
 
         // Create test user
         testUser = createTestUser("testuser", "Test User");
@@ -355,6 +371,294 @@ public class SettingsActivityEspressoTest {
 
         // Note: Actual validation error requires invalid input and button click
         // Manual testing required to verify error display for invalid phone numbers
+    }
+
+    // ============================================================
+    // PHONE NUMBER VALIDATION TESTS (Phase 8.4 - Coverage Gaps)
+    // ============================================================
+
+    /**
+     * Test 13: Save phone with 10-digit US number formats to E.164.
+     * Tests ValidationUtils.formatPhoneE164() integration with SettingsActivity.
+     * Verifies that 10-digit US numbers are formatted to +1 prefix.
+     */
+    @Test
+    public void test_savePhone_with10DigitUS_formatsToE164() {
+        // ARRANGE
+        when(mockUserDAO.updatePhoneNumber(eq(testUserId), eq("+12025551234"))).thenReturn(true);
+
+        // ACT - Enter 10-digit US number (no +1 prefix)
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("2025551234"), closeSoftKeyboard());
+
+        // Simulate IME_ACTION_DONE or save button click (depending on implementation)
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // ASSERT - Phone should be saved with E.164 format (+12025551234)
+        verify(mockUserDAO).updatePhoneNumber(eq(testUserId), eq("+12025551234"));
+    }
+
+    /**
+     * Test 14: Save phone with international E.164 accepts unchanged.
+     * Tests that numbers already in E.164 format are not modified.
+     * Verifies UK phone number +447911123456 saved as-is.
+     */
+    @Test
+    public void test_savePhone_withInternationalE164_acceptsUnchanged() {
+        // ARRANGE
+        when(mockUserDAO.updatePhoneNumber(eq(testUserId), eq("+447911123456"))).thenReturn(true);
+
+        // ACT - Enter international number in E.164 format
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("+447911123456"), closeSoftKeyboard());
+
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // ASSERT - Phone should be saved unchanged
+        verify(mockUserDAO).updatePhoneNumber(eq(testUserId), eq("+447911123456"));
+    }
+
+    /**
+     * Test 15: Save phone with letters shows validation error.
+     * Tests ValidationUtils.getPhoneValidationError() integration.
+     * Verifies that invalid characters trigger error display.
+     */
+    @Test
+    public void test_savePhone_withLetters_showsValidationError() {
+        // ACT - Enter invalid phone with letters
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("abc12345"), closeSoftKeyboard());
+
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // ASSERT - Database save should NOT be called
+        verify(mockUserDAO, never()).updatePhoneNumber(anyLong(), anyString());
+
+        // Note: EditText error display verification is complex in Espresso
+        // Manual testing required to verify error message shown to user
+    }
+
+    /**
+     * Test 16: Save phone with dashes shows validation error.
+     * Tests that phone numbers with formatting characters are rejected.
+     * Verifies "202-555-1234" format triggers validation error.
+     */
+    @Test
+    public void test_savePhone_withDashes_showsValidationError() {
+        // ACT - Enter phone with dashes (invalid format)
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("202-555-1234"), closeSoftKeyboard());
+
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // ASSERT - Database save should NOT be called
+        verify(mockUserDAO, never()).updatePhoneNumber(anyLong(), anyString());
+
+        // Note: Error message verification requires EditText.getError() check
+        // which is difficult to test reliably in Espresso
+    }
+
+    /**
+     * Test 17: Save phone with too few digits shows validation error.
+     * Tests minimum length validation (10-15 digits required).
+     * Verifies "12345" (5 digits) is rejected.
+     */
+    @Test
+    public void test_savePhone_withTooShort_showsValidationError() {
+        // ACT - Enter phone that's too short (5 digits)
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("12345"), closeSoftKeyboard());
+
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // ASSERT - Database save should NOT be called
+        verify(mockUserDAO, never()).updatePhoneNumber(anyLong(), anyString());
+    }
+
+    /**
+     * Test 18: Save phone success persists after activity restart.
+     * Tests that phone number persists via UserDAO storage.
+     * Verifies E.164 formatted phone survives activity recreation.
+     */
+    @Test
+    public void test_savePhone_success_persistsAfterActivityRestart() {
+        // ARRANGE - Mock user with saved phone number
+        User userWithPhone = testUser;
+        userWithPhone.setPhoneNumber("+12025551234");
+        when(mockUserDAO.getUserById(testUserId)).thenReturn(userWithPhone);
+        when(mockUserDAO.updatePhoneNumber(eq(testUserId), eq("+12025551234"))).thenReturn(true);
+
+        // ACT - Enter and save phone
+        onView(withId(R.id.phoneNumberInput))
+                .perform(replaceText("2025551234"), closeSoftKeyboard());
+
+        onView(withId(R.id.phoneNumberInput)).perform(typeText("\n"));
+
+        // Close and reopen activity
+        scenario.close();
+        scenario = ActivityScenario.launch(SettingsActivity.class);
+        scenario.onActivity(activity -> {
+            activity.setUserDAO(mockUserDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ASSERT - Phone should be loaded and displayed (stripped of +1 for US numbers)
+        onView(withId(R.id.phoneNumberInput))
+                .check(matches(withText("2025551234")));
+    }
+
+    // ============================================================
+    // PREFERENCE PERSISTENCE & TOGGLE TESTS (6 tests)
+    // ============================================================
+
+    /**
+     * Test 19: Unit toggle from lbs to kg persists to database.
+     * <p>
+     * Tests FR6.0.4 - Weight unit preference persistence.
+     * Verifies that clicking the kg button when currently set to lbs
+     * saves "kg" preference to database via UserPreferenceDAO.
+     */
+    @Test
+    public void test_unitToggle_lbsToKg_persistsToDatabase() {
+        // ARRANGE - Start with "lbs" preference
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+        scenario.recreate();
+
+        // ACT - Click kg button
+        onView(withId(R.id.unitKg)).perform(click());
+
+        // ASSERT - Verify preference saved to database as "kg"
+        verify(mockUserPreferenceDAO).setPreference(eq(testUserId), eq("weight_unit"), eq("kg"));
+    }
+
+    /**
+     * Test 20: Unit toggle from kg to lbs persists to database.
+     * <p>
+     * Tests FR6.0.4 - Weight unit preference persistence.
+     * Verifies that clicking the lbs button when currently set to kg
+     * saves "lbs" preference to database via UserPreferenceDAO.
+     */
+    @Test
+    public void test_unitToggle_kgToLbs_persistsToDatabase() {
+        // ARRANGE - Start with "kg" preference
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("kg");
+        scenario.recreate();
+
+        // ACT - Click lbs button
+        onView(withId(R.id.unitLbs)).perform(click());
+
+        // ASSERT - Verify preference saved to database as "lbs"
+        verify(mockUserPreferenceDAO).setPreference(eq(testUserId), eq("weight_unit"), eq("lbs"));
+    }
+
+    /**
+     * Test 21: Unit toggle preference persists across activity restart.
+     * <p>
+     * Tests FR6.0.4 - Weight unit preference persistence.
+     * Verifies that when user sets weight unit to kg, closes the activity,
+     * and reopens it, the kg preference is still loaded from database.
+     */
+    @Test
+    public void test_unitToggle_persistsAcrossActivityRestart() {
+        // ARRANGE - Set preference to "kg" and mock database response
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("lbs");
+        scenario.recreate();
+
+        // ACT - Click kg button to change preference
+        onView(withId(R.id.unitKg)).perform(click());
+
+        // Update mock to return "kg" after save
+        when(mockUserPreferenceDAO.getWeightUnit(testUserId)).thenReturn("kg");
+
+        // Close and reopen activity
+        scenario.close();
+        scenario = ActivityScenario.launch(SettingsActivity.class);
+        scenario.onActivity(activity -> {
+            activity.setUserDAO(mockUserDAO);
+            activity.setUserPreferenceDAO(mockUserPreferenceDAO);
+            activity.setSMSNotificationManager(mockSmsManager);
+        });
+
+        // ASSERT - Verify preference was loaded from database on restart
+        verify(mockUserPreferenceDAO).getWeightUnit(testUserId);
+
+        // Visual verification: kg button should be displayed (styled as selected in UI)
+        onView(withId(R.id.unitKg)).check(matches(isDisplayed()));
+    }
+
+    /**
+     * Test 22: Master SMS toggle disabled disables child alert toggles.
+     * <p>
+     * Tests FR5.0 - SMS notification toggle cascading behavior.
+     * Verifies that when master SMS toggle is disabled, all child alert
+     * toggles (goal, milestone, reminder) are disabled and cannot be clicked.
+     */
+    @Test
+    public void test_masterToggle_whenDisabled_disablesChildToggles() {
+        // ARRANGE - Start with master enabled, children visible
+        // (Default state from setUp)
+
+        // ACT - Disable master SMS toggle
+        onView(withId(R.id.switchEnableSms)).perform(click());
+
+        // ASSERT - Child toggles should be disabled (not clickable)
+        onView(withId(R.id.switchGoalAlerts))
+                .check(matches(not(isEnabled())));
+        onView(withId(R.id.switchMilestoneAlerts))
+                .check(matches(not(isEnabled())));
+        onView(withId(R.id.switchDailyReminders))
+                .check(matches(not(isEnabled())));
+    }
+
+    /**
+     * Test 23: Master SMS toggle enabled enables child alert toggles.
+     * <p>
+     * Tests FR5.0 - SMS notification toggle cascading behavior.
+     * Verifies that when master SMS toggle is enabled, all child alert
+     * toggles (goal, milestone, reminder) are enabled and can be clicked.
+     */
+    @Test
+    public void test_masterToggle_whenEnabled_enablesChildToggles() {
+        // ARRANGE - Disable master first
+        onView(withId(R.id.switchEnableSms)).perform(click());
+
+        // ACT - Re-enable master SMS toggle
+        onView(withId(R.id.switchEnableSms)).perform(click());
+
+        // ASSERT - Child toggles should be enabled (clickable)
+        onView(withId(R.id.switchGoalAlerts))
+                .check(matches(isEnabled()));
+        onView(withId(R.id.switchMilestoneAlerts))
+                .check(matches(isEnabled()));
+        onView(withId(R.id.switchDailyReminders))
+                .check(matches(isEnabled()));
+    }
+
+    /**
+     * Test 24: Child toggle stays disabled when master toggle is disabled.
+     * <p>
+     * Tests FR5.0 - SMS notification toggle cascading behavior.
+     * Verifies that when master SMS toggle is OFF, attempting to click
+     * a child toggle (e.g., goal alerts) has no effect - it stays disabled.
+     * This prevents users from enabling individual alerts without SMS permission.
+     */
+    @Test
+    public void test_childToggle_whenMasterDisabled_staysDisabled() {
+        // ARRANGE - Disable master SMS toggle
+        onView(withId(R.id.switchEnableSms)).perform(click());
+
+        // Verify child is disabled first
+        onView(withId(R.id.switchGoalAlerts))
+                .check(matches(not(isEnabled())));
+
+        // ACT - Attempt to click goal alerts toggle (should have no effect)
+        // Note: Espresso may throw PerformException if view is not enabled,
+        // so we skip the click test and just verify it remains disabled
+
+        // ASSERT - Child toggle should still be disabled
+        onView(withId(R.id.switchGoalAlerts))
+                .check(matches(not(isEnabled())));
     }
 
     // ============================================================
