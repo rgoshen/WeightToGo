@@ -2,6 +2,7 @@ package com.example.weighttogo.utils;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -511,5 +512,103 @@ public class ValidationUtilsTest {
 
         // ASSERT
         assertTrue("Phone with invalid chars should return error_phone_invalid_chars", "error_phone_invalid_chars".equals(error));
+    }
+
+    // =============================================================================================
+    // PHONE NUMBER MASKING TESTS (6 tests) - Bug Fix: Phone Persistence & Emulator SMS
+    // =============================================================================================
+
+    /**
+     * Tests that maskPhoneNumber() masks all but last 4 digits for valid E.164 format.
+     * Security: Phone numbers must be masked in logs to prevent PII exposure.
+     */
+    @Test
+    public void test_maskPhoneNumber_withValidE164_masksAllButLast4() {
+        // ARRANGE
+        String phone = "+12025551234";
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected masked phone with last 4 digits", "***1234", masked);
+    }
+
+    /**
+     * Tests that maskPhoneNumber() masks all but last 4 digits for 10-digit US number.
+     */
+    @Test
+    public void test_maskPhoneNumber_with10Digit_masksAllButLast4() {
+        // ARRANGE
+        String phone = "2025551234";
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected masked phone with last 4 digits", "***1234", masked);
+    }
+
+    /**
+     * Tests that maskPhoneNumber() returns placeholder for null input.
+     * Defensive programming: null inputs should not cause NullPointerException.
+     */
+    @Test
+    public void test_maskPhoneNumber_withNull_returnsNone() {
+        // ARRANGE
+        String phone = null;
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected placeholder for null phone", "***NONE", masked);
+    }
+
+    /**
+     * Tests that maskPhoneNumber() returns placeholder for empty input.
+     */
+    @Test
+    public void test_maskPhoneNumber_withEmpty_returnsNone() {
+        // ARRANGE
+        String phone = "";
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected placeholder for empty phone", "***NONE", masked);
+    }
+
+    /**
+     * Tests that maskPhoneNumber() masks entire short number (less than 4 digits).
+     * Short numbers cannot show last 4 digits, so mask entirely.
+     */
+    @Test
+    public void test_maskPhoneNumber_withShortNumber_masksAll() {
+        // ARRANGE - Phone with less than 4 digits
+        String phone = "123";
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected fully masked short number", "***", masked);
+    }
+
+    /**
+     * Tests that maskPhoneNumber() masks all but last 4 digits for international number.
+     * International format (e.g., UK): +447911123456
+     */
+    @Test
+    public void test_maskPhoneNumber_withInternational_masksAllButLast4() {
+        // ARRANGE - UK phone number
+        String phone = "+447911123456";
+
+        // ACT
+        String masked = ValidationUtils.maskPhoneNumber(phone);
+
+        // ASSERT
+        assertEquals("Expected masked international phone", "***3456", masked);
     }
 }
