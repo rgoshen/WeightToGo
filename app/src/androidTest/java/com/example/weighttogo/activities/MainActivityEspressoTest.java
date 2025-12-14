@@ -17,6 +17,7 @@ import android.content.Context;
 import android.view.View;
 
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.matcher.BoundedMatcher;
 import androidx.test.espresso.matcher.ViewMatchers;
@@ -24,8 +25,10 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
-import com.example.weighttogo.MainActivity;
+import com.example.weighttogo.activities.MainActivity;
 import com.example.weighttogo.R;
+import com.example.weighttogo.database.DatabaseException;
+import com.example.weighttogo.database.DuplicateUsernameException;
 import com.example.weighttogo.database.GoalWeightDAO;
 import com.example.weighttogo.database.UserDAO;
 import com.example.weighttogo.database.UserPreferenceDAO;
@@ -104,7 +107,7 @@ public class MainActivityEspressoTest {
         context = ApplicationProvider.getApplicationContext();
 
         // Initialize test database (in-memory)
-        dbHelper = WeighToGoDBHelper.getTestInstance(context);
+        dbHelper = WeighToGoDBHelper.getInstance(context);
 
         // Initialize DAOs
         userDAO = new UserDAO(dbHelper);
@@ -117,13 +120,13 @@ public class MainActivityEspressoTest {
 
         // Create test user
         testUser = createTestUser("testuser", "Test User");
-        testUserId = testUser.getId();
+        testUserId = testUser.getUserId();
 
         // Log in test user BEFORE launching activity
-        sessionManager.createSession(testUserId, testUser.getUsername());
+        sessionManager.createSession(testUser);
 
         // Set default weight unit preference
-        userPreferenceDAO.savePreference(testUserId, "weight_unit", "lbs");
+        userPreferenceDAO.setPreference(testUserId, "weight_unit", "lbs");
 
         // Launch activity AFTER session is ready (prevents race condition)
         scenario = ActivityScenario.launch(MainActivity.class);
@@ -144,7 +147,7 @@ public class MainActivityEspressoTest {
 
         // Clear session
         if (sessionManager != null) {
-            sessionManager.clearSession();
+            sessionManager.logout();
         }
 
         // Close database
@@ -152,8 +155,9 @@ public class MainActivityEspressoTest {
             dbHelper.close();
         }
 
-        // Reset SessionManager singleton for next test
-        SessionManager.resetInstance();
+        // NOTE: SessionManager singleton cannot be reset for test isolation
+        // Tests must manually logout() to clear session state
+        // TODO: Add resetInstance() method to SessionManager for testing
     }
 
     // ============================================================
@@ -382,7 +386,7 @@ public class MainActivityEspressoTest {
         WeightEntry entry = weightEntryDAO.getWeightEntryById(entryId);
         assertNotNull("Entry should exist before deletion", entry);
 
-        weightEntryDAO.softDeleteWeightEntry(entryId);
+        weightEntryDAO.deleteWeightEntry(entryId);
 
         // ASSERT - Verify entry is soft deleted
         WeightEntry deletedEntry = weightEntryDAO.getWeightEntryById(entryId);
@@ -559,20 +563,24 @@ public class MainActivityEspressoTest {
      * @param username    the username for the test user
      * @param displayName the display name for the test user
      * @return the created User object
+     * @throws DuplicateUsernameException if username already exists
+     * @throws DatabaseException if database operation fails
      */
-    private User createTestUser(String username, String displayName) {
+    private User createTestUser(String username, String displayName) throws DuplicateUsernameException, DatabaseException {
         String password = "Test123!";
-        String passwordHash = PasswordUtilsV2.hashPassword(password);
+        String passwordHash = PasswordUtilsV2.hashPasswordBcrypt(password);
 
         User user = new User();
         user.setUsername(username);
         user.setPasswordHash(passwordHash);
+        user.setSalt("");  // bcrypt stores salt in hash, so empty string for User model
+        user.setPasswordAlgorithm("BCRYPT");
         user.setDisplayName(displayName);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
         long userId = userDAO.insertUser(user);
-        user.setId(userId);
+        user.setUserId(userId);
 
         return user;
     }
