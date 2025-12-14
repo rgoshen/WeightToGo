@@ -120,6 +120,12 @@ public class MainActivityEspressoTest {
         // Get SessionManager instance
         sessionManager = SessionManager.getInstance(context);
 
+        // Clean up any existing test user from previous runs
+        User existingUser = userDAO.getUserByUsername("testuser");
+        if (existingUser != null) {
+            userDAO.deleteUser(existingUser.getUserId());
+        }
+
         // Create test user
         testUser = createTestUser("testuser", "Test User");
         testUserId = testUser.getUserId();
